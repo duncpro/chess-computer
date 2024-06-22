@@ -99,7 +99,7 @@ fn calc_diag_length(diag_index: u8) -> u8 {
 /// The general purpose tile coordinate type, to be used almost always,
 /// except in the rare case when a more specialized coordinate system
 /// is convenient for the task at hand.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct StandardCoordinate { index: u8 }
 
 impl StandardCoordinate {
@@ -148,4 +148,17 @@ impl<T> std::ops::IndexMut<StandardCoordinate> for GridTable<T> {
     fn index_mut(&mut self, coord: StandardCoordinate) -> &mut Self::Output {
         &mut self.array[usize::from(coord.index())]
     }
+}
+
+// # `FileDirection`
+
+#[derive(Clone, Copy)]
+#[repr(u8)]
+pub enum FileDirection {
+    Queenside = 0,
+    Kingside = 1
+}
+
+impl FileDirection {
+    pub fn index(self) -> u8 { self as u8 } 
 }

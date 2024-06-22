@@ -46,7 +46,7 @@ impl_bitstring!(u64);
 
 #[macro_export]
 macro_rules! setbit {
-    ($bitstring:ident, $bitpos:expr) => {
+    ($bitstring:expr, $bitpos:expr) => {
         $bitstring |= (1 << $bitpos)
     };
 }

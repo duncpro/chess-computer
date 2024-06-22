@@ -18,8 +18,6 @@ pub trait CoordinateSystem: Sized + Copy {
 #[derive(Copy, Clone)] pub struct ProdiagonalMajorCS;
 #[derive(Copy, Clone)] pub struct AntidiagonalMajorCS;
 
-pub type DefaultCS = RankMajorCS;
-
 /// Represents an *absolute* tile coordinate. 
 ///
 /// There are four distinct absolute major coordinate systems.
@@ -74,6 +72,18 @@ pub struct LaneLoc {
 
 
 // # Lateral Coordinate Systems
+
+/// The [`CoordinateSystem`] of [`StandardCoordinate`].
+/// Unlike the other coordinate systems, conversion between 
+/// `Coordinate<StandardCS>` and [`StandardCoordinate`] is
+/// computationally free, since their in-memory representations
+/// are indistinguishable.
+///
+/// Therefore, `StandardCS` should be preferred when a more specific
+/// coordinate system is unnecessary. Especially if the
+/// `Coordinate<StandardCS>` is to be converted into 
+/// a [`StandardCoordinate`] later.
+pub type StandardCS = RankMajorCS;
 
 impl CoordinateSystem for RankMajorCS {
     fn encode(stdc: StandardCoordinate) -> u8 { stdc.index() }

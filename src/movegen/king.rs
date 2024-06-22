@@ -6,13 +6,13 @@ use crate::coordinates::Coordinate;
 use crate::coordinates::RankMajorCS;
 use crate::gamestate::GameState;
 use crate::grid::StandardCoordinate;
-use crate::misc::TileSpecies;
+use crate::misc::OptionPieceSpecies;
 use crate::setbit;
 
 pub fn movegen_king(state: &GameState) {
     let origin: Coordinate<RankMajorCS> = state.king(); 
     let mut bb = king_attack(origin);
-    bb &= !state.occupancy();
+    bb &= !state.mdboard.occupancy();
     for destin in bb.scan() {
         todo!("add to move queue")
     }

@@ -14,6 +14,8 @@
 
 // Piece Enums
 
+use crate::grid::Rank;
+
 #[derive(Clone, Copy)]
 #[repr(u8)]
 pub(crate) enum PieceSpecies {
@@ -48,13 +50,21 @@ impl PieceColor {
         let index = (self.index() + 1) % 2;
         return Self::from_index(index);
     }
+
+    pub fn base_rank(self) -> Rank {
+        const RANK_LUT: ColorTable<Rank> = ColorTable::new([
+            Rank::from_index(0),
+            Rank::from_index(7)
+        ]);
+        return RANK_LUT[self];
+    }
 }
 
 // Tile Enums
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
-pub enum TileSpecies {
+pub enum OptionPieceSpecies {
     Pawn   = 0,
     Rook   = 1,
     Knight = 2,
@@ -64,11 +74,11 @@ pub enum TileSpecies {
     None   = 6
 }
 
-impl TileSpecies {
+impl OptionPieceSpecies {
     pub const COUNT: usize = 7;
 }
 
-impl From<PieceSpecies> for TileSpecies {
+impl From<PieceSpecies> for OptionPieceSpecies {
     fn from(value: PieceSpecies) -> Self {
         unsafe {
             std::mem::transmute::<PieceSpecies, Self>(value)
@@ -78,23 +88,25 @@ impl From<PieceSpecies> for TileSpecies {
 
 #[derive(Clone, Copy)]
 #[repr(u8)]
-pub enum TileAffiliation { 
+pub enum OptionPieceColor { 
     White = 0,
     Black = 1,
     None = 2 
 }
 
-impl TileAffiliation {
+impl OptionPieceColor {
     pub const COUNT: usize = 3;
 }
 
-impl From<PieceColor> for TileAffiliation {
+impl From<PieceColor> for OptionPieceColor {
     fn from(value: PieceColor) -> Self {
         unsafe {
             std::mem::transmute::<PieceColor, Self>(value)
         }
     }
 }
+
+// # Classifier Tables
 
 macro_rules! impl_classifier_table_type {
     ($table_type_name:ident, $classifier_type:ty) => {
@@ -130,20 +142,33 @@ macro_rules! impl_classifier_table_type {
     };
 }
 
-impl_classifier_table_type!(SpeciesTable, TileSpecies);
-impl_classifier_table_type!(AffiliationTable, TileAffiliation);
+impl_classifier_table_type!(OptSpeciesTable, OptionPieceSpecies);
+impl_classifier_table_type!(OptColorTable, OptionPieceColor);
 impl_classifier_table_type!(ColorTable, PieceColor);
 
-impl<T> std::ops::Index<PieceColor> for AffiliationTable<T> {
+impl<T> std::ops::Index<PieceColor> for OptColorTable<T> {
     type Output = T;
     fn index(&self, index: PieceColor) -> &Self::Output {
-        &self[TileAffiliation::from(index)]
+        &self[OptionPieceColor::from(index)]
     }
 }
 
-impl<T> std::ops::IndexMut<PieceColor> for AffiliationTable<T> {
+impl<T> std::ops::IndexMut<PieceColor> for OptColorTable<T> {
     fn index_mut(&mut self, index: PieceColor) -> &mut Self::Output {
-        &mut self[TileAffiliation::from(index)]
+        &mut self[OptionPieceColor::from(index)]
+    }
+}
+
+impl<T> std::ops::Index<PieceSpecies> for OptSpeciesTable<T> {
+    type Output = T;
+    fn index(&self, index: PieceSpecies) -> &Self::Output {
+        &self[OptionPieceSpecies::from(index)]
+    }
+}
+
+impl<T> std::ops::IndexMut<PieceSpecies> for OptSpeciesTable<T> {
+    fn index_mut(&mut self, index: PieceSpecies) -> &mut Self::Output {
+        &mut self[OptionPieceSpecies::from(index)]
     }
 }
 

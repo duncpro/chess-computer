@@ -5,16 +5,17 @@ use crate::cfor;
 use crate::coordinates::Coordinate;
 use crate::coordinates::RankMajorCS;
 use crate::gamestate::GameState;
-use crate::misc::TileSpecies;
+use crate::misc::PieceSpecies;
+use crate::misc::OptionPieceSpecies;
 use crate::setbit;
 
 pub fn movegen_knights(state: &GameState) {
-    let mut knights: Bitboard<RankMajorCS> = Bitboard::empty();
-    knights =  state.species_bbs[TileSpecies::Knight].get();
-    knights &= state.affilia_bbs[state.active_player].get();
+    let knights: Bitboard<RankMajorCS> = state.mdboard.class(
+        state.active_player, PieceSpecies::Knight);
+        
     for origin in knights.scan() {
         let mut destins = knight_attack(origin);
-        destins &= !state.affilia_bbs[state.active_player].get();
+        destins &= !state.mdboard.affilia_bbs[state.active_player].get();
         for destin in destins.scan() {
             todo!("add to move queue")
         }

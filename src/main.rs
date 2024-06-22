@@ -4,11 +4,12 @@ mod bitboard;
 mod bits;
 mod check;
 mod coordinates;
+mod makemove;
 mod misc;
 mod movegen;
 mod gamestate;
 mod grid;
-mod lanescan;
+mod lane;
 mod sliders;
 
 fn main() {

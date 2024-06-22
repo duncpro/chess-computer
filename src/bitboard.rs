@@ -1,7 +1,9 @@
 use std::marker::PhantomData;
-use crate::coordinates::{CoordinateSystem, RankMajorCS, Coordinate};
+use crate::coordinates::Coordinate;
+use crate::coordinates::CoordinateSystem;
 use crate::bits::bitscan;
 use crate::getbit;
+use crate::setbit;
 
 pub type Bitlane = u8;
 pub type RawBitboard = u64;
@@ -61,6 +63,7 @@ impl<C: CoordinateSystem> std::ops::ShrAssign<u8> for Bitboard<C> {
 }
 
 impl<C: CoordinateSystem> Bitboard<C> {
+    // Accessors
     pub fn scan(self) -> impl Iterator<Item = Coordinate<C>> {
         return bitscan(self.raw_bb)
             .map(|index| Coordinate::<C>::from_index(index));
@@ -81,10 +84,16 @@ impl<C: CoordinateSystem> Bitboard<C> {
     pub fn copy_bitlane(self, begin: Coordinate<C>) -> Bitlane {
         (self.raw_bb >> begin.index()) as u8
     }
+        
+    pub fn raw(self) -> RawBitboard { self.raw_bb } 
+
+    // Modifiers
 
     pub fn invert(&mut self) { self.raw_bb = !self.raw_bb }
 
-    pub fn raw(self) -> RawBitboard { self.raw_bb } 
+    pub fn set(&mut self, pos: Coordinate<C>) { 
+        setbit!(self.raw_bb, pos.index());
+    }
 
     // Constructors
 
