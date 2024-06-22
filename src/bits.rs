@@ -57,3 +57,13 @@ macro_rules! getbit {
         $bitstring & (1 << $bitpos) == (1 << $bitpos)
     };
 }
+
+pub const fn repeat_byte_u64(byte: u8) -> u64 {
+    let mut bitstring: u64 = 0;
+    let mut i: u64 = 0;
+    while i < 64 {
+        bitstring |= (byte as u64) << i;
+        i += 8;
+    }
+    return bitstring;
+}

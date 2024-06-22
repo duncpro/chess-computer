@@ -40,9 +40,23 @@ impl GameState {
     pub fn king_stdc(&self) -> StandardCoordinate {
         self.king::<StandardCS>().into()
     }
+
+    pub fn rel_occupancy(&self) -> RawBitboard {
+        let mut bb: RawBitboard = 0;
+        bb |= self.affilia_rel_bbs[PieceColor::White];
+        bb |= self.affilia_rel_bbs[PieceColor::Black];
+        return bb;
+    }
 }
 
-pub struct MovelogEntry {}
+// # Movelog
+
+pub enum MovelogEntry {
+    Castle(FileDirection),
+    PieceMove
+}
+
+// # `MDBoard`
 
 pub struct MDBoard {
     // 7 species * 4 directions = 28 bitboards
