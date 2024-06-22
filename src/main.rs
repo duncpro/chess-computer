@@ -8,6 +8,7 @@ mod misc;
 mod movegen;
 mod gamestate;
 mod grid;
+mod lanescan;
 mod sliders;
 
 fn main() {

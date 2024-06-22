@@ -68,6 +68,14 @@ impl TileSpecies {
     pub const COUNT: usize = 7;
 }
 
+impl From<PieceSpecies> for TileSpecies {
+    fn from(value: PieceSpecies) -> Self {
+        unsafe {
+            std::mem::transmute::<PieceSpecies, Self>(value)
+        }
+    }
+}
+
 #[derive(Clone, Copy)]
 #[repr(u8)]
 pub enum TileAffiliation { 

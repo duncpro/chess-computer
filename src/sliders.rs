@@ -54,3 +54,4 @@ pub fn get_slidescan(origin: u8, occ: Bitlane) -> Bitlane {
     let indx = calc_lut_key(origin, occ);
     return SLIDER_LUT[indx];
 }
+

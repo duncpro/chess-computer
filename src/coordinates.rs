@@ -7,8 +7,9 @@ use crate::misc::const_min_u8;
 use std::marker::PhantomData;
 
 pub trait CoordinateSystem: Sized + Copy {
-    fn from_stdc(stdc: StandardCoordinate) -> u8;
-    fn into_stdc(coord: u8) -> StandardCoordinate;
+    fn encode(stdc: StandardCoordinate) -> u8;
+    fn decode(spec_coord: u8) -> StandardCoordinate;
+    fn get_lane(stdc: StandardCoordinate) -> LaneLoc;
     const INDEX: usize;
 }
 
@@ -16,6 +17,8 @@ pub trait CoordinateSystem: Sized + Copy {
 #[derive(Copy, Clone)] pub struct FileMajorCS;
 #[derive(Copy, Clone)] pub struct ProdiagonalMajorCS;
 #[derive(Copy, Clone)] pub struct AntidiagonalMajorCS;
+
+pub type DefaultCS = RankMajorCS;
 
 /// Represents an *absolute* tile coordinate. 
 ///
@@ -39,14 +42,14 @@ pub struct Coordinate<C: CoordinateSystem> {
 
 impl<C: CoordinateSystem> From<StandardCoordinate> for Coordinate<C> {
     fn from(value: StandardCoordinate) -> Self {
-        let index = C::from_stdc(value);
+        let index = C::encode(value);
         return Self::from_index(index);
     }
 }
 
 impl<C: CoordinateSystem> From<Coordinate<C>> for StandardCoordinate {
     fn from(value: Coordinate<C>) -> Self {
-        C::into_stdc(value.index())
+        C::decode(value.index())
     }
 }
 
@@ -61,57 +64,104 @@ impl<C: CoordinateSystem> Coordinate<C> {
     pub fn index(self) -> u8 { self.index }
 }
 
+// # Lane
+
+pub struct LaneLoc {
+    pub local_origin: u8,
+    pub base: StandardCoordinate,
+    pub length: u8    
+}
+
+
 // # Lateral Coordinate Systems
 
 impl CoordinateSystem for RankMajorCS {
-    fn from_stdc(stdc: StandardCoordinate) -> u8 { stdc.index() }
-    fn into_stdc(coord: u8) -> StandardCoordinate { 
+    fn encode(stdc: StandardCoordinate) -> u8 { stdc.index() }
+    
+    fn decode(coord: u8) -> StandardCoordinate { 
         StandardCoordinate::from_index(coord)
     }
+
+    fn get_lane(stdc: StandardCoordinate) -> LaneLoc {
+        LaneLoc { 
+            local_origin: stdc.file().index(),
+            base: StandardCoordinate::new(stdc.rank(), File::from_index(0)), 
+            length: 8
+        }
+    }
+    
     const INDEX: usize = 0;
 }
 
 impl CoordinateSystem for FileMajorCS {
-    fn from_stdc(stdc: StandardCoordinate) -> u8 {
+    fn encode(stdc: StandardCoordinate) -> u8 {
         stdc.file().index() * 8
     }
-    fn into_stdc(coord: u8) -> StandardCoordinate {
+    
+    fn decode(coord: u8) -> StandardCoordinate {
         let rank = Rank::from_index(coord % 8);
         let file = File::from_index(coord / 8);
         return StandardCoordinate::new(rank, file);
     }
+
+    fn get_lane(stdc: StandardCoordinate) -> LaneLoc {
+        LaneLoc { 
+            local_origin: stdc.rank().index(),
+            base: StandardCoordinate::new(Rank::from_index(0), stdc.file()), 
+            length: 8
+        }
+    }
+    
     const INDEX: usize = 1;
 }
 
 // # Diagonal Coordinate Systems
 
 impl CoordinateSystem for ProdiagonalMajorCS {
-    fn from_stdc(stdc: StandardCoordinate) -> u8 {
+    fn encode(stdc: StandardCoordinate) -> u8 {
         calc_diag_coord(
             stdc.prodiagonal().index(), 
             stdc.prodiagonal_offset()
         )
     }
 
-    fn into_stdc(coord: u8) -> StandardCoordinate {
+    fn decode(coord: u8) -> StandardCoordinate {
         let index = PDC_INVERSE_LUT[usize::from(coord)];
         return StandardCoordinate::from_index(index);
     }
+
+    fn get_lane(stdc: StandardCoordinate) -> LaneLoc {
+        LaneLoc { 
+            local_origin: stdc.prodiagonal_offset(),
+            base: stdc.prodiagonal().base(), 
+            length: stdc.prodiagonal().length()
+        }
+    }
+    
     const INDEX: usize = 2;
 }
 
 impl CoordinateSystem for AntidiagonalMajorCS {
-    fn from_stdc(stdc: StandardCoordinate) -> u8 {
+    fn encode(stdc: StandardCoordinate) -> u8 {
         calc_diag_coord(
             stdc.antidiagonal().index(), 
             stdc.antidiagonal_offset()
         )
     }
 
-    fn into_stdc(coord: u8) -> StandardCoordinate {
+    fn decode(coord: u8) -> StandardCoordinate {
         let index = ADC_INVERSE_LUT[usize::from(coord)];
         return StandardCoordinate::from_index(index);
     }
+
+    fn get_lane(stdc: StandardCoordinate) -> LaneLoc {
+        LaneLoc { 
+            local_origin: stdc.antidiagonal_offset(),
+            base: stdc.antidiagonal().base(), 
+            length: stdc.antidiagonal().length()
+        }
+    }
+    
     const INDEX: usize = 3;
 }
 
