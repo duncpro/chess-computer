@@ -1,10 +1,12 @@
 use std::marker::PhantomData;
 use crate::coordinates::{CoordinateSystem, RankMajorCS, Coordinate};
-use crate::bitscan::bitscan;
+use crate::bits::bitscan;
+use crate::getbit;
 
 pub type Bitlane = u8;
-
 pub type RawBitboard = u64;
+
+// # `Bitboard`
 
 /// A type-safety wrapper around [`RawBitboard`] which enforces 
 /// coordinate system consistency for bitwise union, intersection, etc.
@@ -64,10 +66,17 @@ impl<C: CoordinateSystem> Bitboard<C> {
             .map(|index| Coordinate::<C>::from_index(index));
     }
 
-    pub fn includes(self, coord: Coordinate<C>) -> bool {
-        let mask = (1 << coord.index());
-        return self.raw_bb & mask == mask;
+    pub fn single(self) -> Coordinate<C> {
+        assert_eq!(self.raw_bb.count_ones(), 1);
+        let index = self.raw_bb.trailing_zeros() as u8;
+        return Coordinate::from_index(index);
     }
+
+    pub fn includes(self, coord: Coordinate<C>) -> bool {
+        return getbit!(self.raw_bb, coord.index())
+    }
+
+    pub fn is_not_empty(self) -> bool { self.raw_bb.count_ones() > 0 }
 
     pub fn copy_bitlane(self, begin: Coordinate<C>, count: u8) -> Bitlane {
         assert!(count <= 8, "bitlane has maximum width of 8 bits");
@@ -94,5 +103,15 @@ impl<C: CoordinateSystem> Bitboard<C> {
     /// Constructs a type-safe bitboard from a raw bitboard.
     pub const fn from_raw(raw_bb: RawBitboard) -> Self {
         Self { raw_bb, pd: PhantomData }
+    }
+}
+
+// # `MDBitboard`
+
+pub struct MDBitboard { array: [RawBitboard; 4] }
+
+impl MDBitboard {
+    pub fn get<C: CoordinateSystem>(&self) -> Bitboard<C> {
+        Bitboard::<C>::from_raw(self.array[C::INDEX])
     }
 }

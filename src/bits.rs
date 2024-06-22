@@ -1,3 +1,5 @@
+// # Bitscan
+
 pub fn bitscan<B: Bitstring>(bitstring: B) -> BitscanIterator<B> {
     BitscanIterator { bitstring }
 }
@@ -38,5 +40,20 @@ macro_rules! impl_bitstring {
     };
 }
 
-impl_bitstring!(u8);
 impl_bitstring!(u64);
+
+// Bitops
+
+#[macro_export]
+macro_rules! setbit {
+    ($bitstring:ident, $bitpos:expr) => {
+        $bitstring |= (1 << $bitpos)
+    };
+}
+
+#[macro_export]
+macro_rules! getbit {
+    ($bitstring:expr, $bitpos:expr) => {
+        $bitstring & (1 << $bitpos) == (1 << $bitpos)
+    };
+}

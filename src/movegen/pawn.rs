@@ -1,14 +1,19 @@
-use crate::bitboard::{Bitboard, RawBitboard};
+use crate::bitboard::RawBitboard;
+use crate::bitboard::Bitboard;
 use crate::coordinates::RankMajorCS;
 use crate::gamestate::GameState;
-use crate::misc::{PieceColor, TileSpecies, TileAffiliation, ColorTable};
-use std::ops::{BitAndAssign, BitAnd, Not};
+use crate::misc::ColorTable;
+use crate::misc::TileSpecies;
+use crate::misc::PieceColor;
+use std::ops::BitAnd;
+use std::ops::Not;
+use std::ops::BitAndAssign;
 
 fn movegen_pawn_forward2(gs: &GameState) {
     let mut bb = PerspectiveBitboard::empty(gs.active_player);
 
     // Select all pawns affiliated with the active player.
-    bb.abs_bb = gs.species_bbs[TileSpecies::Pawn];
+    bb.abs_bb = gs.species_bbs[TileSpecies::Pawn].get();
     bb.abs_bb &= gs.affilia_bbs[gs.active_player].get();
 
     // Filter out pawns not intersecting their home rank.
@@ -40,7 +45,7 @@ fn movegen_pawn_forward1(gs: &GameState) {
     let mut bb = PerspectiveBitboard::empty(gs.active_player);
     
     // Select all pawns affiliated with the active player.
-    bb.abs_bb = gs.species_bbs[TileSpecies::Pawn];
+    bb.abs_bb = gs.species_bbs[TileSpecies::Pawn].get();
     bb.abs_bb &= gs.affilia_bbs[gs.active_player].get();
 
     // Advance one rank towards the opponent.
