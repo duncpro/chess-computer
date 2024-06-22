@@ -45,6 +45,20 @@ impl Prodiagonal {
     pub const fn index(self) -> u8 { self.index }
 
     pub fn length(self) -> u8 { calc_diag_length(self.index()) }
+
+    pub const fn base_file(self) -> File {
+        let index = 7u8.saturating_sub(self.index());
+        return File::from_index(index);
+    }
+
+    pub fn base_rank(self) -> Rank {
+        let index = self.index().saturating_sub(7);
+        return Rank::from_index(index);
+    }
+
+    pub fn base(self) -> StandardCoordinate {
+        StandardCoordinate::new(self.base_rank(), self.base_file())
+    }
 }
 
 impl Antidiagonal {
@@ -56,6 +70,20 @@ impl Antidiagonal {
     pub const fn index(self) -> u8 { self.index }
 
     pub fn length(self) -> u8 { calc_diag_length(self.index()) }
+
+    pub const fn base_file(self) -> File {
+        let index = const_min_u8(self.index(), 7);
+        return File::from_index(index);
+    }
+
+    pub fn base_rank(self) -> Rank {
+        let index = self.index().saturating_sub(7);
+        return Rank::from_index(index);
+    }
+
+    pub fn base(self) -> StandardCoordinate {
+        StandardCoordinate::new(self.base_rank(), self.base_file())
+    }
 }
 
 fn calc_diag_length(diag_index: u8) -> u8 {
@@ -83,8 +111,7 @@ impl StandardCoordinate {
         return Prodiagonal::from_index(index);
     }
     pub const fn prodiagonal_offset(self) -> u8 {
-        let begin_file = 7u8.saturating_sub(self.prodiagonal().index());
-        return self.file().index() - begin_file;
+        return self.file().index() - self.prodiagonal().base_file().index();
     }
     
     pub const fn antidiagonal(self) -> Antidiagonal {
@@ -92,8 +119,7 @@ impl StandardCoordinate {
         return Antidiagonal::from_index(index);
     }
     pub const fn antidiagonal_offset(self) -> u8 {
-        let begin_file = const_min_u8(self.antidiagonal().index(), 7);
-        return begin_file - self.file().index();
+        self.antidiagonal().base_file().index() - self.file().index()
     }
     
     pub fn index(self) -> u8 { self.index }

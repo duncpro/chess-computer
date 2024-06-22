@@ -78,13 +78,8 @@ impl<C: CoordinateSystem> Bitboard<C> {
 
     pub fn is_not_empty(self) -> bool { self.raw_bb.count_ones() > 0 }
 
-    pub fn copy_bitlane(self, begin: Coordinate<C>, count: u8) -> Bitlane {
-        assert!(count <= 8, "bitlane has maximum width of 8 bits");
-        let mut byte = (self.raw_bb >> begin.index()) as u8;
-        let mask_offset = 8 - count;
-        byte <<= mask_offset;
-        byte >>= mask_offset;
-        return byte;
+    pub fn copy_bitlane(self, begin: Coordinate<C>) -> Bitlane {
+        (self.raw_bb >> begin.index()) as u8
     }
 
     pub fn invert(&mut self) { self.raw_bb = !self.raw_bb }
@@ -93,11 +88,16 @@ impl<C: CoordinateSystem> Bitboard<C> {
 
     // Constructors
 
-    pub fn from_bitlane(begin: Coordinate<C>, bitlane: Bitlane) -> Self {
+    pub fn from_bitlane(begin: Coordinate<C>, mut bitlane: Bitlane, len: u8) -> Self {
+        assert!(len <= 8, "bitlane has maximum width of 8 bits");
+        let mask_offset = 8 - len;
+        bitlane <<= mask_offset;
+        bitlane >>= mask_offset;
+        
         let mut raw_bb = (bitlane as u64) << begin.index();
         return Self::from_raw(raw_bb);
     }
-
+    
     pub const fn empty() -> Self { Self::from_raw(0) }
 
     /// Constructs a type-safe bitboard from a raw bitboard.
