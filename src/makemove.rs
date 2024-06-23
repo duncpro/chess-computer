@@ -3,6 +3,8 @@ use crate::crights::update_crights;
 use crate::gamestate::LoggedMove;
 use crate::gamestate::LoggedPieceMove;
 use crate::gamestate::MovelogEntry;
+use crate::grid::File;
+use crate::grid::FileDirection;
 use crate::grid::StandardCoordinate;
 use crate::misc::OptionPieceColor;
 use crate::misc::OptionPieceSpecies;
@@ -58,10 +60,12 @@ fn make_pmove(state: &mut GameState, pmove: MSPieceMove) {
     let end_species = select(pmove.kind == Promote, pmove.promote, beg_species);
     fill_tile(state, pmove.destin, state.active_player(), end_species);
 
+
+    let prev_crights = state.crights;
     update_crights(state); 
 
     state.movelog.push(MovelogEntry {
-        crights: state.crights,
+        prev_crights,
         lmove: LoggedMove::Piece(LoggedPieceMove {
             origin: pmove.origin,
             destin: pmove.destin,
@@ -73,9 +77,100 @@ fn make_pmove(state: &mut GameState, pmove: MSPieceMove) {
 }
 
 fn make_castle_queenside(state: &mut GameState) {
-    todo!()
+    let rook_origin = StandardCoordinate::new(
+        state.active_player().base_rank(), File::A);
+    let king_origin = StandardCoordinate::new(
+        state.active_player().base_rank(), File::E);
+    let rook_destin = StandardCoordinate::new(
+        state.active_player().base_rank(), File::D);
+    let king_destin = StandardCoordinate::new(
+        state.active_player().base_rank(), File::C);
+
+    clear_tile(state, king_origin);
+    clear_tile(state, rook_origin);
+    fill_tile(state, rook_destin, state.active_player(),
+        OptionPieceSpecies::Rook);
+    fill_tile(state, king_destin, state.active_player(), 
+        OptionPieceSpecies::King);
+
+    let prev_crights = state.crights;
+    state.crights.revoke(state.active_player());
+
+    state.movelog.push(MovelogEntry { 
+        prev_crights,
+        lmove: LoggedMove::Castle(FileDirection::Queenside)
+    });
 }
 
 fn make_castle_kingside(state: &mut GameState) {
-    todo!()
+    let rook_origin = StandardCoordinate::new(
+        state.active_player().base_rank(), File::H);
+    let king_origin = StandardCoordinate::new(
+        state.active_player().base_rank(), File::E);
+    let rook_destin = StandardCoordinate::new(
+        state.active_player().base_rank(), File::F);
+    let king_destin = StandardCoordinate::new(
+        state.active_player().base_rank(), File::G);
+
+    clear_tile(state, king_origin);
+    clear_tile(state, rook_origin);
+    fill_tile(state, rook_destin, state.active_player(),
+        OptionPieceSpecies::Rook);
+    fill_tile(state, king_destin, state.active_player(), 
+        OptionPieceSpecies::King);
+
+    let prev_crights = state.crights;
+    state.crights.revoke(state.active_player());
+
+    state.movelog.push(MovelogEntry { 
+        prev_crights,
+        lmove: LoggedMove::Castle(FileDirection::Kingside)
+    });
+}
+
+fn make_castle(state: &mut GameState, side: FileDirection) {
+    const ROOK_ORIGIN_LUT: [File; 2] = [
+        /* Queenside */ File::A,
+        /* Kingside  */ File::H
+    ];
+    let rook_origin = StandardCoordinate::new(
+        state.active_player().base_rank(),
+        ROOK_ORIGIN_LUT[usize::from(side.index())]
+    );
+
+    const ROOK_DESTIN_LUT: [File; 2] = [
+        /* Queenside */ File::D,
+        /* Kingside  */ File::G
+    ];
+    let rook_destin = StandardCoordinate::new(
+        state.active_player().base_rank(),
+        ROOK_DESTIN_LUT[usize::from(side.index())]
+    );
+
+    const KING_DESTIN_LUT: [File; 2] = [
+        /* Queenside */ File::C,
+        /* Kingside  */ File::G
+    ];
+    let king_destin = StandardCoordinate::new(
+        state.active_player().base_rank(), 
+        KING_DESTIN_LUT[usize::from(side.index())]
+    );
+    
+    let king_origin = StandardCoordinate::new(
+        state.active_player().base_rank(), File::E);
+
+    clear_tile(state, king_origin);
+    clear_tile(state, rook_origin);
+    fill_tile(state, rook_destin, state.active_player(),
+        OptionPieceSpecies::Rook);
+    fill_tile(state, king_destin, state.active_player(), 
+        OptionPieceSpecies::King);
+
+    let prev_crights = state.crights;
+    state.crights.revoke(state.active_player());
+
+    state.movelog.push(MovelogEntry { 
+        prev_crights,
+        lmove: LoggedMove::Castle(FileDirection::Kingside)
+    });
 }

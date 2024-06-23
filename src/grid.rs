@@ -24,6 +24,15 @@ impl File {
     }
 
     pub const fn index(self) -> u8 { self.index }
+
+    pub const A: File = File::from_index(0);
+    pub const B: File = File::from_index(1);
+    pub const C: File = File::from_index(2);
+    pub const D: File = File::from_index(3);
+    pub const E: File = File::from_index(4);
+    pub const F: File = File::from_index(5);
+    pub const G: File = File::from_index(6);
+    pub const H: File = File::from_index(7);
 }
 
 // # Diagonals

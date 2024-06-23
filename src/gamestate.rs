@@ -43,7 +43,7 @@ pub enum PieceMoveKind {
 // # Movelog
 
 pub struct MovelogEntry {
-    pub crights: CastlingRights,
+    pub prev_crights: CastlingRights,
     pub lmove: LoggedMove
 }
 

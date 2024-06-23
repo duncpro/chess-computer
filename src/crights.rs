@@ -27,6 +27,11 @@ impl CastlingRights {
         self.data &= !(1 << index);
         self.data |= (1 << index) * (value as u8);
     }
+
+    pub fn revoke(&mut self, color: PieceColor) {
+        self.set(FileDirection::Queenside, color, false);
+        self.set(FileDirection::Kingside, color, false);
+    }
 }
 
 // # Updating Castling Rights
