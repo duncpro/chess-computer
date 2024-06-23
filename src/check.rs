@@ -7,6 +7,8 @@ use crate::coordinates::StandardCS;
 use crate::coordinates::RankMajorCS;
 use crate::gamestate::GameState;
 use crate::gamestate::Bitboards;
+use crate::gamestate::locate_king;
+use crate::gamestate::locate_king_stdc;
 use crate::grid::StandardCoordinate;
 use crate::lane::lanelimit;
 use crate::lane::lanescan;
@@ -15,6 +17,7 @@ use crate::misc::OptionPieceSpecies;
 use crate::movegen::knight::knight_attack;
 use crate::misc::PieceSpecies;
 use crate::movegen::pawn::reverse_pawn_attack;
+use crate::rmrel::relativize;
 
 /// Determines if a hypothetical king placed on `vuln_sq` of
 /// is currently checked by the opponent.
@@ -37,7 +40,14 @@ struct CheckQuery<'a> {
 }
 
 fn is_check_pawn_qs(args: CheckQuery) -> bool {
-    todo!()
+    let king_rmrel = relativize(locate_king_stdc(args.board),
+        args.board.active_player);
+
+    let mut bb = reverse_pawn_attack(king_rmrel);
+    bb &= args.board.affilia_rel_bbs[args.board.active_player.oppo()];
+    bb &= args.board.pawn_rel_bb;
+
+    return bb != 0;
 }
 
 fn is_check_rankslide(args: CheckQuery) -> bool {
