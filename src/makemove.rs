@@ -55,8 +55,7 @@ fn make_pmove(state: &mut GameState, pmove: MSPieceMove) {
     clear_tile(state, pmove.origin);
     clear_tile(state, pmove.target);
 
-    let end_species = select(pmove.kind == Promote, 
-        pmove.promote, beg_species);
+    let end_species = select(pmove.kind == Promote, pmove.promote, beg_species);
     fill_tile(state, pmove.destin, state.active_player(), end_species);
 
     update_crights(state); 
@@ -71,4 +70,12 @@ fn make_pmove(state: &mut GameState, pmove: MSPieceMove) {
             capture,
         })
     })
+}
+
+fn make_castle_queenside(state: &mut GameState) {
+    todo!()
+}
+
+fn make_castle_kingside(state: &mut GameState) {
+    todo!()
 }
