@@ -1,8 +1,6 @@
-// # Laterals
-
-use std::cmp::min;
-
 use crate::misc::const_min_u8;
+
+// # Laterals
 
 #[derive(Clone, Copy)]
 pub struct Rank { index: u8 }
@@ -133,6 +131,8 @@ impl StandardCoordinate {
         return Self::from_index(index);
     }
 }
+
+// # `GridTable`
 
 pub struct GridTable<T> { array: [T; 64] }
 

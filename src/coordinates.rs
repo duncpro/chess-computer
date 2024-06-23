@@ -1,3 +1,11 @@
+//! This module provides additional *absolute* tile coordinate 
+//! systems which are to be used when [`StandardCoordinate`]
+//! from [`crate::grid`] is cumbersome. These additional systems are
+//! primarily useful for working with sliding pieces.
+//!
+//! Note: The rank-major *relative* coordinate system is **not**
+//! defined by this module. That system is provided by [`crate::rmrel`].
+
 use crate::build_itable;
 use crate::cfor;
 use crate::grid::File;
@@ -12,11 +20,6 @@ pub trait CoordinateSystem: Sized + Copy {
     fn get_lane(stdc: StandardCoordinate) -> LaneLoc;
     const INDEX: usize;
 }
-
-#[derive(Copy, Clone)] pub struct RankMajorCS;
-#[derive(Copy, Clone)] pub struct FileMajorCS;
-#[derive(Copy, Clone)] pub struct ProdiagonalMajorCS;
-#[derive(Copy, Clone)] pub struct AntidiagonalMajorCS;
 
 /// Represents an *absolute* tile coordinate. 
 ///
@@ -73,17 +76,9 @@ pub struct LaneLoc {
 
 // # Lateral Coordinate Systems
 
-/// The [`CoordinateSystem`] of [`StandardCoordinate`].
-/// Unlike the other coordinate systems, conversion between 
-/// `Coordinate<StandardCS>` and [`StandardCoordinate`] is
-/// computationally free, since their in-memory representations
-/// are indistinguishable.
-///
-/// Therefore, `StandardCS` should be preferred when a more specific
-/// coordinate system is unnecessary. Especially if the
-/// `Coordinate<StandardCS>` is to be converted into 
-/// a [`StandardCoordinate`] later.
-pub type StandardCS = RankMajorCS;
+// ## `RankMajorCS`
+
+#[derive(Copy, Clone)] pub struct RankMajorCS;
 
 impl CoordinateSystem for RankMajorCS {
     fn encode(stdc: StandardCoordinate) -> u8 { stdc.index() }
@@ -102,6 +97,24 @@ impl CoordinateSystem for RankMajorCS {
     
     const INDEX: usize = 0;
 }
+
+// ## `StandardCS`
+
+/// The [`CoordinateSystem`] of [`StandardCoordinate`].
+/// Unlike the other coordinate systems, conversion between 
+/// `Coordinate<StandardCS>` and [`StandardCoordinate`] is
+/// computationally free, since their in-memory representations
+/// are indistinguishable.
+///
+/// Therefore, `StandardCS` should be preferred when a more specific
+/// coordinate system is unnecessary. Especially if the
+/// `Coordinate<StandardCS>` is to be converted into 
+/// a [`StandardCoordinate`] later.
+pub type StandardCS = RankMajorCS;
+
+// ## `FileMajorCS`
+
+#[derive(Copy, Clone)] pub struct FileMajorCS;
 
 impl CoordinateSystem for FileMajorCS {
     fn encode(stdc: StandardCoordinate) -> u8 {
@@ -127,6 +140,10 @@ impl CoordinateSystem for FileMajorCS {
 
 // # Diagonal Coordinate Systems
 
+// ## `ProdiagonalMajorCS`
+
+#[derive(Copy, Clone)] pub struct ProdiagonalMajorCS;
+
 impl CoordinateSystem for ProdiagonalMajorCS {
     fn encode(stdc: StandardCoordinate) -> u8 {
         calc_diag_coord(
@@ -150,6 +167,10 @@ impl CoordinateSystem for ProdiagonalMajorCS {
     
     const INDEX: usize = 2;
 }
+
+// ## `AntidiagonalMajorCS`
+
+#[derive(Copy, Clone)] pub struct AntidiagonalMajorCS;
 
 impl CoordinateSystem for AntidiagonalMajorCS {
     fn encode(stdc: StandardCoordinate) -> u8 {

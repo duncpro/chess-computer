@@ -10,6 +10,7 @@ mod movegen;
 mod gamestate;
 mod grid;
 mod lane;
+mod rmrel;
 mod sliders;
 
 fn main() {

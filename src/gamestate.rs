@@ -49,11 +49,35 @@ impl GameState {
     }
 }
 
+// # `PieceMoveKind`
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+#[repr(u8)]
+pub enum PieceMoveKind {
+    Normal,
+    Promote,
+    PawnDoubleJump
+}
+
 // # Movelog
 
-pub enum MovelogEntry {
+pub struct MovelogEntry {
+    pub crights: CastlingRights,
+    pub lmove: LoggedMove
+}
+
+pub enum LoggedMove {
     Castle(FileDirection),
-    PieceMove
+    Piece(LoggedPieceMove)
+}
+
+#[derive(Clone, Copy)]
+pub struct LoggedPieceMove {
+    pub origin: StandardCoordinate,
+    pub destin: StandardCoordinate,
+    pub target: StandardCoordinate,
+    pub capture: OptionPieceSpecies,
+    pub kind: PieceMoveKind
 }
 
 // # `MDBoard`

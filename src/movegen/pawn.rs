@@ -4,10 +4,13 @@ use crate::bits::bitscan;
 use crate::bits::repeat_byte_u64;
 use crate::coordinates::RankMajorCS;
 use crate::gamestate::GameState;
+use crate::gamestate::LoggedMove;
 use crate::gamestate::MovelogEntry;
+use crate::gamestate::PieceMoveKind;
 use crate::misc::ColorTable;
 use crate::misc::OptionPieceSpecies;
 use crate::misc::PieceColor;
+use crate::rmrel::convert_rmrel_coord;
 use std::ops::BitAnd;
 use std::ops::Not;
 use std::ops::BitAndAssign;
@@ -136,9 +139,14 @@ fn movegen_capture_kingside(state: &GameState) {
 }
 
 fn movegen_enpassant(state: &GameState) {
-    if let Some(last_move) = state.movelog.last() {
-        if let MovelogEntry::PieceMove = last_move {
-            
+    if let Some(last_entry) = state.movelog.last() {
+        if let LoggedMove::Piece(pmove) = last_entry.lmove {
+            if pmove.kind == PieceMoveKind::PawnDoubleJump {
+                let target_rmrel = convert_rmrel_coord(
+                    pmove.destin.index(), state.active_player);
+                let destin_rmrel = target_rmrel + 8;
+                todo!()
+            }
         }
     }
 }
