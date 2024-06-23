@@ -1,9 +1,15 @@
 use std::marker::PhantomData;
+use crate::coordinates::AntidiagonalMajorCS;
 use crate::coordinates::Coordinate;
 use crate::coordinates::CoordinateSystem;
 use crate::bits::bitscan;
+use crate::coordinates::FileMajorCS;
+use crate::coordinates::ProdiagonalMajorCS;
+use crate::coordinates::RankMajorCS;
 use crate::getbit;
+use crate::grid::StandardCoordinate;
 use crate::setbit;
+use crate::unsetbit;
 
 pub type Bitlane = u8;
 pub type RawBitboard = u64;
@@ -95,6 +101,10 @@ impl<C: CoordinateSystem> Bitboard<C> {
         setbit!(self.raw_bb, pos.index());
     }
 
+    pub fn unset(&mut self, pos: Coordinate<C>) {
+        unsetbit!(self.raw_bb, pos.index());
+    }
+
     // Constructors
 
     pub fn from_bitlane(begin: Coordinate<C>, mut bitlane: Bitlane, len: u8) -> Self {
@@ -122,5 +132,26 @@ pub struct MDBitboard { array: [RawBitboard; 4] }
 impl MDBitboard {
     pub fn get<C: CoordinateSystem>(&self) -> Bitboard<C> {
         Bitboard::<C>::from_raw(self.array[C::INDEX])
+    }
+
+    pub fn get_mut<C: CoordinateSystem>(&mut self) -> &mut Bitboard<C> {
+        unsafe {
+            std::mem::transmute::<&mut RawBitboard, &mut Bitboard<C>>(
+                &mut self.array[C::INDEX])
+        }
+    }
+
+    pub fn set(&mut self, pos: StandardCoordinate) {
+        self.get_mut::<RankMajorCS>().set(pos.into());
+        self.get_mut::<FileMajorCS>().set(pos.into());
+        self.get_mut::<ProdiagonalMajorCS>().set(pos.into());
+        self.get_mut::<AntidiagonalMajorCS>().set(pos.into());
+    }
+    
+    pub fn unset(&mut self, pos: StandardCoordinate) {
+        self.get_mut::<RankMajorCS>().unset(pos.into());
+        self.get_mut::<FileMajorCS>().unset(pos.into());
+        self.get_mut::<ProdiagonalMajorCS>().unset(pos.into());
+        self.get_mut::<AntidiagonalMajorCS>().unset(pos.into());
     }
 }

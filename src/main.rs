@@ -4,6 +4,7 @@ mod bitboard;
 mod bits;
 mod check;
 mod coordinates;
+mod crights;
 mod makemove;
 mod misc;
 mod movegen;

@@ -4,6 +4,7 @@ use crate::bitboard::RawBitboard;
 use crate::coordinates::Coordinate;
 use crate::coordinates::CoordinateSystem;
 use crate::coordinates::StandardCS;
+use crate::crights::CastlingRights;
 use crate::getbit;
 use crate::grid::FileDirection;
 use crate::grid::GridTable;
@@ -121,23 +122,4 @@ pub fn locate_king<C: CoordinateSystem>(board: &Bitboards) -> Coordinate<C> {
 /// Calculates the [`StandardCoordinate`] of the active-player's king.
 pub fn locate_king_stdc(board: &Bitboards) -> StandardCoordinate {
     locate_king::<StandardCS>(board).into()
-}
-
-// # Castling Rights
-
-#[derive(Clone, Copy)]
-pub struct CastlingRights { data: u8 }
-
-impl CastlingRights {
-    pub fn get(self, side: FileDirection, color: PieceColor) -> bool {
-        let index = 2 * color.index() + side.index();
-        return getbit!(self.data, index);
-    }
-
-    pub fn set(&mut self, side: FileDirection, color: PieceColor, value: bool)
-    {
-        let index = 2 * color.index() + side.index();
-        self.data &= !(1 << index);
-        self.data |= (1 << index) * (value as u8);
-    }
 }

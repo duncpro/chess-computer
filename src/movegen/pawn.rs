@@ -83,9 +83,12 @@ fn movegen_forward2(ctx: &mut PawnMGContext) {
     for destin_rmrel in bitscan(bb) {
         let origin = absolutize(destin_rmrel - 16, ctx.gstate.active_player());
         let destin = absolutize(destin_rmrel, ctx.gstate.active_player());
-        let target = destin;
-        let kind = PieceMoveKind::PawnDoubleJump;
-        ctx.moves.pmoves.push(MSPieceMove { origin, destin, target, kind });
+        ctx.moves.pmoves.push(MSPieceMove {
+            origin, destin, 
+            target: destin,
+            promote: OptionPieceSpecies::None,
+            kind: PieceMoveKind::PawnDoubleJump
+        });
     }
 }
 
@@ -168,7 +171,8 @@ fn movegen_enpassant(ctx: &mut PawnMGContext) {
                     let origin = absolutize(origin_rmrel, ctx.gstate.active_player());
                     ctx.moves.pmoves.push(MSPieceMove { 
                         origin, destin, target, 
-                        kind: PieceMoveKind::Normal  
+                        kind: PieceMoveKind::Normal,
+                        promote: OptionPieceSpecies::None
                     });
                 }
             }
@@ -225,10 +229,16 @@ impl<'a, 'b> PawnMGContext<'a, 'b> {
     }
 }
 
+// # Move Constructors
+
 fn make_promote_move(origin: StandardCoordinate, destin: StandardCoordinate, 
     promote: OptionPieceSpecies) -> MSPieceMove
 {
     let target = destin;
     let kind = PieceMoveKind::Promote;
-    MSPieceMove { origin, destin, target, kind }
+    return MSPieceMove { origin, destin, target, kind, promote };
+}
+
+fn make_dj_move(origin: StandardCoordinate, destin: StandardCoordinate) {
+    
 }

@@ -1,61 +1,74 @@
-use crate::bitboard::Bitboard;
-use crate::coordinates::Coordinate;
-use crate::coordinates::StandardCS;
-use crate::gamestate::locate_king_stdc;
-use crate::grid::File;
+use crate::bitboard::RawBitboard;
+use crate::crights::update_crights;
+use crate::gamestate::LoggedMove;
+use crate::gamestate::LoggedPieceMove;
+use crate::gamestate::MovelogEntry;
 use crate::grid::StandardCoordinate;
-use crate::grid::FileDirection;
-use crate::gamestate::GameState;
+use crate::misc::OptionPieceColor;
+use crate::misc::OptionPieceSpecies;
+use crate::misc::PieceColor;
 use crate::misc::PieceSpecies;
+use crate::misc::select;
+use crate::movegen::moveset::MSPieceMove;
+use crate::gamestate::GameState;
+use crate::gamestate::PieceMoveKind::Promote;
+use crate::rmrel::relativize;
+use crate::setbit;
+use crate::unsetbit;
 
-// # Updating Castling Rights
+fn clear_tile(state: &mut GameState, pos: StandardCoordinate) {    
+    let species = state.species_lut[pos];
+    let affilia = state.affilia_lut[pos];
 
-fn update_crights(state: &mut GameState) {
-    update_crights_kingside(state);
-    update_crights_queenside(state);
+    state.species_lut[pos] = OptionPieceSpecies::None;
+    state.affilia_lut[pos] = OptionPieceColor::None;
+    
+    state.bbs.affilia_bbs[affilia].unset(pos);
+    state.bbs.species_bbs[species].unset(pos);
+
+    unsetbit!(state.bbs.pawn_rel_bb, 
+        relativize(pos, state.active_player()));
+    unsetbit!(state.bbs.affilia_rel_bbs[affilia],
+        relativize(pos, state.active_player()));
 }
 
-fn update_crights_kingside(state: &mut GameState) {
-    let mut value = state.crights.get(FileDirection::Kingside, 
-        state.active_player());
+fn fill_tile(state: &mut GameState, pos: StandardCoordinate,
+    color: PieceColor, species: OptionPieceSpecies) 
+{
+    state.species_lut[pos] = species;
+    state.affilia_lut[pos] = color.into();
 
-    value &= is_king_intact(state);
-
-    let base_rank = state.active_player().base_rank();
+    state.bbs.affilia_bbs[color].set(pos);
+    state.bbs.species_bbs[species].set(pos);
     
-    let rook_home = StandardCoordinate::new(base_rank, File::from_index(7));
-        
-    let rooks: Bitboard<StandardCS> = 
-        state.bbs.class(state.active_player(), PieceSpecies::Rook);
-    
-    value &= rooks.includes(rook_home.into());
-
-    state.crights.set(FileDirection::Kingside, 
-        state.active_player(), value);
+    let rel_pos = relativize(pos, state.active_player());
+    setbit!(state.bbs.affilia_rel_bbs[color], rel_pos);
+    let is_pawn = species == OptionPieceSpecies::Pawn;
+    state.bbs.pawn_rel_bb |= ((1 << rel_pos) * (is_pawn as RawBitboard));
 }
 
-fn update_crights_queenside(state: &mut GameState) {
-    let mut value = state.crights.get(FileDirection::Queenside, 
-        state.active_player());
+fn make_pmove(state: &mut GameState, pmove: MSPieceMove) {
+    let beg_species = state.species_lut[pmove.origin];
+    let affilia = state.affilia_lut[pmove.origin];
+    let capture = state.species_lut[pmove.target];
 
-    value &= is_king_intact(state);
+    clear_tile(state, pmove.origin);
+    clear_tile(state, pmove.target);
 
-    let base_rank = state.active_player().base_rank();
-    
-    let rook_home = StandardCoordinate::new(base_rank, File::from_index(0));
-    
-    let rooks: Bitboard<StandardCS> = 
-        state.bbs.class(state.active_player(), PieceSpecies::Rook);
-    
-    value &= rooks.includes(rook_home.into());
+    let end_species = select(pmove.kind == Promote, 
+        pmove.promote, beg_species);
+    fill_tile(state, pmove.destin, state.active_player(), end_species);
 
-    state.crights.set(FileDirection::Queenside, 
-        state.active_player(), value);
-}
+    update_crights(state); 
 
-fn is_king_intact(state: &mut GameState) -> bool {
-    let base_rank = state.active_player().base_rank();
-    let king_home = StandardCoordinate::new(base_rank, File::from_index(4));
-    let king_pos  = locate_king_stdc(&state.bbs);
-    return king_home == king_pos;
+    state.movelog.push(MovelogEntry {
+        crights: state.crights,
+        lmove: LoggedMove::Piece(LoggedPieceMove {
+            origin: pmove.origin,
+            destin: pmove.destin,
+            target: pmove.target,
+            kind: pmove.kind,
+            capture,
+        })
+    })
 }

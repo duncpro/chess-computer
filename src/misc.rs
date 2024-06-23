@@ -214,6 +214,15 @@ macro_rules! build_itable {
     };
 }
 
+/// Utility Functions
+
 pub const fn const_min_u8(left: u8, right: u8) -> u8 {
     if left < right { left } else { right }
+}
+
+pub const fn select<T>(condition: bool, left: T, right: T) -> T 
+where T: Copy
+{
+    let lut: [T; 2] = [left, right];
+    return lut[condition as usize];
 }

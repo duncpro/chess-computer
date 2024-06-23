@@ -103,13 +103,12 @@ impl CoordinateSystem for RankMajorCS {
 /// The [`CoordinateSystem`] of [`StandardCoordinate`].
 /// Unlike the other coordinate systems, conversion between 
 /// `Coordinate<StandardCS>` and [`StandardCoordinate`] is
-/// computationally free, since their in-memory representations
+/// computationally free, since the in-memory representations
 /// are indistinguishable.
 ///
 /// Therefore, `StandardCS` should be preferred when a more specific
-/// coordinate system is unnecessary. Especially if the
-/// `Coordinate<StandardCS>` is to be converted into 
-/// a [`StandardCoordinate`] later.
+/// coordinate system is unnecessary. Especially when the [`Coordinate`]
+/// is to be converted into a [`StandardCoordinate`] later.
 pub type StandardCS = RankMajorCS;
 
 // ## `FileMajorCS`

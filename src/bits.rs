@@ -52,6 +52,13 @@ macro_rules! setbit {
 }
 
 #[macro_export]
+macro_rules! unsetbit {
+    ($bitstring:expr, $bitpos:expr) => {
+        $bitstring &= !(1 << $bitpos)
+    };
+}
+
+#[macro_export]
 macro_rules! getbit {
     ($bitstring:expr, $bitpos:expr) => {
         $bitstring & (1 << $bitpos) == (1 << $bitpos)
