@@ -19,8 +19,8 @@ use crate::misc::PieceSpecies;
 use crate::movegen::pawn::reverse_pawn_attack;
 use crate::rmrel::relativize;
 
-/// Determines if a hypothetical king placed on `vuln_sq` of
-/// is currently checked by the opponent.
+/// Determines if a hypothetical king placed on `vuln_sq` is currently 
+/// checked by the opponent.
 pub fn is_check(board: &Bitboards, vuln_sq: StandardCoordinate) -> bool {
     let mut check: bool = false;
     let args = CheckQuery { board,  vuln_sq };
