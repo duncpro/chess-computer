@@ -18,6 +18,8 @@ use crate::rmrel::relativize;
 use crate::setbit;
 use crate::unsetbit;
 
+
+
 fn clear_tile(state: &mut GameState, pos: StandardCoordinate) {    
     let species = state.species_lut[pos];
     let affilia = state.affilia_lut[pos];
@@ -76,58 +78,6 @@ fn make_pmove(state: &mut GameState, pmove: MSPieceMove) {
     })
 }
 
-fn make_castle_queenside(state: &mut GameState) {
-    let rook_origin = StandardCoordinate::new(
-        state.active_player().base_rank(), File::A);
-    let king_origin = StandardCoordinate::new(
-        state.active_player().base_rank(), File::E);
-    let rook_destin = StandardCoordinate::new(
-        state.active_player().base_rank(), File::D);
-    let king_destin = StandardCoordinate::new(
-        state.active_player().base_rank(), File::C);
-
-    clear_tile(state, king_origin);
-    clear_tile(state, rook_origin);
-    fill_tile(state, rook_destin, state.active_player(),
-        OptionPieceSpecies::Rook);
-    fill_tile(state, king_destin, state.active_player(), 
-        OptionPieceSpecies::King);
-
-    let prev_crights = state.crights;
-    state.crights.revoke(state.active_player());
-
-    state.movelog.push(MovelogEntry { 
-        prev_crights,
-        lmove: LoggedMove::Castle(FileDirection::Queenside)
-    });
-}
-
-fn make_castle_kingside(state: &mut GameState) {
-    let rook_origin = StandardCoordinate::new(
-        state.active_player().base_rank(), File::H);
-    let king_origin = StandardCoordinate::new(
-        state.active_player().base_rank(), File::E);
-    let rook_destin = StandardCoordinate::new(
-        state.active_player().base_rank(), File::F);
-    let king_destin = StandardCoordinate::new(
-        state.active_player().base_rank(), File::G);
-
-    clear_tile(state, king_origin);
-    clear_tile(state, rook_origin);
-    fill_tile(state, rook_destin, state.active_player(),
-        OptionPieceSpecies::Rook);
-    fill_tile(state, king_destin, state.active_player(), 
-        OptionPieceSpecies::King);
-
-    let prev_crights = state.crights;
-    state.crights.revoke(state.active_player());
-
-    state.movelog.push(MovelogEntry { 
-        prev_crights,
-        lmove: LoggedMove::Castle(FileDirection::Kingside)
-    });
-}
-
 fn make_castle(state: &mut GameState, side: FileDirection) {
     const ROOK_ORIGIN_LUT: [File; 2] = [
         /* Queenside */ File::A,
@@ -171,6 +121,6 @@ fn make_castle(state: &mut GameState, side: FileDirection) {
 
     state.movelog.push(MovelogEntry { 
         prev_crights,
-        lmove: LoggedMove::Castle(FileDirection::Kingside)
+        lmove: LoggedMove::Castle(side)
     });
 }
