@@ -76,8 +76,9 @@ pub struct LoggedPieceMove {
     pub origin: StandardCoordinate,
     pub destin: StandardCoordinate,
     pub target: StandardCoordinate,
+    pub kind: PieceMoveKind,
+    
     pub capture: OptionPieceSpecies,
-    pub kind: PieceMoveKind
 }
 
 // # `MDBoard`

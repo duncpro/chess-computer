@@ -4,13 +4,14 @@ use crate::grid::FileDirection;
 use crate::grid::StandardCoordinate;
 use crate::grid::File;
 use crate::gamestate::GameState;
+use crate::movegen::moveset::MoveSet;
 
-pub fn movegen_castle(state: &GameState) {
-    movegen_castle_ks(state);
-    movegen_castle_qs(state);
+pub fn movegen_castle(state: &GameState, moves: &mut MoveSet) {
+    movegen_castle_ks(state, moves);
+    movegen_castle_qs(state, moves);
 }
 
-pub fn movegen_castle_ks(state: &GameState) {    
+pub fn movegen_castle_ks(state: &GameState, moves: &mut MoveSet) {    
     let mut can_castle = false;
         
     let base_rank = state.active_player.base_rank();
@@ -31,10 +32,10 @@ pub fn movegen_castle_ks(state: &GameState) {
 
     can_castle &= state.crights.get(FileDirection::Kingside, state.active_player);
     
-    todo!("add to move queue")    
+    moves.castle_kingside = can_castle; 
 }
 
-pub fn movegen_castle_qs(state: &GameState) {
+pub fn movegen_castle_qs(state: &GameState, moves: &mut MoveSet) {
     let mut can_castle = false;
         
     let base_rank = state.active_player.base_rank();
@@ -61,5 +62,5 @@ pub fn movegen_castle_qs(state: &GameState) {
 
     can_castle &= state.crights.get(FileDirection::Queenside, state.active_player);
 
-    todo!("add to move queue")
+    moves.castle_queenside = can_castle;
 }
