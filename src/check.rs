@@ -24,7 +24,7 @@ use crate::rmrel::relativize;
 pub fn is_check(board: &Bitboards, vuln_sq: StandardCoordinate) -> bool {
     let mut check: bool = false;
     let args = CheckQuery { board,  vuln_sq };
-    check |= is_check_pawn_qs(args);
+    check |= is_check_pawn(args);
     check |= is_check_rankslide(args);
     check |= is_check_fileslide(args);
     check |= is_check_prodiag_slide(args);
@@ -39,7 +39,7 @@ struct CheckQuery<'a> {
     vuln_sq: StandardCoordinate 
 }
 
-fn is_check_pawn_qs(args: CheckQuery) -> bool {
+fn is_check_pawn(args: CheckQuery) -> bool {
     let king_rmrel = relativize(locate_king_stdc(args.board),
         args.board.active_player);
 
