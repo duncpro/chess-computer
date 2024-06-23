@@ -17,36 +17,16 @@ use crate::misc::OptSpeciesTable;
 use crate::setbit;
 
 pub struct GameState {
-    pub affilia_rel_bbs: OptColorTable<RawBitboard>,
-    pub pawn_rel_bb: RawBitboard,
-    pub mdboard: MDBoard,
+    pub bbs: Bitboards,
     pub species_lut: GridTable<OptionPieceSpecies>,
     pub affilia_lut: GridTable<OptionPieceColor>,
-    pub active_player: PieceColor,
     pub movelog: Vec<MovelogEntry>,
     pub crights: CastlingRights
 }
 
 impl GameState {
-    /// Calculates the [`Coordinate`] of the active-player's king.
-    pub fn king<C: CoordinateSystem>(&self) -> Coordinate<C> {
-        let mut bb: Bitboard<C> = Bitboard::empty();
-        bb  = self.mdboard.species_bbs[OptionPieceSpecies::King].get();
-        bb &= self.mdboard.affilia_bbs[self.active_player].get();
-        return bb.single();
-    }
-
-    /// Calculates the [`StandardCoordinate`] of the active-player's king.
-    pub fn king_stdc(&self) -> StandardCoordinate {
-        self.king::<StandardCS>().into()
-    }
-
-    pub fn rel_occupancy(&self) -> RawBitboard {
-        let mut bb: RawBitboard = 0;
-        bb |= self.affilia_rel_bbs[PieceColor::White];
-        bb |= self.affilia_rel_bbs[PieceColor::Black];
-        return bb;
-    }
+    // ## Accessors
+    pub fn active_player(&self) -> PieceColor { self.bbs.active_player }
 }
 
 // # `PieceMoveKind`
@@ -77,24 +57,39 @@ pub struct LoggedPieceMove {
     pub destin: StandardCoordinate,
     pub target: StandardCoordinate,
     pub kind: PieceMoveKind,
-    
     pub capture: OptionPieceSpecies,
 }
 
-// # `MDBoard`
+// # `Bitboards`
 
-pub struct MDBoard {
+pub struct Bitboards {
+    // ## MDBitboards
     // 7 species * 4 directions = 28 bitboards
     // 28 bitboards * 8 bytes each = 224 bytes
     pub species_bbs: OptSpeciesTable<MDBitboard>,
     // 3 affiliations * 4 directions = 12 bitboards
     // 12 bitboards * 8 bytes each = 96 bytes
-    pub affilia_bbs: OptColorTable<MDBitboard>
-    // So in total MDBoard has memory expenditure of
-    // 224 + 96 = 320 bytes, which is quite small.
+    pub affilia_bbs: OptColorTable<MDBitboard>,
+
+    // ## Relative Bitboards
+    // 3 affiliations = 3 bitboards
+    // 3 bitboards * 8 bytes each = 24 bytes
+    pub affilia_rel_bbs: OptColorTable<RawBitboard>,
+    // 1 bitboard * 8 bytes each = 8 bytes
+    pub pawn_rel_bb: RawBitboard,
+    pub active_player: PieceColor
+    // So in total `Bitboards` has memory expenditure of
+    // 224 + 96 + 24 + 8 + 1 = 321 bytes.
 }
 
-impl MDBoard {
+impl Bitboards {
+    pub fn rel_occupancy(&self) -> RawBitboard {
+        let mut bb: RawBitboard = 0;
+        bb |= self.affilia_rel_bbs[PieceColor::White];
+        bb |= self.affilia_rel_bbs[PieceColor::Black];
+        return bb;
+    }
+
     pub fn occupancy<C: CoordinateSystem>(&self) -> Bitboard<C> {
         let mut bb: Bitboard<C> = Bitboard::empty();
         bb |= self.affilia_bbs[OptionPieceColor::White].get();
@@ -112,6 +107,20 @@ impl MDBoard {
         bb &= self.species_bbs[species].get();
         return bb;
     }
+}
+
+
+/// Calculates the [`Coordinate`] of the active-player's king.
+pub fn locate_king<C: CoordinateSystem>(board: &Bitboards) -> Coordinate<C> {
+    let mut bb: Bitboard<C> = Bitboard::empty();
+    bb  = board.species_bbs[OptionPieceSpecies::King].get();
+    bb &= board.affilia_bbs[board.active_player].get();
+    return bb.single();
+}
+
+/// Calculates the [`StandardCoordinate`] of the active-player's king.
+pub fn locate_king_stdc(board: &Bitboards) -> StandardCoordinate {
+    locate_king::<StandardCS>(board).into()
 }
 
 // # Castling Rights

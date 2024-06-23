@@ -5,19 +5,24 @@ use crate::cfor;
 use crate::coordinates::Coordinate;
 use crate::coordinates::RankMajorCS;
 use crate::gamestate::GameState;
+use crate::grid::StandardCoordinate;
 use crate::misc::PieceSpecies;
 use crate::misc::OptionPieceSpecies;
 use crate::setbit;
 
-pub fn movegen_knights(state: &GameState) {
-    let knights: Bitboard<RankMajorCS> = state.mdboard.class(
-        state.active_player, PieceSpecies::Knight);
+use super::moveset::MSPieceMove;
+use super::moveset::MoveSet;
+
+pub fn movegen_knights(state: &GameState, moves: &mut MoveSet) {
+    let knights: Bitboard<RankMajorCS> = state.bbs.class(
+        state.active_player(), PieceSpecies::Knight);
         
     for origin in knights.scan() {
         let mut destins = knight_attack(origin);
-        destins &= !state.mdboard.affilia_bbs[state.active_player].get();
+        destins &= !state.bbs.affilia_bbs[state.active_player()].get();
         for destin in destins.scan() {
-            todo!("add to move queue")
+            moves.pmoves.push(
+                MSPieceMove::normal(origin.into(), destin.into()));
         }
     }
 }

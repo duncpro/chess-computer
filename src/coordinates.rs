@@ -1,7 +1,7 @@
 //! This module provides additional *absolute* tile coordinate 
-//! systems which are to be used when [`StandardCoordinate`]
-//! from [`crate::grid`] is cumbersome. These additional systems are
-//! primarily useful for working with sliding pieces.
+//! systems which are to be used when the general-purpose
+//! [`StandardCoordinate`] from [`crate::grid`] is cumbersome. 
+//! These additional systems are primarily useful for working with sliding pieces.
 //!
 //! Note: The rank-major *relative* coordinate system is **not**
 //! defined by this module. That system is provided by [`crate::rmrel`].

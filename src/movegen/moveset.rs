@@ -12,7 +12,7 @@ pub struct MSPieceMove {
 }
 
 impl MSPieceMove {
-    pub fn normal(origin: StandardCoordinate, destin: StandardCoordinate) {
+    pub fn normal(origin: StandardCoordinate, destin: StandardCoordinate) -> Self {
         let target = destin;
         Self { origin, destin, target, kind: PieceMoveKind::Normal }
     }
