@@ -9,25 +9,23 @@ use crate::getbit;
 use crate::grid::FileDirection;
 use crate::grid::GridTable;
 use crate::grid::StandardCoordinate;
-use crate::misc::PieceColor;
-use crate::misc::PieceSpecies;
-use crate::misc::OptionPieceColor;
-use crate::misc::OptionPieceSpecies;
-use crate::misc::OptColorTable;
-use crate::misc::OptSpeciesTable;
+use crate::piece::Color;
+use crate::piece::Species;
+use crate::piece::OptColorTable;
+use crate::piece::OptSpeciesTable;
 use crate::setbit;
 
 pub struct GameState {
     pub bbs: Bitboards,
-    pub species_lut: GridTable<OptionPieceSpecies>,
-    pub affilia_lut: GridTable<OptionPieceColor>,
+    pub species_lut: GridTable<Option<Species>>,
+    pub affilia_lut: GridTable<Option<Color>>,
     pub movelog: Vec<MovelogEntry>,
     pub crights: CastlingRights
 }
 
 impl GameState {
     // ## Accessors
-    pub fn active_player(&self) -> PieceColor { self.bbs.active_player }
+    pub fn active_player(&self) -> Color { self.bbs.active_player }
 }
 
 // # `PieceMoveKind`
@@ -58,7 +56,7 @@ pub struct LoggedPieceMove {
     pub destin: StandardCoordinate,
     pub target: StandardCoordinate,
     pub kind: PieceMoveKind,
-    pub capture: OptionPieceSpecies,
+    pub capture: Option<Species>,
 }
 
 // # `Bitboards`
@@ -78,7 +76,7 @@ pub struct Bitboards {
     pub affilia_rel_bbs: OptColorTable<RawBitboard>,
     // 1 bitboard * 8 bytes each = 8 bytes
     pub pawn_rel_bb: RawBitboard,
-    pub active_player: PieceColor
+    pub active_player: Color
     // So in total `Bitboards` has memory expenditure of
     // 224 + 96 + 24 + 8 + 1 = 321 bytes.
 }
@@ -86,21 +84,21 @@ pub struct Bitboards {
 impl Bitboards {
     pub fn rel_occupancy(&self) -> RawBitboard {
         let mut bb: RawBitboard = 0;
-        bb |= self.affilia_rel_bbs[PieceColor::White];
-        bb |= self.affilia_rel_bbs[PieceColor::Black];
+        bb |= self.affilia_rel_bbs[Color::White];
+        bb |= self.affilia_rel_bbs[Color::Black];
         return bb;
     }
 
     pub fn occupancy<C: CoordinateSystem>(&self) -> Bitboard<C> {
         let mut bb: Bitboard<C> = Bitboard::empty();
-        bb |= self.affilia_bbs[OptionPieceColor::White].get();
-        bb |= self.affilia_bbs[OptionPieceColor::Black].get();
+        bb |= self.affilia_bbs[Color::White].get();
+        bb |= self.affilia_bbs[Color::Black].get();
         return bb;
     }
 
     /// Computes a [`Bitboard`] of all pieces of the given class.
     /// That is, all pieces matching the given `color` and `species`.
-    pub fn class<C: CoordinateSystem>(&self, color: PieceColor, species: PieceSpecies)
+    pub fn class<C: CoordinateSystem>(&self, color: Color, species: Species)
     -> Bitboard<C> 
     {
         let mut bb: Bitboard<C> = Bitboard::empty();
@@ -114,7 +112,7 @@ impl Bitboards {
 /// Calculates the [`Coordinate`] of the active-player's king.
 pub fn locate_king<C: CoordinateSystem>(board: &Bitboards) -> Coordinate<C> {
     let mut bb: Bitboard<C> = Bitboard::empty();
-    bb  = board.species_bbs[OptionPieceSpecies::King].get();
+    bb  = board.species_bbs[Species::King].get();
     bb &= board.affilia_bbs[board.active_player].get();
     return bb.single();
 }

@@ -4,11 +4,11 @@ use crate::coordinates::CoordinateSystem;
 use crate::gamestate::GameState;
 use crate::grid::StandardCoordinate;
 use crate::lane::lanescan;
-use crate::misc::PieceSpecies;
+use crate::piece::Species;
 use crate::movegen::moveset::MoveSet;
 use crate::movegen::moveset::MSPieceMove;
 
-pub fn movegen_sliders<C: CoordinateSystem>(state: &GameState, kind: PieceSpecies,
+pub fn movegen_sliders<C: CoordinateSystem>(state: &GameState, kind: Species,
     moves: &mut MoveSet)
 {
     let mut bb: Bitboard<StandardCS> = 

@@ -9,9 +9,9 @@ use crate::gamestate::LoggedMove;
 use crate::gamestate::MovelogEntry;
 use crate::gamestate::PieceMoveKind;
 use crate::grid::StandardCoordinate;
-use crate::misc::ColorTable;
-use crate::misc::OptionPieceSpecies;
-use crate::misc::PieceColor;
+use crate::piece::ColorTable;
+use crate::piece::Color;
+use crate::piece::Species;
 use crate::movegen::moveset::MSPieceMove;
 use crate::movegen::moveset::MoveSet;
 use crate::rmrel::absolutize;
@@ -86,7 +86,7 @@ fn movegen_forward2(ctx: &mut PawnMGContext) {
         ctx.moves.pmoves.push(MSPieceMove {
             origin, destin, 
             target: destin,
-            promote: OptionPieceSpecies::None,
+            promote: None,
             kind: PieceMoveKind::PawnDoubleJump
         });
     }
@@ -172,7 +172,7 @@ fn movegen_enpassant(ctx: &mut PawnMGContext) {
                     ctx.moves.pmoves.push(MSPieceMove { 
                         origin, destin, target, 
                         kind: PieceMoveKind::Normal,
-                        promote: OptionPieceSpecies::None
+                        promote: None
                     });
                 }
             }
@@ -215,7 +215,7 @@ impl<'a, 'b> PawnMGContext<'a, 'b> {
         let origin = absolutize(origin_rmrel, self.gstate.active_player());
         let destin = absolutize(destin_rmrel, self.gstate.active_player());
 
-        use OptionPieceSpecies::*;
+        use Species::*;
         self.moves.pmoves.push(make_promote_move(origin, destin, Queen));
         self.moves.pmoves.push(make_promote_move(origin, destin, Rook));
         self.moves.pmoves.push(make_promote_move(origin, destin, Bishop));
@@ -232,13 +232,12 @@ impl<'a, 'b> PawnMGContext<'a, 'b> {
 // # Move Constructors
 
 fn make_promote_move(origin: StandardCoordinate, destin: StandardCoordinate, 
-    promote: OptionPieceSpecies) -> MSPieceMove
+    desire: Species) -> MSPieceMove
 {
-    let target = destin;
-    let kind = PieceMoveKind::Promote;
-    return MSPieceMove { origin, destin, target, kind, promote };
-}
-
-fn make_dj_move(origin: StandardCoordinate, destin: StandardCoordinate) {
-    
+    return MSPieceMove { 
+        origin, destin, 
+        target: destin,
+        kind: PieceMoveKind::Promote,
+        promote: Some(desire)
+    };
 }

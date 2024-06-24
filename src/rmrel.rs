@@ -12,12 +12,13 @@
 
 use crate::bitboard::RawBitboard;
 use crate::bits::bitscan;
-use crate::coordinates::{Coordinate, RankMajorCS};
+use crate::coordinates::RankMajorCS;
+use crate::coordinates::Coordinate;
 use crate::grid::StandardCoordinate;
-use crate::misc::PieceColor;
+use crate::piece::Color;
 
 /// An involution between relative coordinates and absolute coordinates.
-fn convert_rmrel_coord(input: u8, active: PieceColor) -> u8 {
+fn convert_rmrel_coord(input: u8, active: Color) -> u8 {
     // - The relative and absolute coordinates are equivalent
     //   when white is the active player.
     // - When black is the active player we must invert the rank index.
@@ -31,7 +32,7 @@ fn convert_rmrel_coord(input: u8, active: PieceColor) -> u8 {
 
 /// Resolves a *relative* rank-major tile coordinate to a [`StandardCoordinate`].
 /// This is the inverse of [`absolutize`].
-pub fn absolutize(relc: u8, active_player: PieceColor)
+pub fn absolutize(relc: u8, active_player: Color)
 -> StandardCoordinate
 {
     let abs_rm_index = convert_rmrel_coord(relc, active_player);
@@ -41,7 +42,7 @@ pub fn absolutize(relc: u8, active_player: PieceColor)
 
 /// Resolves a [`StandardCoordinate`] to a *relative* rank-major tile coordinate.
 /// This is the inverse of [`absolutize`].
-pub fn relativize(abs_coord: StandardCoordinate, active: PieceColor) -> u8 {
+pub fn relativize(abs_coord: StandardCoordinate, active: Color) -> u8 {
     let abs_rm_coord = Coordinate::<RankMajorCS>::from(abs_coord);
     return convert_rmrel_coord(abs_rm_coord.index(), active);
 }

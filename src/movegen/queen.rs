@@ -3,7 +3,7 @@ use crate::coordinates::AntidiagonalMajorCS;
 use crate::coordinates::ProdiagonalMajorCS;
 use crate::coordinates::RankMajorCS;
 use crate::coordinates::FileMajorCS;
-use crate::misc::PieceSpecies::Queen;
+use crate::piece::Species::Queen;
 use crate::movegen::moveset::MoveSet;
 use crate::movegen::slider::movegen_sliders;
 

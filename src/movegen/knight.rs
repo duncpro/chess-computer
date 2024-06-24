@@ -6,16 +6,14 @@ use crate::coordinates::Coordinate;
 use crate::coordinates::RankMajorCS;
 use crate::gamestate::GameState;
 use crate::grid::StandardCoordinate;
-use crate::misc::PieceSpecies;
-use crate::misc::OptionPieceSpecies;
+use crate::piece::Species;
 use crate::setbit;
-
 use super::moveset::MSPieceMove;
 use super::moveset::MoveSet;
 
 pub fn movegen_knights(state: &GameState, moves: &mut MoveSet) {
     let knights: Bitboard<RankMajorCS> = state.bbs.class(
-        state.active_player(), PieceSpecies::Knight);
+        state.active_player(), Species::Knight);
         
     for origin in knights.scan() {
         let mut destins = knight_attack(origin);

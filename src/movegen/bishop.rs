@@ -1,7 +1,7 @@
 use crate::coordinates::AntidiagonalMajorCS;
 use crate::coordinates::ProdiagonalMajorCS;
 use crate::gamestate::GameState;
-use crate::misc::PieceSpecies::Bishop;
+use crate::piece::Species::Bishop;
 use crate::movegen::slider::movegen_sliders;
 use crate::movegen::moveset::MoveSet;
 

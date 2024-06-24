@@ -7,8 +7,8 @@ use crate::grid::File;
 use crate::grid::StandardCoordinate;
 use crate::grid::FileDirection;
 use crate::gamestate::GameState;
-use crate::misc::PieceColor;
-use crate::misc::PieceSpecies;
+use crate::piece::Color;
+use crate::piece::Species;
 
 // # `CastlingRights`
 
@@ -16,19 +16,19 @@ use crate::misc::PieceSpecies;
 pub struct CastlingRights { data: u8 }
 
 impl CastlingRights {
-    pub fn get(self, side: FileDirection, color: PieceColor) -> bool {
+    pub fn get(self, side: FileDirection, color: Color) -> bool {
         let index = 2 * color.index() + side.index();
         return getbit!(self.data, index);
     }
 
-    pub fn set(&mut self, side: FileDirection, color: PieceColor, value: bool)
+    pub fn set(&mut self, side: FileDirection, color: Color, value: bool)
     {
         let index = 2 * color.index() + side.index();
         self.data &= !(1 << index);
         self.data |= (1 << index) * (value as u8);
     }
 
-    pub fn revoke(&mut self, color: PieceColor) {
+    pub fn revoke(&mut self, color: Color) {
         self.set(FileDirection::Queenside, color, false);
         self.set(FileDirection::Kingside, color, false);
     }
@@ -52,7 +52,7 @@ fn update_crights_kingside(state: &mut GameState) {
     let rook_home = StandardCoordinate::new(base_rank, File::from_index(7));
         
     let rooks: Bitboard<StandardCS> = 
-        state.bbs.class(state.active_player(), PieceSpecies::Rook);
+        state.bbs.class(state.active_player(), Species::Rook);
     
     value &= rooks.includes(rook_home.into());
 
@@ -71,7 +71,7 @@ fn update_crights_queenside(state: &mut GameState) {
     let rook_home = StandardCoordinate::new(base_rank, File::from_index(0));
     
     let rooks: Bitboard<StandardCS> = 
-        state.bbs.class(state.active_player(), PieceSpecies::Rook);
+        state.bbs.class(state.active_player(), Species::Rook);
     
     value &= rooks.includes(rook_home.into());
 

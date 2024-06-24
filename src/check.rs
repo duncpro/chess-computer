@@ -12,10 +12,9 @@ use crate::gamestate::locate_king_stdc;
 use crate::grid::StandardCoordinate;
 use crate::lane::lanelimit;
 use crate::lane::lanescan;
-use crate::misc::PieceColor;
-use crate::misc::OptionPieceSpecies;
+use crate::piece::Color;
+use crate::piece::Species;
 use crate::movegen::knight::knight_attack;
-use crate::misc::PieceSpecies;
 use crate::movegen::pawn::reverse_pawn_attack;
 use crate::rmrel::relativize;
 
@@ -52,8 +51,8 @@ fn is_check_pawn(args: CheckQuery) -> bool {
 
 fn is_check_rankslide(args: CheckQuery) -> bool {
     let mut bb: Bitboard<RankMajorCS> = Bitboard::empty();
-    bb |= args.board.species_bbs[OptionPieceSpecies::Rook].get();
-    bb |= args.board.species_bbs[OptionPieceSpecies::Queen].get();
+    bb |= args.board.species_bbs[Species::Rook].get();
+    bb |= args.board.species_bbs[Species::Queen].get();
     bb &= args.board.affilia_bbs[args.board.active_player.oppo()].get();
     bb &= lanelimit(args.board, args.vuln_sq);
     return bb.is_not_empty();
@@ -61,8 +60,8 @@ fn is_check_rankslide(args: CheckQuery) -> bool {
 
 fn is_check_fileslide(args: CheckQuery) -> bool {
     let mut bb: Bitboard<FileMajorCS> = Bitboard::empty();
-    bb |= args.board.species_bbs[OptionPieceSpecies::Rook].get();
-    bb |= args.board.species_bbs[OptionPieceSpecies::Queen].get();
+    bb |= args.board.species_bbs[Species::Rook].get();
+    bb |= args.board.species_bbs[Species::Queen].get();
     bb &= args.board.affilia_bbs[args.board.active_player.oppo()].get();
     bb &= lanelimit(args.board, args.vuln_sq);
     return bb.is_not_empty();
@@ -70,8 +69,8 @@ fn is_check_fileslide(args: CheckQuery) -> bool {
 
 fn is_check_prodiag_slide(args: CheckQuery) -> bool {
     let mut bb: Bitboard<ProdiagonalMajorCS> = Bitboard::empty();
-    bb |= args.board.species_bbs[OptionPieceSpecies::Bishop].get();
-    bb |= args.board.species_bbs[OptionPieceSpecies::Queen].get();
+    bb |= args.board.species_bbs[Species::Bishop].get();
+    bb |= args.board.species_bbs[Species::Queen].get();
     bb &= args.board.affilia_bbs[args.board.active_player.oppo()].get();
     bb &= lanelimit(args.board, args.vuln_sq);
     return bb.is_not_empty();
@@ -79,8 +78,8 @@ fn is_check_prodiag_slide(args: CheckQuery) -> bool {
 
 fn is_check_antidiag_slide(args: CheckQuery) -> bool {
     let mut bb: Bitboard<AntidiagonalMajorCS> = Bitboard::empty();
-    bb |= args.board.species_bbs[OptionPieceSpecies::Bishop].get();
-    bb |= args.board.species_bbs[OptionPieceSpecies::Queen].get();
+    bb |= args.board.species_bbs[Species::Bishop].get();
+    bb |= args.board.species_bbs[Species::Queen].get();
     bb &= args.board.affilia_bbs[args.board.active_player.oppo()].get();
     bb &= lanelimit(args.board, args.vuln_sq);
     return bb.is_not_empty();
@@ -88,7 +87,7 @@ fn is_check_antidiag_slide(args: CheckQuery) -> bool {
 
 fn is_check_knight(args: CheckQuery) -> bool {
     let mut bb: Bitboard<RankMajorCS> = Bitboard::empty();
-    bb = args.board.class(args.board.active_player.oppo(), PieceSpecies::Knight);
+    bb = args.board.class(args.board.active_player.oppo(), Species::Knight);
     bb &= knight_attack(args.vuln_sq.into());
     return bb.is_not_empty();
 }

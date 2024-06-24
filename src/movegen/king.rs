@@ -7,7 +7,6 @@ use crate::coordinates::RankMajorCS;
 use crate::gamestate::GameState;
 use crate::gamestate::locate_king;
 use crate::grid::StandardCoordinate;
-use crate::misc::OptionPieceSpecies;
 use crate::movegen::moveset::MSPieceMove;
 use crate::movegen::moveset::MoveSet;
 use crate::setbit;
