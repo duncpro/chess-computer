@@ -9,10 +9,9 @@ use crate::grid::FileDirection;
 use crate::grid::StandardCoordinate;
 use crate::piece::Color;
 use crate::piece::Species;
-use crate::misc::select;
+use crate::misc::pick;
 use crate::movegen::moveset::MSPieceMove;
 use crate::gamestate::GameState;
-use crate::gamestate::PieceMoveKind::Promote;
 use crate::rmrel::relativize;
 use crate::setbit;
 use crate::unsetbit;
@@ -56,7 +55,7 @@ fn make_pmove(state: &mut GameState, pmove: MSPieceMove) {
     clear_tile(state, pmove.origin);
     clear_tile(state, pmove.target);
 
-    let end_species = select(pmove.kind == Promote, pmove.promote, beg_species);
+    let end_species = pick(pmove.promote.is_some(), pmove.promote, beg_species);
     fill_tile(state, pmove.destin, state.active_player().into(), 
         end_species);
 
@@ -70,7 +69,7 @@ fn make_pmove(state: &mut GameState, pmove: MSPieceMove) {
             origin: pmove.origin,
             destin: pmove.destin,
             target: pmove.target,
-            kind: pmove.kind,
+            is_pdj: pmove.is_pdj,
             capture,
         })
     })
@@ -133,29 +132,69 @@ fn swap_active(state: &mut GameState) {
 }
 
 fn unmake_pmove(state: &mut GameState, pmove: LoggedPieceMove) {
+    let species = state.species_lut[pmove.destin];
     clear_tile(state, pmove.destin);
     clear_tile(state, pmove.target);
 
     // Undo capture
     {
-        let capture_affil = select(pmove.capture.is_some(), 
+        let capture_affil = pick(pmove.capture.is_some(), 
             state.active_player().oppo().into(), None);
         fill_tile(state, pmove.target, capture_affil, pmove.capture);
     }
+
+    fill_tile(state, pmove.origin, state.active_player().into(), 
+        species);
 }
 
 fn unmake_castle(state: &mut GameState, side: FileDirection) {
+    const ROOK_ORIGIN_LUT: [File; 2] = [
+        /* Queenside */ File::A,
+        /* Kingside  */ File::H
+    ];
+    let rook_origin = StandardCoordinate::new(
+        state.active_player().base_rank(),
+        ROOK_ORIGIN_LUT[usize::from(side.index())]
+    );
+
+    const ROOK_DESTIN_LUT: [File; 2] = [
+        /* Queenside */ File::D,
+        /* Kingside  */ File::G
+    ];
+    let rook_destin = StandardCoordinate::new(
+        state.active_player().base_rank(),
+        ROOK_DESTIN_LUT[usize::from(side.index())]
+    );
+
+    const KING_DESTIN_LUT: [File; 2] = [
+        /* Queenside */ File::C,
+        /* Kingside  */ File::G
+    ];
+    let king_destin = StandardCoordinate::new(
+        state.active_player().base_rank(), 
+        KING_DESTIN_LUT[usize::from(side.index())]
+    );
     
+    let king_origin = StandardCoordinate::new(
+        state.active_player().base_rank(), File::E);
+
+    clear_tile(state, rook_destin);
+    clear_tile(state, king_destin);
+    fill_tile(state, rook_origin, Some(state.active_player()), 
+        Some(Species::Rook));
+    fill_tile(state, king_origin, Some(state.active_player()),
+        Some(Species::King));
 }
 
 fn unmake_move(state: &mut GameState) {
     let last_entry = state.movelog.pop().unwrap();
     state.crights = last_entry.prev_crights;
-
+        
     swap_active(state);
-
+    
     match last_entry.lmove {
         LoggedMove::Castle(side) => unmake_castle(state, side),
         LoggedMove::Piece(pmove) => unmake_pmove(state, pmove),
     }
+    
 }

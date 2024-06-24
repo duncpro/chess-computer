@@ -15,6 +15,8 @@ use crate::piece::OptColorTable;
 use crate::piece::OptSpeciesTable;
 use crate::setbit;
 
+// # `GameState`
+
 pub struct GameState {
     pub bbs: Bitboards,
     pub species_lut: GridTable<Option<Species>>,
@@ -24,18 +26,7 @@ pub struct GameState {
 }
 
 impl GameState {
-    // ## Accessors
     pub fn active_player(&self) -> Color { self.bbs.active_player }
-}
-
-// # `PieceMoveKind`
-
-#[derive(Clone, Copy, PartialEq, Eq)]
-#[repr(u8)]
-pub enum PieceMoveKind {
-    Normal,
-    Promote,
-    PawnDoubleJump
 }
 
 // # Movelog
@@ -55,7 +46,7 @@ pub struct LoggedPieceMove {
     pub origin: StandardCoordinate,
     pub destin: StandardCoordinate,
     pub target: StandardCoordinate,
-    pub kind: PieceMoveKind,
+    pub is_pdj: bool,
     pub capture: Option<Species>,
 }
 

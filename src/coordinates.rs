@@ -117,7 +117,9 @@ pub type StandardCS = RankMajorCS;
 
 impl CoordinateSystem for FileMajorCS {
     fn encode(stdc: StandardCoordinate) -> u8 {
-        stdc.file().index() * 8
+        let filei = stdc.file().index();
+        let ranki = stdc.rank().index();
+        return filei * 8 + ranki;
     }
     
     fn decode(coord: u8) -> StandardCoordinate {

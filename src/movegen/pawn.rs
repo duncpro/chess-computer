@@ -7,7 +7,6 @@ use crate::coordinates::RankMajorCS;
 use crate::gamestate::GameState;
 use crate::gamestate::LoggedMove;
 use crate::gamestate::MovelogEntry;
-use crate::gamestate::PieceMoveKind;
 use crate::grid::StandardCoordinate;
 use crate::piece::ColorTable;
 use crate::piece::Color;
@@ -86,8 +85,8 @@ fn movegen_forward2(ctx: &mut PawnMGContext) {
         ctx.moves.pmoves.push(MSPieceMove {
             origin, destin, 
             target: destin,
+            is_pdj: true,
             promote: None,
-            kind: PieceMoveKind::PawnDoubleJump
         });
     }
 }
@@ -155,7 +154,7 @@ fn movegen_capture_kingside(ctx: &mut PawnMGContext) {
 fn movegen_enpassant(ctx: &mut PawnMGContext) {
     if let Some(last_entry) = ctx.gstate.movelog.last() {
         if let LoggedMove::Piece(pmove) = last_entry.lmove {
-            if pmove.kind == PieceMoveKind::PawnDoubleJump {
+            if pmove.is_pdj {
                 let target_rmrel = relativize(pmove.destin,
                     ctx.gstate.active_player());
                 
@@ -171,7 +170,7 @@ fn movegen_enpassant(ctx: &mut PawnMGContext) {
                     let origin = absolutize(origin_rmrel, ctx.gstate.active_player());
                     ctx.moves.pmoves.push(MSPieceMove { 
                         origin, destin, target, 
-                        kind: PieceMoveKind::Normal,
+                        is_pdj: false,
                         promote: None
                     });
                 }
@@ -235,9 +234,10 @@ fn make_promote_move(origin: StandardCoordinate, destin: StandardCoordinate,
     desire: Species) -> MSPieceMove
 {
     return MSPieceMove { 
-        origin, destin, 
+        origin, 
+        destin, 
         target: destin,
-        kind: PieceMoveKind::Promote,
+        is_pdj: false,
         promote: Some(desire)
     };
 }

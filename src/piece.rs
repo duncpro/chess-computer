@@ -50,6 +50,30 @@ impl Color {
     }
 }
 
+#[derive(Clone, Copy)]
+pub struct OptionPiece { data: u8 }
+
+impl OptionPiece {
+    // Accessors
+    
+    fn color(self) -> Option<Color> {
+        let data = self.data & 0b11;
+        unsafe { std::mem::transmute(data) }
+    }
+
+    fn species(self) -> Option<Species> {
+        let data = self.data >> 2;
+        unsafe { std::mem::transmute(data) }
+    }
+
+    fn new(color: Option<Color>, species: Option<Species>) -> Self {
+        assert!(color.is_some() == species.is_some());
+        let mut data: u8 = unsafe { std::mem::transmute(color) };
+        data |= (unsafe { std::mem::transmute::<_, u8>(species) } << 2);
+        return Self { data }
+    }
+}
+
 impl_enum_opt_table!(Color);
 impl_enum_table!(Color);
 impl_enum_opt_table!(Species);

@@ -1,4 +1,3 @@
-use crate::gamestate::PieceMoveKind;
 use crate::grid::StandardCoordinate;
 use crate::piece::Species;
 
@@ -8,7 +7,7 @@ pub struct MSPieceMove {
     pub origin: StandardCoordinate,
     pub destin: StandardCoordinate,
     pub target: StandardCoordinate,
-    pub kind: PieceMoveKind,
+    pub is_pdj: bool,
     pub promote: Option<Species>
 }
 
@@ -18,7 +17,7 @@ impl MSPieceMove {
             origin, 
             destin,
             target: destin,
-            kind: PieceMoveKind::Normal,
+            is_pdj: false,
             promote: None
         }
     }
