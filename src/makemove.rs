@@ -1,4 +1,5 @@
 use crate::bitboard::RawBitboard;
+use crate::bits::swap_bytes_inplace_u64;
 use crate::crights::update_crights;
 use crate::gamestate::LoggedMove;
 use crate::gamestate::LoggedPieceMove;
@@ -18,8 +19,6 @@ use crate::rmrel::relativize;
 use crate::setbit;
 use crate::unsetbit;
 
-
-
 fn clear_tile(state: &mut GameState, pos: StandardCoordinate) {    
     let species = state.species_lut[pos];
     let affilia = state.affilia_lut[pos];
@@ -37,10 +36,10 @@ fn clear_tile(state: &mut GameState, pos: StandardCoordinate) {
 }
 
 fn fill_tile(state: &mut GameState, pos: StandardCoordinate,
-    color: PieceColor, species: OptionPieceSpecies) 
+    color: OptionPieceColor, species: OptionPieceSpecies) 
 {
     state.species_lut[pos] = species;
-    state.affilia_lut[pos] = color.into();
+    state.affilia_lut[pos] = color;
 
     state.bbs.affilia_bbs[color].set(pos);
     state.bbs.species_bbs[species].set(pos);
@@ -60,7 +59,8 @@ fn make_pmove(state: &mut GameState, pmove: MSPieceMove) {
     clear_tile(state, pmove.target);
 
     let end_species = select(pmove.kind == Promote, pmove.promote, beg_species);
-    fill_tile(state, pmove.destin, state.active_player(), end_species);
+    fill_tile(state, pmove.destin, state.active_player().into(), 
+        end_species);
 
 
     let prev_crights = state.crights;
@@ -111,9 +111,9 @@ fn make_castle(state: &mut GameState, side: FileDirection) {
 
     clear_tile(state, king_origin);
     clear_tile(state, rook_origin);
-    fill_tile(state, rook_destin, state.active_player(),
+    fill_tile(state, rook_destin, state.active_player().into(),
         OptionPieceSpecies::Rook);
-    fill_tile(state, king_destin, state.active_player(), 
+    fill_tile(state, king_destin, state.active_player().into(), 
         OptionPieceSpecies::King);
 
     let prev_crights = state.crights;
@@ -123,4 +123,46 @@ fn make_castle(state: &mut GameState, side: FileDirection) {
         prev_crights,
         lmove: LoggedMove::Castle(side)
     });
+}
+
+fn swap_active(state: &mut GameState) {
+    swap_bytes_inplace_u64(&mut state.bbs.pawn_rel_bb);
+    swap_bytes_inplace_u64(
+        &mut state.bbs.affilia_rel_bbs[PieceColor::White]);
+    swap_bytes_inplace_u64(
+        &mut state.bbs.affilia_rel_bbs[PieceColor::Black]);
+    state.bbs.active_player = state.bbs.active_player.oppo();
+}
+
+fn unmake_pmove(state: &mut GameState, pmove: LoggedPieceMove) {
+    clear_tile(state, pmove.destin);
+    clear_tile(state, pmove.target);
+
+    // Undo capture
+    {
+        let was_capture = (pmove.capture != OptionPieceSpecies::None);
+        let capture_affil = select(was_capture, 
+            state.active_player().oppo().into(), OptionPieceColor::None);
+        // TODO: Get rid of this lookup table easily.
+        // Create a `Capture` struct which holds an OptionPieceColor,
+        // and an OptionPieceSpecies, compressed of course, and store
+        // that in the LoggedMove instead of only the kind.
+        fill_tile(state, pmove.target, capture_affil, pmove.capture);
+    }
+}
+
+fn unmake_castle(state: &mut GameState, side: FileDirection) {
+    
+}
+
+fn unmake_move(state: &mut GameState) {
+    let last_entry = state.movelog.pop().unwrap();
+    state.crights = last_entry.prev_crights;
+
+    swap_active(state);
+
+    match last_entry.lmove {
+        LoggedMove::Castle(side) => unmake_castle(state, side),
+        LoggedMove::Piece(pmove) => unmake_pmove(state, pmove),
+    }
 }

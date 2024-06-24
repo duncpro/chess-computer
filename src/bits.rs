@@ -65,6 +65,12 @@ macro_rules! getbit {
     };
 }
 
+pub fn swap_bytes_inplace_u64(bitstring: &mut u64) {
+    *bitstring = bitstring.swap_bytes();
+}
+
+// Bitstring Constructors
+
 pub const fn repeat_byte_u64(byte: u8) -> u64 {
     let mut bitstring: u64 = 0;
     let mut i: u64 = 0;

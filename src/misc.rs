@@ -76,6 +76,13 @@ pub enum OptionPieceSpecies {
 
 impl OptionPieceSpecies {
     pub const COUNT: usize = 7;
+    
+    pub fn from_index(index: u8) -> Self {
+        assert!(index < 7);
+        unsafe {
+            std::mem::transmute::<u8, Self>(index)
+        }
+    }
 }
 
 impl From<PieceSpecies> for OptionPieceSpecies {
@@ -96,6 +103,13 @@ pub enum OptionPieceColor {
 
 impl OptionPieceColor {
     pub const COUNT: usize = 3;
+
+    pub fn from_index(index: u8) -> Self {
+        assert!(index < 3);
+        unsafe {
+            std::mem::transmute::<u8, Self>(index)
+        }
+    }
 }
 
 impl From<PieceColor> for OptionPieceColor {

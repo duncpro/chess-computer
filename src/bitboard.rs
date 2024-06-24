@@ -19,6 +19,7 @@ pub type RawBitboard = u64;
 /// A type-safety wrapper around [`RawBitboard`] which enforces 
 /// coordinate system consistency for bitwise union, intersection, etc.
 #[derive(Clone, Copy)]
+#[repr(transparent)]
 pub struct Bitboard<C: CoordinateSystem> {
     raw_bb: RawBitboard,
     pd: PhantomData<C>
