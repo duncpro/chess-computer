@@ -1,4 +1,4 @@
-//! This modules provides support for enum tables. n enum table is a wrapper 
+//! This modules provides support for enum tables. An enum table is a wrapper 
 //! around an array that implements [`std::ops::Index`] and [`std::ops::IndexMut`]
 //! so that the table can be indexed by the enum directly instead of indirectly though
 //! the discriminant.
