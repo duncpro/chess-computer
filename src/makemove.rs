@@ -1,78 +1,80 @@
 use crate::bitboard::RawBitboard;
 use crate::bits::swap_bytes_inplace_u64;
+use crate::check::is_check;
 use crate::crights::update_crights;
 use crate::gamestate::LoggedMove;
 use crate::gamestate::LoggedPieceMove;
 use crate::gamestate::MovelogEntry;
+use crate::gamestate::SpecialPieceMove;
+use crate::gamestate::locate_king_stdc;
 use crate::grid::File;
 use crate::grid::FileDirection;
 use crate::grid::StandardCoordinate;
 use crate::piece::Color;
+use crate::piece::Piece;
 use crate::piece::Species;
 use crate::misc::pick;
-use crate::movegen::moveset::MSPieceMove;
+use crate::movegen::moveset::MGPieceMove;
 use crate::gamestate::GameState;
 use crate::rmrel::relativize;
 use crate::setbit;
 use crate::unsetbit;
 
+// # Utilities
+
 fn clear_tile(state: &mut GameState, pos: StandardCoordinate) {    
-    let species = state.species_lut[pos];
-    let affilia = state.affilia_lut[pos];
-
-    state.species_lut[pos] = None;
-    state.affilia_lut[pos] = None;
-    
-    state.bbs.affilia_bbs[affilia].unset(pos);
-    state.bbs.species_bbs[species].unset(pos);
-
+    let occupant = state.occupant_lut[pos];
+    state.occupant_lut[pos] = None;
+    if let Some(piece) = occupant {
+        state.bbs.affilia_bbs[piece.color()].unset(pos);
+        state.bbs.species_bbs[piece.species()].unset(pos);
+        unsetbit!(state.bbs.affilia_rel_bbs[piece.color()],
+            relativize(pos, state.active_player()));
+    }
     unsetbit!(state.bbs.pawn_rel_bb, 
-        relativize(pos, state.active_player()));
-    unsetbit!(state.bbs.affilia_rel_bbs[affilia],
         relativize(pos, state.active_player()));
 }
 
-fn fill_tile(state: &mut GameState, pos: StandardCoordinate,
-    color: Option<Color>, species: Option<Species>) 
+fn fill_tile(state: &mut GameState, pos: StandardCoordinate, piece: Piece) 
 {
-    state.species_lut[pos] = species;
-    state.affilia_lut[pos] = color;
-
-    state.bbs.affilia_bbs[color].set(pos);
-    state.bbs.species_bbs[species].set(pos);
+    state.occupant_lut[pos] = Some(piece);
+    state.bbs.affilia_bbs[piece.color()].set(pos);
+    state.bbs.species_bbs[piece.species()].set(pos);
     
     let rel_pos = relativize(pos, state.active_player());
-    setbit!(state.bbs.affilia_rel_bbs[color], rel_pos);
-    let is_pawn = species == Some(Species::Pawn);
+    setbit!(state.bbs.affilia_rel_bbs[piece.color()], rel_pos);
+    let is_pawn = piece.species() == Species::Pawn;
     state.bbs.pawn_rel_bb |= ((1 << rel_pos) * (is_pawn as RawBitboard));
 }
 
-fn make_pmove(state: &mut GameState, pmove: MSPieceMove) {
-    let beg_species = state.species_lut[pmove.origin];
-    let affilia = state.affilia_lut[pmove.origin];
-    let capture = state.species_lut[pmove.target];
+fn swap_active(state: &mut GameState) {
+    swap_bytes_inplace_u64(&mut state.bbs.pawn_rel_bb);
+    swap_bytes_inplace_u64(
+        &mut state.bbs.affilia_rel_bbs[Color::White]);
+    swap_bytes_inplace_u64(
+        &mut state.bbs.affilia_rel_bbs[Color::Black]);
+    state.bbs.active_player = state.bbs.active_player.oppo();
+}
 
-    clear_tile(state, pmove.origin);
-    clear_tile(state, pmove.target);
 
-    let end_species = pick(pmove.promote.is_some(), pmove.promote, beg_species);
-    fill_tile(state, pmove.destin, state.active_player().into(), 
-        end_species);
+// # Make
 
+fn make_pmove(state: &mut GameState, mgmove: MGPieceMove) {
+    let piece = state.occupant_lut[mgmove.origin].unwrap();
+    let capture = state.occupant_lut[mgmove.target];
+    
+    clear_tile(state, mgmove.origin);
+    clear_tile(state, mgmove.target);
+
+    let end_species = pick(mgmove.promote.is_some(), 
+        mgmove.promote.unwrap(), piece.species());
+    fill_tile(state, mgmove.destin, Piece::new(piece.color(), end_species));
 
     let prev_crights = state.crights;
     update_crights(state); 
 
-    state.movelog.push(MovelogEntry {
-        prev_crights,
-        lmove: LoggedMove::Piece(LoggedPieceMove {
-            origin: pmove.origin,
-            destin: pmove.destin,
-            target: pmove.target,
-            is_pdj: pmove.is_pdj,
-            capture,
-        })
-    })
+    state.movelog.push(MovelogEntry { prev_crights,
+        lmove: LoggedMove::Piece(LoggedPieceMove { mgmove, capture }) });
 }
 
 fn make_castle(state: &mut GameState, side: FileDirection) {
@@ -108,10 +110,8 @@ fn make_castle(state: &mut GameState, side: FileDirection) {
 
     clear_tile(state, king_origin);
     clear_tile(state, rook_origin);
-    fill_tile(state, rook_destin, state.active_player().into(),
-        Some(Species::Rook));
-    fill_tile(state, king_destin, state.active_player().into(), 
-        Some(Species::King));
+    fill_tile(state, rook_destin, Piece::new(state.active_player(), Species::Rook));
+    fill_tile(state, king_destin, Piece::new(state.active_player(), Species::King));
 
     let prev_crights = state.crights;
     state.crights.revoke(state.active_player());
@@ -122,29 +122,22 @@ fn make_castle(state: &mut GameState, side: FileDirection) {
     });
 }
 
-fn swap_active(state: &mut GameState) {
-    swap_bytes_inplace_u64(&mut state.bbs.pawn_rel_bb);
-    swap_bytes_inplace_u64(
-        &mut state.bbs.affilia_rel_bbs[Color::White]);
-    swap_bytes_inplace_u64(
-        &mut state.bbs.affilia_rel_bbs[Color::Black]);
-    state.bbs.active_player = state.bbs.active_player.oppo();
-}
+// # Unmake
 
 fn unmake_pmove(state: &mut GameState, pmove: LoggedPieceMove) {
-    let species = state.species_lut[pmove.destin];
-    clear_tile(state, pmove.destin);
-    clear_tile(state, pmove.target);
-
-    // Undo capture
-    {
-        let capture_affil = pick(pmove.capture.is_some(), 
-            state.active_player().oppo().into(), None);
-        fill_tile(state, pmove.target, capture_affil, pmove.capture);
+    let is_promote = (pmove.mgmove.special == Some(SpecialPieceMove::Promote));
+    let species = pick(is_promote, Species::Pawn, 
+        state.occupant_lut[pmove.mgmove.destin].unwrap().species());
+    
+    clear_tile(state, pmove.mgmove.destin);
+    clear_tile(state, pmove.mgmove.target);
+    
+    if let Some(piece) = pmove.capture {
+        fill_tile(state, pmove.mgmove.target, piece);
     }
 
-    fill_tile(state, pmove.origin, state.active_player().into(), 
-        species);
+    fill_tile(state, pmove.mgmove.origin,
+        Piece::new(state.active_player(), species));
 }
 
 fn unmake_castle(state: &mut GameState, side: FileDirection) {
@@ -180,13 +173,13 @@ fn unmake_castle(state: &mut GameState, side: FileDirection) {
 
     clear_tile(state, rook_destin);
     clear_tile(state, king_destin);
-    fill_tile(state, rook_origin, Some(state.active_player()), 
-        Some(Species::Rook));
-    fill_tile(state, king_origin, Some(state.active_player()),
-        Some(Species::King));
+    fill_tile(state, rook_origin, Piece::new(state.active_player(), 
+        Species::Rook));
+    fill_tile(state, king_origin, Piece::new(state.active_player(),
+        Species::King));
 }
 
-fn unmake_move(state: &mut GameState) {
+pub fn unmake_move(state: &mut GameState) {
     let last_entry = state.movelog.pop().unwrap();
     state.crights = last_entry.prev_crights;
         
@@ -196,5 +189,17 @@ fn unmake_move(state: &mut GameState) {
         LoggedMove::Castle(side) => unmake_castle(state, side),
         LoggedMove::Piece(pmove) => unmake_pmove(state, pmove),
     }
-    
+}
+
+// # Test
+
+/// Calculates the legality of a psuedo-legal move.
+/// This procedure returns `true` if the move is legal, 
+/// and false otherwise.
+pub fn test_pmove(state: &mut GameState, pmove: MGPieceMove) -> bool {
+    make_pmove(state, pmove);
+    let is_legal = is_check(&state.bbs, locate_king_stdc(&state.bbs));
+    swap_active(state);
+    unmake_move(state);
+    return is_legal;
 }

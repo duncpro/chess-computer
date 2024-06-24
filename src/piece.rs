@@ -1,6 +1,9 @@
+use std::num::NonZeroU8;
+
 use crate::impl_enum_table;
-use crate::impl_enum_opt_table;
 use crate::grid::Rank;
+
+// # `Species`
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
@@ -14,8 +17,20 @@ pub enum Species {
 }
 
 impl Species {
-    const COUNT: usize = 6;
+    pub const COUNT: usize = 6;
+
+    pub const fn index(self) -> u8 { self as u8 - 1 }
+
+    pub fn from_index(index: u8) -> Self {
+        unsafe {
+            std::mem::transmute(index + 1)
+        }
+    }
 }
+
+impl_enum_table!(Species);
+
+// # `Color`
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
@@ -50,32 +65,37 @@ impl Color {
     }
 }
 
+impl_enum_table!(Color);
+
+// `Piece`
+
 #[derive(Clone, Copy)]
-pub struct OptionPiece { data: u8 }
-
-impl OptionPiece {
-    // Accessors
-    
-    fn color(self) -> Option<Color> {
-        let data = self.data & 0b11;
-        unsafe { std::mem::transmute(data) }
-    }
-
-    fn species(self) -> Option<Species> {
-        let data = self.data >> 2;
-        unsafe { std::mem::transmute(data) }
-    }
-
-    fn new(color: Option<Color>, species: Option<Species>) -> Self {
-        assert!(color.is_some() == species.is_some());
-        let mut data: u8 = unsafe { std::mem::transmute(color) };
-        data |= (unsafe { std::mem::transmute::<_, u8>(species) } << 2);
-        return Self { data }
-    }
+#[repr(transparent)]
+pub struct Piece {
+    // LSB 8 7 6 5 4 3 2 1
+    //  Species  -----
+    //          Color  ---
+    data: NonZeroU8 
 }
 
-impl_enum_opt_table!(Color);
-impl_enum_table!(Color);
-impl_enum_opt_table!(Species);
-impl_enum_table!(Species);
+impl Piece {
+    pub fn color(self) -> Color {
+        let index = (self.data.get() & 0b11) - 1;
+        return Color::from_index(index);
+    }
+    
+    pub fn species(self) -> Species {
+        let index = (self.data.get() >> 2) - 1;
+        return Species::from_index(index);
+    }
+
+    pub fn new(color: Color, species: Species) -> Self {
+        let mut data = 0;
+        data |= color.index() + 1;
+        data |= (species.index() + 1) << 2;
+        return Self { 
+            data: NonZeroU8::new(data).unwrap()  
+        }
+    }
+}
 

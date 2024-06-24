@@ -94,6 +94,8 @@ impl<C: CoordinateSystem> Bitboard<C> {
         
     pub fn raw(self) -> RawBitboard { self.raw_bb } 
 
+    pub fn count(self) -> u8 { self.raw_bb.count_ones() as u8 }
+
     // Modifiers
 
     pub fn invert(&mut self) { self.raw_bb = !self.raw_bb }

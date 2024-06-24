@@ -7,11 +7,12 @@ use crate::coordinates::RankMajorCS;
 use crate::gamestate::GameState;
 use crate::gamestate::LoggedMove;
 use crate::gamestate::MovelogEntry;
+use crate::gamestate::SpecialPieceMove;
 use crate::grid::StandardCoordinate;
 use crate::piece::ColorTable;
 use crate::piece::Color;
 use crate::piece::Species;
-use crate::movegen::moveset::MSPieceMove;
+use crate::movegen::moveset::MGPieceMove;
 use crate::movegen::moveset::MoveSet;
 use crate::rmrel::absolutize;
 use crate::rmrel::relativize;
@@ -21,7 +22,7 @@ use std::ops::Not;
 use std::ops::BitAndAssign;
 
 
-pub fn movegen_pawns(gstate: &GameState, moves: &mut MoveSet) {
+pub fn movegen_pawns(gstate: &GameState, moves: &mut Vec<MGPieceMove>) {
     let mut ctx = PawnMGContext { gstate, moves };
     movegen_forward1(&mut ctx);
     movegen_forward2(&mut ctx);
@@ -82,10 +83,10 @@ fn movegen_forward2(ctx: &mut PawnMGContext) {
     for destin_rmrel in bitscan(bb) {
         let origin = absolutize(destin_rmrel - 16, ctx.gstate.active_player());
         let destin = absolutize(destin_rmrel, ctx.gstate.active_player());
-        ctx.moves.pmoves.push(MSPieceMove {
+        ctx.moves.push(MGPieceMove {
             origin, destin, 
             target: destin,
-            is_pdj: true,
+            special: Some(SpecialPieceMove::PawnDoubleJump),
             promote: None,
         });
     }
@@ -154,8 +155,8 @@ fn movegen_capture_kingside(ctx: &mut PawnMGContext) {
 fn movegen_enpassant(ctx: &mut PawnMGContext) {
     if let Some(last_entry) = ctx.gstate.movelog.last() {
         if let LoggedMove::Piece(pmove) = last_entry.lmove {
-            if pmove.is_pdj {
-                let target_rmrel = relativize(pmove.destin,
+            if pmove.mgmove.special == Some(SpecialPieceMove::PawnDoubleJump) {
+                let target_rmrel = relativize(pmove.mgmove.destin,
                     ctx.gstate.active_player());
                 
                 let destin_rmrel = target_rmrel + 8;
@@ -165,12 +166,12 @@ fn movegen_enpassant(ctx: &mut PawnMGContext) {
                 bb &= ctx.gstate.bbs.pawn_rel_bb;
 
                 let destin = absolutize(destin_rmrel, ctx.gstate.active_player());
-                let target = StandardCoordinate::from(pmove.destin);
+                let target = StandardCoordinate::from(pmove.mgmove.destin);
                 for origin_rmrel in bitscan(bb) {
                     let origin = absolutize(origin_rmrel, ctx.gstate.active_player());
-                    ctx.moves.pmoves.push(MSPieceMove { 
+                    ctx.moves.push(MGPieceMove { 
                         origin, destin, target, 
-                        is_pdj: false,
+                        special: None,
                         promote: None
                     });
                 }
@@ -206,7 +207,7 @@ pub fn reverse_pawn_attack(target: u8) -> RawBitboard {
 
 struct PawnMGContext<'a, 'b> {
     gstate: &'a GameState,
-    moves: &'b mut MoveSet
+    moves: &'b mut Vec<MGPieceMove>
 }
 
 impl<'a, 'b> PawnMGContext<'a, 'b> {
@@ -215,29 +216,29 @@ impl<'a, 'b> PawnMGContext<'a, 'b> {
         let destin = absolutize(destin_rmrel, self.gstate.active_player());
 
         use Species::*;
-        self.moves.pmoves.push(make_promote_move(origin, destin, Queen));
-        self.moves.pmoves.push(make_promote_move(origin, destin, Rook));
-        self.moves.pmoves.push(make_promote_move(origin, destin, Bishop));
-        self.moves.pmoves.push(make_promote_move(origin, destin, Knight));
+        self.moves.push(make_promote_move(origin, destin, Queen));
+        self.moves.push(make_promote_move(origin, destin, Rook));
+        self.moves.push(make_promote_move(origin, destin, Bishop));
+        self.moves.push(make_promote_move(origin, destin, Knight));
     }
 
     fn push(&mut self, origin_rmrel: u8, destin_rmrel: u8) {
         let origin = absolutize(origin_rmrel, self.gstate.active_player());
         let destin = absolutize(destin_rmrel, self.gstate.active_player());
-        self.moves.pmoves.push(MSPieceMove::normal(origin, destin));
+        self.moves.push(MGPieceMove::normal(origin, destin));
     }
 }
 
 // # Move Constructors
 
 fn make_promote_move(origin: StandardCoordinate, destin: StandardCoordinate, 
-    desire: Species) -> MSPieceMove
+    desire: Species) -> MGPieceMove
 {
-    return MSPieceMove { 
+    return MGPieceMove { 
         origin, 
         destin, 
         target: destin,
-        is_pdj: false,
+        special: Some(SpecialPieceMove::Promote),
         promote: Some(desire)
     };
 }

@@ -8,10 +8,10 @@ use crate::gamestate::GameState;
 use crate::grid::StandardCoordinate;
 use crate::piece::Species;
 use crate::setbit;
-use super::moveset::MSPieceMove;
+use super::moveset::MGPieceMove;
 use super::moveset::MoveSet;
 
-pub fn movegen_knights(state: &GameState, moves: &mut MoveSet) {
+pub fn movegen_knights(state: &GameState, moves: &mut Vec<MGPieceMove>) {
     let knights: Bitboard<RankMajorCS> = state.bbs.class(
         state.active_player(), Species::Knight);
         
@@ -19,8 +19,8 @@ pub fn movegen_knights(state: &GameState, moves: &mut MoveSet) {
         let mut destins = knight_attack(origin);
         destins &= !state.bbs.affilia_bbs[state.active_player()].get();
         for destin in destins.scan() {
-            moves.pmoves.push(
-                MSPieceMove::normal(origin.into(), destin.into()));
+            moves.push(
+                MGPieceMove::normal(origin.into(), destin.into()));
         }
     }
 }

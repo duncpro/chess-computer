@@ -9,7 +9,7 @@ mod bits;
 mod check;
 mod coordinates;
 mod crights;
-mod enumtable;
+mod eval;
 mod gamestate;
 mod grid;
 mod lane;
@@ -18,6 +18,7 @@ mod misc;
 mod movegen;
 mod piece;
 mod rmrel;
+mod search;
 mod sliders;
 
 fn main() {

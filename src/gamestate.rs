@@ -9,18 +9,19 @@ use crate::getbit;
 use crate::grid::FileDirection;
 use crate::grid::GridTable;
 use crate::grid::StandardCoordinate;
+use crate::movegen::moveset::MGPieceMove;
 use crate::piece::Color;
+use crate::piece::ColorTable;
+use crate::piece::Piece;
 use crate::piece::Species;
-use crate::piece::OptColorTable;
-use crate::piece::OptSpeciesTable;
+use crate::piece::SpeciesTable;
 use crate::setbit;
 
 // # `GameState`
 
 pub struct GameState {
     pub bbs: Bitboards,
-    pub species_lut: GridTable<Option<Species>>,
-    pub affilia_lut: GridTable<Option<Color>>,
+    pub occupant_lut: GridTable<Option<Piece>>,
     pub movelog: Vec<MovelogEntry>,
     pub crights: CastlingRights
 }
@@ -43,28 +44,23 @@ pub enum LoggedMove {
 
 #[derive(Clone, Copy)]
 pub struct LoggedPieceMove {
-    pub origin: StandardCoordinate,
-    pub destin: StandardCoordinate,
-    pub target: StandardCoordinate,
-    pub is_pdj: bool,
-    pub capture: Option<Species>,
+    pub mgmove: MGPieceMove,
+    pub capture: Option<Piece>,
 }
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+#[repr(u8)]
+pub enum SpecialPieceMove { Promote = 1, PawnDoubleJump = 2 }
 
 // # `Bitboards`
 
 pub struct Bitboards {
     // ## MDBitboards
-    // 7 species * 4 directions = 28 bitboards
-    // 28 bitboards * 8 bytes each = 224 bytes
-    pub species_bbs: OptSpeciesTable<MDBitboard>,
-    // 3 affiliations * 4 directions = 12 bitboards
-    // 12 bitboards * 8 bytes each = 96 bytes
-    pub affilia_bbs: OptColorTable<MDBitboard>,
+    pub species_bbs: SpeciesTable<MDBitboard>,
+    pub affilia_bbs: ColorTable<MDBitboard>,
 
     // ## Relative Bitboards
-    // 3 affiliations = 3 bitboards
-    // 3 bitboards * 8 bytes each = 24 bytes
-    pub affilia_rel_bbs: OptColorTable<RawBitboard>,
+    pub affilia_rel_bbs: ColorTable<RawBitboard>,
     // 1 bitboard * 8 bytes each = 8 bytes
     pub pawn_rel_bb: RawBitboard,
     pub active_player: Color
