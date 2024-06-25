@@ -4,12 +4,12 @@ use crate::coordinates::CoordinateSystem;
 use crate::gamestate::GameState;
 use crate::grid::StandardCoordinate;
 use crate::lane::lanescan;
+use crate::misc::SegVec;
 use crate::piece::Species;
-use crate::movegen::moveset::MoveSet;
 use crate::movegen::moveset::MGPieceMove;
 
 pub fn movegen_sliders<C: CoordinateSystem>(state: &GameState, kind: Species,
-    moves: &mut Vec<MGPieceMove>)
+    moves: &mut SegVec<MGPieceMove>)
 {
     let mut bb: Bitboard<StandardCS> = 
         state.bbs.class(state.active_player(), kind);
@@ -21,7 +21,7 @@ pub fn movegen_sliders<C: CoordinateSystem>(state: &GameState, kind: Species,
 }
 
 fn movegen_slider<C: CoordinateSystem>(state: &GameState, origin: StandardCoordinate,
-    moves: &mut Vec<MGPieceMove>)
+    moves: &mut SegVec<MGPieceMove>)
 {
     let mut bb: Bitboard<C> = lanescan(&state.bbs, origin);
     bb &= !state.bbs.affilia_bbs[state.active_player()].get();

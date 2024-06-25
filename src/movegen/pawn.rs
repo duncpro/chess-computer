@@ -9,11 +9,11 @@ use crate::gamestate::LoggedMove;
 use crate::gamestate::MovelogEntry;
 use crate::gamestate::SpecialPieceMove;
 use crate::grid::StandardCoordinate;
+use crate::misc::SegVec;
 use crate::piece::ColorTable;
 use crate::piece::Color;
 use crate::piece::Species;
 use crate::movegen::moveset::MGPieceMove;
-use crate::movegen::moveset::MoveSet;
 use crate::rmrel::absolutize;
 use crate::rmrel::relativize;
 use crate::setbit;
@@ -21,8 +21,7 @@ use std::ops::BitAnd;
 use std::ops::Not;
 use std::ops::BitAndAssign;
 
-
-pub fn movegen_pawns(gstate: &GameState, moves: &mut Vec<MGPieceMove>) {
+pub fn movegen_pawns(gstate: &GameState, moves: &mut SegVec<MGPieceMove>) {
     let mut ctx = PawnMGContext { gstate, moves };
     movegen_forward1(&mut ctx);
     movegen_forward2(&mut ctx);
@@ -207,7 +206,7 @@ pub fn reverse_pawn_attack(target: u8) -> RawBitboard {
 
 struct PawnMGContext<'a, 'b> {
     gstate: &'a GameState,
-    moves: &'b mut Vec<MGPieceMove>
+    moves: &'a mut SegVec<'b, MGPieceMove>
 }
 
 impl<'a, 'b> PawnMGContext<'a, 'b> {

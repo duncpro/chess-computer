@@ -47,7 +47,7 @@ fn fill_tile(state: &mut GameState, pos: StandardCoordinate, piece: Piece)
     state.bbs.pawn_rel_bb |= ((1 << rel_pos) * (is_pawn as RawBitboard));
 }
 
-fn swap_active(state: &mut GameState) {
+pub fn swap_active(state: &mut GameState) {
     swap_bytes_inplace_u64(&mut state.bbs.pawn_rel_bb);
     swap_bytes_inplace_u64(
         &mut state.bbs.affilia_rel_bbs[Color::White]);
@@ -59,7 +59,7 @@ fn swap_active(state: &mut GameState) {
 
 // # Make
 
-fn make_pmove(state: &mut GameState, mgmove: MGPieceMove) {
+pub fn make_pmove(state: &mut GameState, mgmove: MGPieceMove) {
     let piece = state.occupant_lut[mgmove.origin].unwrap();
     let capture = state.occupant_lut[mgmove.target];
     
@@ -193,12 +193,12 @@ pub fn unmake_move(state: &mut GameState) {
 
 // # Test
 
-/// Calculates the legality of a psuedo-legal move.
+/// Calculates the legality of a pseudo-legal move.
 /// This procedure returns `true` if the move is legal, 
 /// and false otherwise.
 pub fn test_pmove(state: &mut GameState, pmove: MGPieceMove) -> bool {
     make_pmove(state, pmove);
-    let is_legal = is_check(&state.bbs, locate_king_stdc(&state.bbs));
+    let is_legal = !state.bbs.is_check();
     swap_active(state);
     unmake_move(state);
     return is_legal;

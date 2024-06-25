@@ -110,3 +110,57 @@ macro_rules! impl_enum_table {
     };
 }
 
+// # `SegVec`
+
+pub struct SegVec<'a, T> 
+{
+    vec: &'a mut Vec<T>,
+    begin: usize
+}
+
+impl<'a, T> SegVec<'a, T> {
+    pub fn extend<'b, 'c>(&'b mut self) -> SegVec<'c, T> 
+    where 'a: 'b, 'b: 'c 
+    {
+        let begin = self.vec.len();
+        SegVec { vec: self.vec, begin }
+    }
+    
+    pub fn push(&mut self, value: T) {
+        self.vec.push(value);
+    }
+
+    pub fn as_mut_slice<'b, 'c>(&'b mut self) -> &'c mut [T] 
+    where 'a: 'b, 'b: 'c
+    {
+        &mut self.vec[self.begin..]
+    }
+
+    pub fn retain<F>(&mut self, mut f: F)
+    where F: FnMut(&T) -> bool
+    {
+        for i in (self.begin..self.vec.len()).rev() {
+            let retained = f(&self.vec[i]);
+            if !retained { self.vec.remove(i); }
+        }
+    }
+
+    pub fn new(vec: &'a mut Vec<T>) -> Self {
+        let begin = vec.len();
+        Self { vec, begin }
+    }    
+
+    pub fn as_slice<'b, 'c>(&'b self) -> &'c [T]
+    where 'a: 'b, 'b: 'c
+    {
+        &self.vec[self.begin..]
+    }
+
+    pub fn is_empty(&self) -> bool { self.as_slice().is_empty() }
+}
+
+impl<'a, T> Drop for SegVec<'a, T> {
+    fn drop(&mut self) {
+        self.vec.truncate(self.begin);
+    }
+}

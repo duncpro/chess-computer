@@ -7,11 +7,11 @@ use crate::coordinates::RankMajorCS;
 use crate::gamestate::GameState;
 use crate::gamestate::locate_king;
 use crate::grid::StandardCoordinate;
+use crate::misc::SegVec;
 use crate::movegen::moveset::MGPieceMove;
-use crate::movegen::moveset::MoveSet;
 use crate::setbit;
 
-pub fn movegen_king(state: &GameState, moves: &mut Vec<MGPieceMove>) {
+pub fn movegen_king(state: &GameState, moves: &mut SegVec<MGPieceMove>) {
     let origin: Coordinate<RankMajorCS> = locate_king(&state.bbs);
     let mut bb = king_attack(origin);
     bb &= !state.bbs.occupancy();

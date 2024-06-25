@@ -1,15 +1,15 @@
 use crate::gamestate::GameState;
 use crate::makemove::test_pmove;
+use crate::misc::SegVec;
 use super::bishop::movegen_bishops;
-use super::castle::movegen_castle;
 use super::king::movegen_king;
 use super::knight::movegen_knights;
-use super::moveset::{MoveSet, MGPieceMove};
+use super::moveset::MGPieceMove;
 use super::queen::movegen_queens;
 use super::rook::movegen_rooks;
 use super::pawn::movegen_pawns;
 
-fn pseudo_movegen_pmoves(state: &GameState, moves: &mut Vec<MGPieceMove>) {
+fn pseudo_movegen_pmoves(state: &GameState, moves: &mut SegVec<MGPieceMove>) {
     movegen_pawns(state, moves);
     movegen_rooks(state, moves);
     movegen_knights(state, moves);
@@ -18,12 +18,9 @@ fn pseudo_movegen_pmoves(state: &GameState, moves: &mut Vec<MGPieceMove>) {
     movegen_king(state, moves);
 }
 
-pub fn movegen(state: &mut GameState, moves: &mut MoveSet) {
+pub fn movegen_pmoves(state: &mut GameState, moves: &mut SegVec<MGPieceMove>) {
     // Generate pseudo-legal piece moves
-    assert!(moves.pmoves.is_empty());
-    pseudo_movegen_pmoves(state, &mut moves.pmoves);
+    pseudo_movegen_pmoves(state, moves);
     // Filter out illegal moves
-    moves.pmoves.retain(|pmove| test_pmove(state, *pmove));
-    // Generate castling moves, these do not require a legality check.
-    movegen_castle(state, moves);
+    moves.retain(|pmove| test_pmove(state, *pmove));
 }

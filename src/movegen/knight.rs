@@ -6,12 +6,12 @@ use crate::coordinates::Coordinate;
 use crate::coordinates::RankMajorCS;
 use crate::gamestate::GameState;
 use crate::grid::StandardCoordinate;
+use crate::misc::SegVec;
 use crate::piece::Species;
 use crate::setbit;
 use super::moveset::MGPieceMove;
-use super::moveset::MoveSet;
 
-pub fn movegen_knights(state: &GameState, moves: &mut Vec<MGPieceMove>) {
+pub fn movegen_knights(state: &GameState, moves: &mut SegVec<MGPieceMove>) {
     let knights: Bitboard<RankMajorCS> = state.bbs.class(
         state.active_player(), Species::Knight);
         

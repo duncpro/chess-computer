@@ -1,50 +1,48 @@
-use crate::bitboard::Bitboard;
-use crate::build_itable;
-use crate::coordinates::StandardCS;
-use crate::piece::Color;
-use crate::piece::Color::*;
-use crate::piece::Species;
-use crate::piece::Species::*;
-use crate::gamestate::Bitboards;
-use crate::piece::SpeciesTable;
+use crate::check::is_check;
+use crate::gamestate::{GameState, locate_king_stdc};
+use crate::makemove::{swap_active, make_pmove, unmake_move};
+use crate::mat_eval::matdiff;
+use crate::misc::{SegVec, pick};
+use crate::movegen::dispatch::movegen_pmoves;
+use crate::movegen::moveset::MGPieceMove;
 
-build_itable!(SPECIES_VALUE: [u8; 6], |table| {
-    macro_rules! put { ($species:expr, $value:expr) => {{
-        table[$species.index() as usize] = $value; }}; }
-
-    put!(King, 0);
-    put!(Pawn, 1);
-    put!(Knight, 3);
-    put!(Bishop, 3);
-    put!(Rook, 5);
-    put!(Queen, 9)
-});
-
-fn count_class(board: &mut Bitboards, color: Color, species: Species) -> i32 {
-    let bitboard: Bitboard<StandardCS> = board.class(color, species);
-    return i32::from(bitboard.count());
+struct Context<'a, 'b> {
+    gstate: &'a mut GameState,
+    depth: u8,
+    moves: SegVec<'b, MGPieceMove>
 }
 
-fn matval_class(board: &mut Bitboards, color: Color, species: Species) -> i32 {
-    let count = count_class(board, color, species);
-    let lut_key = usize::from(species.index());
-    return count * i32::from(SPECIES_VALUE[lut_key]);
+#[derive(Clone, Copy)]
+pub enum Eval {
+    Lost,
+    Won,
+    Indeterminant(i32 /* score */),
+    Stalemate
 }
 
-fn matval(board: &mut Bitboards, color: Color) -> i32 {
-    let mut total: i32 = 0;
-    total += matval_class(board, color, King);
-    total += matval_class(board, color, Pawn);
-    total += matval_class(board, color, Knight);
-    total += matval_class(board, color, Bishop);
-    total += matval_class(board, color, Rook);
-    total += matval_class(board, color, Queen);
-    return total;
+fn shallow_eval(gstate: &mut GameState) -> Eval {
+    Eval::Indeterminant(matdiff(&gstate.bbs))
 }
 
-fn matdif(board: &mut Bitboards) -> i32 {
-    let mut value: i32 = 0;
-    value += matval(board, White);
-    value -= matval(board, Black);
-    return value;
+fn deep_eval(mut ctx: Context) -> Eval {
+    movegen_pmoves(ctx.gstate, &mut ctx.moves);
+
+    if ctx.moves.is_empty() { 
+        return pick(ctx.gstate.bbs.is_check(), Eval::Lost,
+            Eval::Stalemate); 
+    }
+    
+    if ctx.depth == 0 { 
+        return shallow_eval(ctx.gstate);
+    }
+
+    for pmove in ctx.moves.as_slice() {
+        make_pmove(ctx.gstate, *pmove);
+        let score = deep_eval(Context { gstate: ctx.gstate,
+            depth: ctx.depth - 1, moves: ctx.moves.extend() });
+        unmake_move(ctx.gstate);
+    }    
+
+    todo!()
 }
+

@@ -14,11 +14,11 @@ mod gamestate;
 mod grid;
 mod lane;
 mod makemove;
+mod mat_eval;
 mod misc;
 mod movegen;
 mod piece;
 mod rmrel;
-mod search;
 mod sliders;
 
 fn main() {

@@ -24,11 +24,3 @@ impl MGPieceMove {
         }
     }
 }
-
-// # `MoveSet`
-
-pub struct MoveSet {
-    pub castle_queenside: bool,
-    pub castle_kingside: bool,
-    pub pmoves: Vec<MGPieceMove>
-}
