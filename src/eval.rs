@@ -37,19 +37,21 @@ fn shallow_eval(gstate: &mut GameState) -> i32 {
     matdiff(&gstate.bbs)
 }
 
+const MIN_SCORE: i32 = i32::MIN + 1;
+
 fn eval(mut ctx: Context) -> i32 {
     movegen_pmoves(ctx.gstate, &mut ctx.moves);
 
     // If we have no moves, then either its a stalemate,
     // or we're in checkmate. Either way, it's not a good
     // position to be in.
-    if ctx.moves.is_empty() { return i32::MIN; }
+    if ctx.moves.is_empty() { return MIN_SCORE; }
     
     if ctx.depth == 0 { 
         return shallow_eval(ctx.gstate);
     }
 
-    let mut parent_score: i32 = i32::MIN + 1;
+    let mut parent_score: i32 = MIN_SCORE;
 
     macro_rules! eval_child {
         () => {{
