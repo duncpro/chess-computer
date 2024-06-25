@@ -52,6 +52,7 @@ pub fn deep_eval(mut ctx: DeepEvalContext) -> Option<i32> {
             let result = deep_eval(DeepEvalContext { gstate: ctx.gstate,
                 maxdepth: ctx.maxdepth - 1, pmoves: ctx.pmoves.extend(), 
                 deadline: ctx.deadline });
+            unmake_move(ctx.gstate);
             match result {
                 Some(child_score) => 
                     max_inplace(&mut parent_score, -1 * child_score),
@@ -63,7 +64,6 @@ pub fn deep_eval(mut ctx: DeepEvalContext) -> Option<i32> {
     for pmove in ctx.pmoves.as_slice().iter() {
         make_pmove(ctx.gstate, *pmove);
         eval_child!();
-        unmake_move(ctx.gstate);
     }  
 
     macro_rules! eval_castle { 
@@ -71,7 +71,6 @@ pub fn deep_eval(mut ctx: DeepEvalContext) -> Option<i32> {
             if movegen_castle!($side, ctx.gstate) {
                 make_castle(ctx.gstate, FileDirection::$side);
                 eval_child!();
-                unmake_move(ctx.gstate);
             }
         };
     }
