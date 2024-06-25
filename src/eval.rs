@@ -10,27 +10,11 @@ use crate::movegen::dispatch::movegen_pmoves;
 use crate::movegen::moveset::MGPieceMove;
 use crate::movegen_castle;
 
-#[derive(Clone, Copy)]
-#[repr(u8)]
-enum Mode { Min = 0, Max = 1 }
-
-impl Mode {
-    fn from_index(index: u8) -> Self {
-        assert!(index < 2);
-        unsafe { std::mem::transmute(index) }
-    }
-    fn index(self) -> u8 { self as u8 }
-    fn sign(self) -> i8 { (self.index() as i8) * 2 - 1 }
-    fn inverse(self) -> Self {
-        Self::from_index((self.index() + 1) % 2)
-    }
-}
 
 struct Context<'a, 'b> {
     gstate: &'a mut GameState,
     depth: u8,
-    moves: SegVec<'b, MGPieceMove>,
-    mode: Mode
+    moves: SegVec<'b, MGPieceMove>
 }
 
 fn shallow_eval(gstate: &mut GameState) -> i32 {
@@ -56,9 +40,8 @@ fn eval(mut ctx: Context) -> i32 {
     macro_rules! eval_child {
         () => {{
             swap_active(ctx.gstate);
-            let child_score = eval(Context { gstate: ctx.gstate,
-                depth: ctx.depth - 1, moves: ctx.moves.extend(),
-                mode: ctx.mode.inverse() });
+            let child_score = -1 * eval(Context { gstate: ctx.gstate,
+                depth: ctx.depth - 1, moves: ctx.moves.extend() });
             parent_score = max(parent_score, child_score);
             unmake_move(ctx.gstate);
         }};
@@ -82,7 +65,6 @@ fn eval(mut ctx: Context) -> i32 {
     eval_castle!(Kingside);
     eval_castle!(Queenside);
     
-    parent_score *= i32::from(ctx.mode.sign());  
     return parent_score;
 }
 
