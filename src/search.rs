@@ -35,7 +35,12 @@ enum SearchResult {
 /// - If the maximum depth is exhausted before reaching
 ///   a conclusion, the approximate optimal move is returned.
 /// - If the player has no legal moves, `SearchResult::Completed(None)` 
-///   is returned.
+///   is returned. 
+/// 
+/// Note that when the maximum depth is set to zero, this procedure
+/// will *never* return `SearchResult::DeadlineElapsed`. Instead,
+/// it will perform a complete but shallow evaluation of each move,
+/// regardless of the imposed deadline.
 fn search(mut ctx: SearchContext) -> SearchResult {
     let mut best_move: Option<MGAnyMove> = None;
     let mut best_score: i32 = MIN_EVAL_SCORE;
@@ -43,19 +48,14 @@ fn search(mut ctx: SearchContext) -> SearchResult {
     macro_rules! eval_child {
         ($mgmove:expr) => { 
             swap_active(ctx.gstate);
-            let result = deep_eval(DeepEvalContext {
-                gstate: ctx.gstate,
-                maxdepth: ctx.maxdepth,
-                pmoves: ctx.pmoves.extend(),
-                deadline: ctx.deadline,
-            });
+            let result = deep_eval(DeepEvalContext { gstate: ctx.gstate,
+                maxdepth: ctx.maxdepth, pmoves: ctx.pmoves.extend(),
+                deadline: ctx.deadline, });
             unmake_move(ctx.gstate);
             match result {
-                Some(score) => {
-                    if score > best_score {
-                        best_move = Some($mgmove);
-                        best_score = score;
-                    }
+                Some(score) => if score > best_score {
+                    best_move = Some($mgmove);
+                    best_score = score;
                 },
                 None => return SearchResult::DeadlineElapsed,
             }
@@ -92,5 +92,16 @@ pub struct IterDeepSearchContext<'a, 'b> {
 }
 
 pub fn iterdeep_search(mut ctx: IterDeepSearchContext) -> Option<MGAnyMove> {
-    todo!()
+    let mut maxdepth: u8 = 0;
+    let mut prev_bestmove: Option<MGAnyMove> = None;
+    loop {
+        let result = search(SearchContext { gstate: ctx.gstate, maxdepth, 
+            pmoves: ctx.pmoves.extend(), deadline: ctx.deadline });
+        match result {
+            SearchResult::DeadlineElapsed => { assert!(maxdepth > 0); break }, 
+            SearchResult::Completed(bestmove) => prev_bestmove = bestmove,
+        }
+        maxdepth += 1;
+    }
+    return prev_bestmove;
 }
