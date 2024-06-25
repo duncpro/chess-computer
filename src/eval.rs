@@ -56,10 +56,9 @@ fn eval(mut ctx: Context) -> i32 {
     macro_rules! eval_child {
         () => {{
             swap_active(ctx.gstate);
-            let mut child_score = eval(Context { gstate: ctx.gstate,
+            let child_score = eval(Context { gstate: ctx.gstate,
                 depth: ctx.depth - 1, moves: ctx.moves.extend(),
                 mode: ctx.mode.inverse() });
-            child_score *= i32::from(ctx.mode.sign());
             parent_score = max(parent_score, child_score);
             unmake_move(ctx.gstate);
         }};
