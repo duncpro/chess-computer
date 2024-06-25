@@ -1,3 +1,5 @@
+use std::cell::{RefCell, RefMut, Ref};
+
 /// A C-style for-loop, usable in `const` contexts.
 #[macro_export]
 macro_rules! cfor {
@@ -114,46 +116,49 @@ macro_rules! impl_enum_table {
 
 pub struct SegVec<'a, T> 
 {
-    vec: &'a mut Vec<T>,
+    vec: &'a RefCell<Vec<T>>,
     begin: usize
 }
 
 impl<'a, T> SegVec<'a, T> {
-    pub fn extend<'b, 'c>(&'b mut self) -> SegVec<'c, T> 
+    pub fn extend<'b, 'c>(&'b self) -> SegVec<'c, T> 
     where 'a: 'b, 'b: 'c 
     {
-        let begin = self.vec.len();
+        let begin = self.vec.borrow().len();
         SegVec { vec: self.vec, begin }
     }
     
     pub fn push(&mut self, value: T) {
-        self.vec.push(value);
+        self.vec.borrow_mut().push(value);
     }
 
-    pub fn as_mut_slice<'b, 'c>(&'b mut self) -> &'c mut [T] 
+    pub fn as_mut_slice<'b, 'c>(&'b mut self) -> RefMut<'c, [T]>
     where 'a: 'b, 'b: 'c
     {
-        &mut self.vec[self.begin..]
+        let begin = self.begin;
+        RefMut::map(self.vec.borrow_mut(), 
+            |r| &mut r.as_mut_slice()[begin..])
     }
 
     pub fn retain<F>(&mut self, mut f: F)
     where F: FnMut(&T) -> bool
     {
-        for i in (self.begin..self.vec.len()).rev() {
-            let retained = f(&self.vec[i]);
-            if !retained { self.vec.remove(i); }
+        for i in (self.begin..self.vec.borrow().len()).rev() {
+            let retained = f(&self.vec.borrow()[i]);
+            if !retained { self.vec.borrow_mut().remove(i); }
         }
     }
 
-    pub fn new(vec: &'a mut Vec<T>) -> Self {
-        let begin = vec.len();
+    pub fn new(vec: &'a mut RefCell<Vec<T>>) -> Self {
+        let begin = vec.borrow().len();
         Self { vec, begin }
     }    
 
-    pub fn as_slice<'b, 'c>(&'b self) -> &'c [T]
+    pub fn as_slice<'b, 'c>(&'b self) -> Ref<'c, [T]>
     where 'a: 'b, 'b: 'c
     {
-        &self.vec[self.begin..]
+        let begin = self.begin;
+        Ref::map(self.vec.borrow(), |r| &r.as_slice()[begin..])
     }
 
     pub fn is_empty(&self) -> bool { self.as_slice().is_empty() }
@@ -161,6 +166,6 @@ impl<'a, T> SegVec<'a, T> {
 
 impl<'a, T> Drop for SegVec<'a, T> {
     fn drop(&mut self) {
-        self.vec.truncate(self.begin);
+        self.vec.borrow_mut().truncate(self.begin);
     }
 }

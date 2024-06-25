@@ -36,7 +36,7 @@ fn deep_eval(mut ctx: Context) -> Eval {
         return shallow_eval(ctx.gstate);
     }
 
-    for pmove in ctx.moves.as_slice() {
+    for pmove in ctx.moves.as_slice().iter() {
         make_pmove(ctx.gstate, *pmove);
         let score = deep_eval(Context { gstate: ctx.gstate,
             depth: ctx.depth - 1, moves: ctx.moves.extend() });
