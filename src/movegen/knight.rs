@@ -4,14 +4,14 @@ use crate::build_itable;
 use crate::cfor;
 use crate::coordinates::Coordinate;
 use crate::coordinates::RankMajorCS;
-use crate::gamestate::GameState;
+use crate::gamestate::FastPosition;
 use crate::grid::StandardCoordinate;
-use crate::misc::SegVec;
+use crate::misc::Push;
 use crate::piece::Species;
 use crate::setbit;
 use super::moveset::MGPieceMove;
 
-pub fn movegen_knights(state: &GameState, moves: &mut SegVec<MGPieceMove>) {
+pub fn movegen_knights(state: &FastPosition, moves: &mut impl Push<MGPieceMove>) {
     let knights: Bitboard<RankMajorCS> = state.bbs.class(
         state.active_player(), Species::Knight);
         

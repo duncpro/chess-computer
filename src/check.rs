@@ -5,7 +5,7 @@ use crate::coordinates::AntidiagonalMajorCS;
 use crate::coordinates::ProdiagonalMajorCS;
 use crate::coordinates::StandardCS;
 use crate::coordinates::RankMajorCS;
-use crate::gamestate::GameState;
+use crate::gamestate::FastPosition;
 use crate::gamestate::Bitboards;
 use crate::gamestate::locate_king;
 use crate::gamestate::locate_king_stdc;

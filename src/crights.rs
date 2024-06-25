@@ -6,7 +6,7 @@ use crate::getbit;
 use crate::grid::File;
 use crate::grid::StandardCoordinate;
 use crate::grid::FileDirection;
-use crate::gamestate::GameState;
+use crate::gamestate::FastPosition;
 use crate::piece::Color;
 use crate::piece::Species;
 
@@ -36,12 +36,12 @@ impl CastlingRights {
 
 // # Updating Castling Rights
 
-pub fn update_crights(state: &mut GameState) {
+pub fn update_crights(state: &mut FastPosition) {
     update_crights_kingside(state);
     update_crights_queenside(state);
 }
 
-fn update_crights_kingside(state: &mut GameState) {
+fn update_crights_kingside(state: &mut FastPosition) {
     let mut value = state.crights.get(FileDirection::Kingside, 
         state.active_player());
 
@@ -60,7 +60,7 @@ fn update_crights_kingside(state: &mut GameState) {
         state.active_player(), value);
 }
 
-fn update_crights_queenside(state: &mut GameState) {
+fn update_crights_queenside(state: &mut FastPosition) {
     let mut value = state.crights.get(FileDirection::Queenside, 
         state.active_player());
 
@@ -79,7 +79,7 @@ fn update_crights_queenside(state: &mut GameState) {
         state.active_player(), value);
 }
 
-fn is_king_intact(state: &mut GameState) -> bool {
+fn is_king_intact(state: &mut FastPosition) -> bool {
     let base_rank = state.active_player().base_rank();
     let king_home = StandardCoordinate::new(base_rank, File::from_index(4));
     let king_pos  = locate_king_stdc(&state.bbs);

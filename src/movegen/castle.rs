@@ -3,7 +3,7 @@ use crate::coordinates::StandardCS;
 use crate::grid::FileDirection;
 use crate::grid::StandardCoordinate;
 use crate::grid::File;
-use crate::gamestate::GameState;
+use crate::gamestate::FastPosition;
 
 #[macro_export]
 macro_rules! movegen_castle {
@@ -16,7 +16,7 @@ macro_rules! movegen_castle {
     };
 }
 
-pub fn movegen_castle_kingside(state: &GameState) -> bool{    
+pub fn movegen_castle_kingside(state: &FastPosition) -> bool{    
     let mut can_castle = false;
         
     let base_rank = state.active_player().base_rank();
@@ -40,7 +40,7 @@ pub fn movegen_castle_kingside(state: &GameState) -> bool{
     return can_castle; 
 }
 
-pub fn movegen_castle_queenside(state: &GameState) -> bool {
+pub fn movegen_castle_queenside(state: &FastPosition) -> bool {
     let mut can_castle = false;
         
     let base_rank = state.active_player().base_rank();

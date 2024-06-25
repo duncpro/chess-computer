@@ -18,6 +18,7 @@ mod mat_eval;
 mod misc;
 mod movegen;
 mod piece;
+mod play;
 mod rmrel;
 mod search;
 mod sliders;

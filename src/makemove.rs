@@ -15,14 +15,14 @@ use crate::piece::Piece;
 use crate::piece::Species;
 use crate::misc::pick;
 use crate::movegen::moveset::MGPieceMove;
-use crate::gamestate::GameState;
+use crate::gamestate::FastPosition;
 use crate::rmrel::relativize;
 use crate::setbit;
 use crate::unsetbit;
 
 // # Utilities
 
-fn clear_tile(state: &mut GameState, pos: StandardCoordinate) {    
+fn clear_tile(state: &mut FastPosition, pos: StandardCoordinate) {    
     let occupant = state.occupant_lut[pos];
     state.occupant_lut[pos] = None;
     if let Some(piece) = occupant {
@@ -35,7 +35,7 @@ fn clear_tile(state: &mut GameState, pos: StandardCoordinate) {
         relativize(pos, state.active_player()));
 }
 
-fn fill_tile(state: &mut GameState, pos: StandardCoordinate, piece: Piece) 
+fn fill_tile(state: &mut FastPosition, pos: StandardCoordinate, piece: Piece) 
 {
     state.occupant_lut[pos] = Some(piece);
     state.bbs.affilia_bbs[piece.color()].set(pos);
@@ -47,7 +47,7 @@ fn fill_tile(state: &mut GameState, pos: StandardCoordinate, piece: Piece)
     state.bbs.pawn_rel_bb |= ((1 << rel_pos) * (is_pawn as RawBitboard));
 }
 
-pub fn swap_active(state: &mut GameState) {
+pub fn swap_active(state: &mut FastPosition) {
     swap_bytes_inplace_u64(&mut state.bbs.pawn_rel_bb);
     swap_bytes_inplace_u64(
         &mut state.bbs.affilia_rel_bbs[Color::White]);
@@ -59,7 +59,7 @@ pub fn swap_active(state: &mut GameState) {
 
 // # Make
 
-pub fn make_pmove(state: &mut GameState, mgmove: MGPieceMove) {
+pub fn make_pmove(state: &mut FastPosition, mgmove: MGPieceMove) {
     let piece = state.occupant_lut[mgmove.origin].unwrap();
     let capture = state.occupant_lut[mgmove.target];
     
@@ -77,7 +77,7 @@ pub fn make_pmove(state: &mut GameState, mgmove: MGPieceMove) {
         lmove: LoggedMove::Piece(LoggedPieceMove { mgmove, capture }) });
 }
 
-pub fn make_castle(state: &mut GameState, side: FileDirection) {
+pub fn make_castle(state: &mut FastPosition, side: FileDirection) {
     const ROOK_ORIGIN_LUT: [File; 2] = [
         /* Queenside */ File::A,
         /* Kingside  */ File::H
@@ -124,7 +124,7 @@ pub fn make_castle(state: &mut GameState, side: FileDirection) {
 
 // # Unmake
 
-fn unmake_pmove(state: &mut GameState, pmove: LoggedPieceMove) {
+fn unmake_pmove(state: &mut FastPosition, pmove: LoggedPieceMove) {
     let is_promote = (pmove.mgmove.special == Some(SpecialPieceMove::Promote));
     let species = pick(is_promote, Species::Pawn, 
         state.occupant_lut[pmove.mgmove.destin].unwrap().species());
@@ -140,7 +140,7 @@ fn unmake_pmove(state: &mut GameState, pmove: LoggedPieceMove) {
         Piece::new(state.active_player(), species));
 }
 
-fn unmake_castle(state: &mut GameState, side: FileDirection) {
+fn unmake_castle(state: &mut FastPosition, side: FileDirection) {
     const ROOK_ORIGIN_LUT: [File; 2] = [
         /* Queenside */ File::A,
         /* Kingside  */ File::H
@@ -179,7 +179,7 @@ fn unmake_castle(state: &mut GameState, side: FileDirection) {
         Species::King));
 }
 
-pub fn unmake_move(state: &mut GameState) {
+pub fn unmake_move(state: &mut FastPosition) {
     let last_entry = state.movelog.pop().unwrap();
     state.crights = last_entry.prev_crights;
         
@@ -196,7 +196,7 @@ pub fn unmake_move(state: &mut GameState) {
 /// Calculates the legality of a pseudo-legal move.
 /// This procedure returns `true` if the move is legal, 
 /// and false otherwise.
-pub fn test_pmove(state: &mut GameState, pmove: MGPieceMove) -> bool {
+pub fn test_pmove(state: &mut FastPosition, pmove: MGPieceMove) -> bool {
     make_pmove(state, pmove);
     let is_legal = !state.bbs.is_check();
     swap_active(state);

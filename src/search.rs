@@ -10,14 +10,14 @@ use crate::misc::SegVec;
 use crate::movegen::dispatch::movegen_pmoves;
 use crate::movegen::moveset::MGPieceMove;
 use crate::movegen::moveset::MGAnyMove;
-use crate::gamestate::GameState;
+use crate::gamestate::FastPosition;
 use crate::grid::FileDirection;
 use std::time::Instant;
 
 // # Search
 
 pub struct SearchContext<'a, 'b> {
-    pub gstate: &'a mut GameState,
+    pub gstate: &'a mut FastPosition,
     pub maxdepth: u8,
     pub pmoves: SegVec<'b, MGPieceMove>,
     pub deadline: Instant
@@ -86,7 +86,7 @@ fn search(mut ctx: SearchContext) -> SearchResult {
 // # Iterative Deepening Search
 
 pub struct IterDeepSearchContext<'a, 'b> {
-    gstate: &'a mut GameState,
+    gstate: &'a mut FastPosition,
     pmoves: SegVec<'b, MGPieceMove>,
     deadline: Instant
 }

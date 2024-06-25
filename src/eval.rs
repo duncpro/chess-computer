@@ -1,5 +1,5 @@
 use crate::check::is_check;
-use crate::gamestate::GameState;
+use crate::gamestate::FastPosition;
 use crate::grid::FileDirection;
 use crate::makemove::make_pmove;
 use crate::makemove::unmake_move;
@@ -13,14 +13,14 @@ use crate::movegen::moveset::MGPieceMove;
 use crate::movegen_castle;
 use std::time::Instant;
 
-fn shallow_eval(gstate: &mut GameState) -> i32 {
+fn shallow_eval(gstate: &mut FastPosition) -> i32 {
     matdiff(&gstate.bbs)
 }
 
 pub const MIN_EVAL_SCORE: i32 = i32::MIN + 1;
 
 pub struct DeepEvalContext<'a, 'b> {
-    pub gstate: &'a mut GameState,
+    pub gstate: &'a mut FastPosition,
     pub maxdepth: u8,
     pub pmoves: SegVec<'b, MGPieceMove>,
     pub deadline: Instant

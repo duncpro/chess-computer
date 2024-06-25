@@ -10,6 +10,9 @@ use crate::getbit;
 use crate::grid::FileDirection;
 use crate::grid::GridTable;
 use crate::grid::StandardCoordinate;
+use crate::misc::Push;
+use crate::misc::PushCount;
+use crate::movegen::dispatch::movegen_pmoves;
 use crate::movegen::moveset::MGPieceMove;
 use crate::piece::Color;
 use crate::piece::ColorTable;
@@ -18,16 +21,16 @@ use crate::piece::Species;
 use crate::piece::SpeciesTable;
 use crate::setbit;
 
-// # `GameState`
+// # Position
 
-pub struct GameState {
+pub struct FastPosition {
     pub bbs: Bitboards,
     pub occupant_lut: GridTable<Option<Piece>>,
     pub movelog: Vec<MovelogEntry>,
     pub crights: CastlingRights
 }
 
-impl GameState {
+impl FastPosition {
     pub fn active_player(&self) -> Color { self.bbs.active_player }
 }
 
@@ -99,6 +102,12 @@ impl Bitboards {
     pub fn is_check(&self) -> bool { 
         is_check(&self, locate_king_stdc(&self)) 
     }
+
+    pub fn status(&mut self) -> GameStatus {
+        // let mut move_count = PushCount::new();
+        // movegen_pmoves(self, )
+        todo!()
+    }
 }
 
 
@@ -114,3 +123,16 @@ pub fn locate_king<C: CoordinateSystem>(board: &Bitboards) -> Coordinate<C> {
 pub fn locate_king_stdc(board: &Bitboards) -> StandardCoordinate {
     locate_king::<StandardCS>(board).into()
 }
+
+// # Status
+
+pub enum GameStatus {
+    Complete(GameResult),
+    Incomplete
+}
+
+pub enum GameResult {
+    Diff(/* victor */ Color),
+    Tie
+}
+

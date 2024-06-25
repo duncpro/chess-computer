@@ -1,4 +1,4 @@
-use std::cell::{RefCell, RefMut, Ref};
+use std::{cell::{RefCell, RefMut, Ref}, marker::PhantomData};
 
 /// A C-style for-loop, usable in `const` contexts.
 #[macro_export]
@@ -118,6 +118,58 @@ macro_rules! impl_enum_table {
     };
 }
 
+
+// # `Push`
+
+pub trait Push<T> {
+    fn push(&mut self, value: T);
+}
+
+pub struct PushCount<T> { 
+    count: usize,
+    pd: PhantomData<T>
+}
+
+impl<T> Push<T> for PushCount<T> {
+    fn push(&mut self, value: T) { 
+        self.count += 1; 
+    }
+}
+
+impl<T> PushCount<T> {
+    pub fn count(&self) -> usize { self.count }
+    pub fn new() -> Self { 
+        Self { count: 0, pd: PhantomData } 
+    }
+}
+
+pub struct PushFilter<T, F, P> 
+where P: Push<T>, F: FnMut(&T) -> bool
+{
+    filter_fn: F,
+    wrapped: P,
+    pd: PhantomData<T>
+}
+
+impl<T, F, P> Push<T> for PushFilter<T, F, P>
+where P: Push<T>, F: FnMut(&T) -> bool
+{
+    fn push(&mut self, value: T) {
+        let pass = (self.filter_fn)(&value);
+        if pass { self.wrapped.push(value); }
+    }
+}
+
+
+impl<T, F, P> PushFilter<T, F, P>
+where P: Push<T>, F: FnMut(&T) -> bool
+{
+    pub fn wrapped(&self) -> &P { &self.wrapped }
+    pub fn new(wrapped: P, filter_fn: F) -> Self {
+        Self { filter_fn, wrapped, pd: PhantomData }
+    }
+}
+
 // # `SegVec`
 
 pub struct SegVec<'a, T> 
@@ -132,10 +184,6 @@ impl<'a, T> SegVec<'a, T> {
     {
         let begin = self.vec.borrow().len();
         SegVec { vec: self.vec, begin }
-    }
-    
-    pub fn push(&mut self, value: T) {
-        self.vec.borrow_mut().push(value);
     }
 
     pub fn as_mut_slice<'b, 'c>(&'b mut self) -> RefMut<'c, [T]>
@@ -173,5 +221,11 @@ impl<'a, T> SegVec<'a, T> {
 impl<'a, T> Drop for SegVec<'a, T> {
     fn drop(&mut self) {
         self.vec.borrow_mut().truncate(self.begin);
+    }
+}
+
+impl<'a, T> Push<T> for SegVec<'a, T> {
+    fn push(&mut self, value: T) {
+        self.vec.borrow_mut().push(value);
     }
 }

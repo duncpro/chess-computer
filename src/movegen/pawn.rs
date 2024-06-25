@@ -4,11 +4,12 @@ use crate::bits::bitscan;
 use crate::bits::repeat_byte_u64;
 use crate::coordinates::Coordinate;
 use crate::coordinates::RankMajorCS;
-use crate::gamestate::GameState;
+use crate::gamestate::FastPosition;
 use crate::gamestate::LoggedMove;
 use crate::gamestate::MovelogEntry;
 use crate::gamestate::SpecialPieceMove;
 use crate::grid::StandardCoordinate;
+use crate::misc::Push;
 use crate::misc::SegVec;
 use crate::piece::ColorTable;
 use crate::piece::Color;
@@ -21,7 +22,7 @@ use std::ops::BitAnd;
 use std::ops::Not;
 use std::ops::BitAndAssign;
 
-pub fn movegen_pawns(gstate: &GameState, moves: &mut SegVec<MGPieceMove>) {
+pub fn movegen_pawns(gstate: &FastPosition, moves: &mut impl Push<MGPieceMove>) {
     let mut ctx = PawnMGContext { gstate, moves };
     movegen_forward1(&mut ctx);
     movegen_forward2(&mut ctx);
@@ -30,7 +31,9 @@ pub fn movegen_pawns(gstate: &GameState, moves: &mut SegVec<MGPieceMove>) {
     movegen_enpassant(&mut ctx);
 }
 
-fn movegen_forward1(ctx: &mut PawnMGContext) {
+fn movegen_forward1<P>(ctx: &mut PawnMGContext<P>) 
+where P: Push<MGPieceMove>
+{
     let mut bb: RawBitboard = 0;
 
     // Select all of the active-player's pawns.
@@ -54,7 +57,9 @@ fn movegen_forward1(ctx: &mut PawnMGContext) {
     }
 }
 
-fn movegen_forward2(ctx: &mut PawnMGContext) {
+fn movegen_forward2<P>(ctx: &mut PawnMGContext<P>) 
+where P: Push<MGPieceMove>
+{
     let mut bb: RawBitboard = 0;
 
     // Select all of the active-player's pawns.
@@ -91,7 +96,9 @@ fn movegen_forward2(ctx: &mut PawnMGContext) {
     }
 }
 
-fn movegen_capture_queenside(ctx: &mut PawnMGContext) {    
+fn movegen_capture_queenside<P>(ctx: &mut PawnMGContext<P>) 
+where P: Push<MGPieceMove>
+{    
     let mut bb: RawBitboard = 0;
 
     // Select all of the active-player's pawns.
@@ -121,7 +128,9 @@ fn movegen_capture_queenside(ctx: &mut PawnMGContext) {
     }
 }
 
-fn movegen_capture_kingside(ctx: &mut PawnMGContext) {    
+fn movegen_capture_kingside<P>(ctx: &mut PawnMGContext<P>)
+where P: Push<MGPieceMove>
+{    
     let mut bb: RawBitboard = 0;
 
     // Select all of the active-player's pawns.
@@ -151,7 +160,9 @@ fn movegen_capture_kingside(ctx: &mut PawnMGContext) {
     }
 }
 
-fn movegen_enpassant(ctx: &mut PawnMGContext) {
+fn movegen_enpassant<P>(ctx: &mut PawnMGContext<P>) 
+where P: Push<MGPieceMove>
+{
     if let Some(last_entry) = ctx.gstate.movelog.last() {
         if let LoggedMove::Piece(pmove) = last_entry.lmove {
             if pmove.mgmove.special == Some(SpecialPieceMove::PawnDoubleJump) {
@@ -204,12 +215,16 @@ pub fn reverse_pawn_attack(target: u8) -> RawBitboard {
 
 // ## `PawnMGContext`
 
-struct PawnMGContext<'a, 'b> {
-    gstate: &'a GameState,
-    moves: &'a mut SegVec<'b, MGPieceMove>
+struct PawnMGContext<'a, 'b, P>
+where P: Push<MGPieceMove>
+{
+    gstate: &'a FastPosition,
+    moves: &'b mut P
 }
 
-impl<'a, 'b> PawnMGContext<'a, 'b> {
+impl<'a, 'b, P> PawnMGContext<'a, 'b, P> 
+where P: Push<MGPieceMove>
+{
     fn push_promote(&mut self, origin_rmrel: u8, destin_rmrel: u8) {
         let origin = absolutize(origin_rmrel, self.gstate.active_player());
         let destin = absolutize(destin_rmrel, self.gstate.active_player());

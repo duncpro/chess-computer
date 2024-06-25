@@ -1,7 +1,7 @@
 use crate::bitboard::Bitboard;
 use crate::coordinates::Coordinate;
 use crate::coordinates::CoordinateSystem;
-use crate::gamestate::GameState;
+use crate::gamestate::FastPosition;
 use crate::gamestate::Bitboards;
 use crate::grid::StandardCoordinate;
 use crate::sliders::get_slidelimit;

@@ -4,14 +4,14 @@ use crate::build_itable;
 use crate::cfor;
 use crate::coordinates::Coordinate;
 use crate::coordinates::RankMajorCS;
-use crate::gamestate::GameState;
+use crate::gamestate::FastPosition;
 use crate::gamestate::locate_king;
 use crate::grid::StandardCoordinate;
-use crate::misc::SegVec;
+use crate::misc::Push;
 use crate::movegen::moveset::MGPieceMove;
 use crate::setbit;
 
-pub fn movegen_king(state: &GameState, moves: &mut SegVec<MGPieceMove>) {
+pub fn movegen_king(state: &FastPosition, moves: &mut impl Push<MGPieceMove>) {
     let origin: Coordinate<RankMajorCS> = locate_king(&state.bbs);
     let mut bb = king_attack(origin);
     bb &= !state.bbs.occupancy();
