@@ -2,11 +2,13 @@ use std::cmp::max;
 
 use crate::check::is_check;
 use crate::gamestate::{GameState, locate_king_stdc};
-use crate::makemove::{swap_active, make_pmove, unmake_move};
+use crate::grid::FileDirection;
+use crate::makemove::{swap_active, make_pmove, unmake_move, make_castle};
 use crate::mat_eval::matdiff;
 use crate::misc::{SegVec, pick};
 use crate::movegen::dispatch::movegen_pmoves;
 use crate::movegen::moveset::MGPieceMove;
+use crate::movegen_castle;
 
 #[derive(Clone, Copy)]
 #[repr(u8)]
@@ -48,18 +50,38 @@ fn eval(mut ctx: Context) -> i32 {
     }
 
     let mut parent_score: i32 = i32::MIN + 1;
+
+    macro_rules! eval_child {
+        () => {{
+            swap_active(ctx.gstate);
+            let mut child_score = eval(Context { gstate: ctx.gstate,
+                depth: ctx.depth - 1, moves: ctx.moves.extend(),
+                mode: ctx.mode.inverse() });
+            child_score *= i32::from(ctx.mode.sign());
+            parent_score = max(parent_score, child_score);
+            unmake_move(ctx.gstate);
+        }};
+    }
+    
     for pmove in ctx.moves.as_slice().iter() {
         make_pmove(ctx.gstate, *pmove);
-        swap_active(ctx.gstate);
-        let mut child_score = eval(Context { gstate: ctx.gstate,
-            depth: ctx.depth - 1, moves: ctx.moves.extend(),
-            mode: ctx.mode.inverse() });
-        child_score *= i32::from(ctx.mode.sign());
-        parent_score = max(parent_score, child_score);
-        unmake_move(ctx.gstate);
+        eval_child!();
     }  
-    parent_score *= i32::from(ctx.mode.sign());  
 
+    macro_rules! eval_castle { 
+        ($side:ident) => {
+            if movegen_castle!($side, ctx.gstate) {
+                make_castle(ctx.gstate, FileDirection::$side);
+                eval_child!();
+                unmake_move(ctx.gstate);
+            }
+        };
+    }
+
+    eval_castle!(Kingside);
+    eval_castle!(Queenside);
+    
+    parent_score *= i32::from(ctx.mode.sign());  
     return parent_score;
 }
 

@@ -5,7 +5,18 @@ use crate::grid::StandardCoordinate;
 use crate::grid::File;
 use crate::gamestate::GameState;
 
-pub fn movegen_castle_ks(state: &GameState) -> bool{    
+#[macro_export]
+macro_rules! movegen_castle {
+    ($side:ident /* either Kingside or Queenside */, $state:expr) => {{
+        ::paste::paste! {
+            use crate::movegen::castle::movegen_castle_kingside;
+            use crate::movegen::castle::movegen_castle_queenside;
+            [< movegen_castle _ $side:lower >]($state)
+        }}
+    };
+}
+
+pub fn movegen_castle_kingside(state: &GameState) -> bool{    
     let mut can_castle = false;
         
     let base_rank = state.active_player().base_rank();
@@ -29,7 +40,7 @@ pub fn movegen_castle_ks(state: &GameState) -> bool{
     return can_castle; 
 }
 
-pub fn movegen_castle_qs(state: &GameState) -> bool {
+pub fn movegen_castle_queenside(state: &GameState) -> bool {
     let mut can_castle = false;
         
     let base_rank = state.active_player().base_rank();

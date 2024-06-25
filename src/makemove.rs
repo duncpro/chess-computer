@@ -77,7 +77,7 @@ pub fn make_pmove(state: &mut GameState, mgmove: MGPieceMove) {
         lmove: LoggedMove::Piece(LoggedPieceMove { mgmove, capture }) });
 }
 
-fn make_castle(state: &mut GameState, side: FileDirection) {
+pub fn make_castle(state: &mut GameState, side: FileDirection) {
     const ROOK_ORIGIN_LUT: [File; 2] = [
         /* Queenside */ File::A,
         /* Kingside  */ File::H
