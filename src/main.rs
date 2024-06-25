@@ -19,6 +19,7 @@ mod misc;
 mod movegen;
 mod piece;
 mod rmrel;
+mod search;
 mod sliders;
 
 fn main() {

@@ -1,8 +1,9 @@
 use crate::gamestate::SpecialPieceMove;
 use crate::piece::Species;
+use crate::grid::FileDirection;
 use crate::grid::StandardCoordinate;
 
-// # `MSPieceMove`
+// # `MGPieceMove`
 
 #[derive(Clone, Copy)]
 pub struct MGPieceMove {
@@ -23,4 +24,12 @@ impl MGPieceMove {
             promote: None
         }
     }
+}
+
+// # `MGAnyMove`
+
+#[derive(Clone, Copy)]
+pub enum MGAnyMove {
+    Piece(MGPieceMove),
+    Castle(FileDirection)
 }

@@ -53,6 +53,12 @@ where T: Copy
     return lut[condition as usize];
 }
 
+pub fn max_inplace<T>(left: &mut T, right: T) 
+where T: Ord + Copy
+{
+    *left = std::cmp::max(*left, right);
+}
+
 /// This macro provides support for enum tables. An enum table is a wrapper 
 /// around an array that implements [`std::ops::Index`] and [`std::ops::IndexMut`]
 /// so that the table can be indexed by the enum directly instead of indirectly though

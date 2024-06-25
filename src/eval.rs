@@ -1,55 +1,69 @@
-use std::cmp::max;
-
 use crate::check::is_check;
-use crate::gamestate::{GameState, locate_king_stdc};
+use crate::gamestate::GameState;
 use crate::grid::FileDirection;
-use crate::makemove::{swap_active, make_pmove, unmake_move, make_castle};
+use crate::makemove::make_pmove;
+use crate::makemove::unmake_move;
+use crate::makemove::swap_active;
+use crate::makemove::make_castle;
 use crate::mat_eval::matdiff;
-use crate::misc::{SegVec, pick};
+use crate::misc::SegVec;
+use crate::misc::max_inplace;
 use crate::movegen::dispatch::movegen_pmoves;
 use crate::movegen::moveset::MGPieceMove;
 use crate::movegen_castle;
-
-
-struct Context<'a, 'b> {
-    gstate: &'a mut GameState,
-    depth: u8,
-    moves: SegVec<'b, MGPieceMove>
-}
+use std::time::Instant;
 
 fn shallow_eval(gstate: &mut GameState) -> i32 {
     matdiff(&gstate.bbs)
 }
 
-const MIN_SCORE: i32 = i32::MIN + 1;
+pub const MIN_EVAL_SCORE: i32 = i32::MIN + 1;
 
-fn eval(mut ctx: Context) -> i32 {
-    movegen_pmoves(ctx.gstate, &mut ctx.moves);
+pub struct DeepEvalContext<'a, 'b> {
+    pub gstate: &'a mut GameState,
+    pub maxdepth: u8,
+    pub pmoves: SegVec<'b, MGPieceMove>,
+    pub deadline: Instant
+}
 
-    // If we have no moves, then either its a stalemate,
-    // or we're in checkmate. Either way, it's not a good
-    // position to be in.
-    if ctx.moves.is_empty() { return MIN_SCORE; }
-    
-    if ctx.depth == 0 { 
-        return shallow_eval(ctx.gstate);
+/// Conducts a depth-limited time-limited evaluation of 
+/// a chess position. If the deadline elapses before the 
+/// evaluation completes, `Option::None` is returned.
+/// Otherwise, the score of the position is returned.
+pub fn deep_eval(mut ctx: DeepEvalContext) -> Option<i32> {
+    movegen_pmoves(ctx.gstate, &mut ctx.pmoves);
+
+    // In the case there are no legal moves, its a stalemate,
+    // or we're in checkmate. Either way, this is not a good
+    // position to be in, so it gets the minimum score.
+    if ctx.pmoves.is_empty() { return Some(MIN_EVAL_SCORE); }
+
+    if ctx.maxdepth == 0 { 
+        return Some(shallow_eval(ctx.gstate));
     }
 
-    let mut parent_score: i32 = MIN_SCORE;
+    if Instant::now() > ctx.deadline { return None; }
+    
+    let mut parent_score: i32 = MIN_EVAL_SCORE;
 
     macro_rules! eval_child {
         () => {{
             swap_active(ctx.gstate);
-            let child_score = -1 * eval(Context { gstate: ctx.gstate,
-                depth: ctx.depth - 1, moves: ctx.moves.extend() });
-            parent_score = max(parent_score, child_score);
-            unmake_move(ctx.gstate);
+            let result = deep_eval(DeepEvalContext { gstate: ctx.gstate,
+                maxdepth: ctx.maxdepth - 1, pmoves: ctx.pmoves.extend(), 
+                deadline: ctx.deadline });
+            match result {
+                Some(child_score) => 
+                    max_inplace(&mut parent_score, -1 * child_score),
+                None => return None
+            }
         }};
     }
     
-    for pmove in ctx.moves.as_slice().iter() {
+    for pmove in ctx.pmoves.as_slice().iter() {
         make_pmove(ctx.gstate, *pmove);
         eval_child!();
+        unmake_move(ctx.gstate);
     }  
 
     macro_rules! eval_castle { 
@@ -65,6 +79,6 @@ fn eval(mut ctx: Context) -> i32 {
     eval_castle!(Kingside);
     eval_castle!(Queenside);
     
-    return parent_score;
+    return Some(parent_score);
 }
 
