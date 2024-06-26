@@ -1,3 +1,6 @@
+use std::borrow::BorrowMut;
+use std::cell::RefCell;
+
 use crate::gamestate::FastPosition;
 use crate::makemove::test_pmove;
 use crate::misc::{SegVec, Push, PushFilter, PushCount};
@@ -26,9 +29,11 @@ pub fn movegen_pmoves(state: &mut FastPosition, moves: &mut SegVec<MGPieceMove>)
 }
 
 pub fn movegen_count_pmoves(state: &mut FastPosition) -> usize {
+    let state_cell = RefCell::new(state);
+    
     let mut counter = PushFilter::new(PushCount::new(), 
-        |pmove| test_pmove(state, *pmove));
+        |pmove| test_pmove(*state_cell.borrow_mut(), *pmove));
 
-    pseudo_movegen_pmoves(state, &mut counter);
+    pseudo_movegen_pmoves(*state_cell.borrow(), &mut counter);
     return counter.wrapped().count();
 }

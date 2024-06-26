@@ -1,3 +1,5 @@
+use std::cell::RefCell;
+
 use crate::bitboard::RawBitboard;
 use crate::bits::swap_bytes_inplace_u64;
 use crate::check::is_check;

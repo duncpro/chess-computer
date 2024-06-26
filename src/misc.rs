@@ -1,4 +1,7 @@
-use std::{cell::{RefCell, RefMut, Ref}, marker::PhantomData};
+use std::cell::Ref;
+use std::marker::PhantomData;
+use std::cell::RefMut;
+use std::cell::RefCell;
 
 /// A C-style for-loop, usable in `const` contexts.
 #[macro_export]
