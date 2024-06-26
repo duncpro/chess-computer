@@ -5,6 +5,7 @@ use crate::gamestate::FastPosition;
 use crate::makemove::test_pmove;
 use crate::misc::{SegVec, Push, PushFilter, PushCount};
 use super::bishop::movegen_bishops;
+use super::castle::{movegen_castle_kingside, movegen_castle_queenside};
 use super::king::movegen_king;
 use super::knight::movegen_knights;
 use super::moveset::MGPieceMove;
@@ -28,12 +29,18 @@ pub fn movegen_pmoves(state: &mut FastPosition, moves: &mut SegVec<MGPieceMove>)
     moves.retain(|pmove| test_pmove(state, *pmove));
 }
 
-pub fn movegen_count_pmoves(state: &mut FastPosition) -> usize {
+fn movegen_count_pmoves(state: &mut FastPosition) -> usize {
     let state_cell = RefCell::new(state);
-    
     let mut counter = PushFilter::new(PushCount::new(), 
         |pmove| test_pmove(*state_cell.borrow_mut(), *pmove));
-
     pseudo_movegen_pmoves(*state_cell.borrow(), &mut counter);
     return counter.wrapped().count();
+}
+
+fn movegen_count(state: &mut FastPosition) -> usize {
+    let mut count: usize = 0;
+    count += movegen_castle_kingside(state) as usize;
+    count += movegen_castle_queenside(state) as usize;
+    count += movegen_count_pmoves(state);
+    return count;
 }
