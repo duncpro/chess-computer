@@ -7,6 +7,7 @@
 mod bitboard;
 mod bits;
 mod check;
+mod cli;
 mod coordinates;
 mod crights;
 mod eval;
