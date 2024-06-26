@@ -34,6 +34,4 @@ mod sliders;
 
 fn main() {
     selfplay(Duration::from_millis(5 * 1000));
-    // let coord = StandardCoordinate::new(Rank::from_index(7), File::F);
-    // print_bitboard(king_attack(coord.into()).raw())
 }
