@@ -8,7 +8,7 @@ use crate::makemove::make_castle;
 use crate::mat_eval::matdiff;
 use crate::misc::SegVec;
 use crate::misc::max_inplace;
-use crate::movegen::dispatch::movegen_pmoves;
+use crate::movegen::dispatch::movegen_legal_pmoves;
 use crate::movegen::types::PMGMove;
 use crate::movegen_castle;
 use std::time::Instant;
@@ -31,7 +31,7 @@ pub struct DeepEvalContext<'a, 'b> {
 /// evaluation completes, `Option::None` is returned.
 /// Otherwise, the score of the position is returned.
 pub fn deep_eval(mut ctx: DeepEvalContext) -> Option<i32> {
-    movegen_pmoves(ctx.gstate, &mut ctx.pmoves);
+    movegen_legal_pmoves(ctx.gstate, &mut ctx.pmoves);
 
     // In the case there are no legal moves, its a stalemate,
     // or we're in checkmate. Either way, this is not a good
@@ -60,11 +60,11 @@ pub fn deep_eval(mut ctx: DeepEvalContext) -> Option<i32> {
             }
         }};
     }
-    
-    for pmove in ctx.pmoves.as_slice().iter() {
-        make_pmove(ctx.gstate, *pmove);
+
+    while let Some(pmove) = ctx.pmoves.pop() {        
+        make_pmove(ctx.gstate, pmove);
         eval_child!();
-    }  
+    }
 
     macro_rules! eval_castle { 
         ($side:ident) => {

@@ -4,6 +4,10 @@
 // and never in the actual application.
 #![feature(variant_count)]
 
+use std::time::Duration;
+
+use play::selfplay;
+
 mod bitboard;
 mod bits;
 mod check;
@@ -25,5 +29,5 @@ mod search;
 mod sliders;
 
 fn main() {
-    println!("Hello, world!");
+    selfplay(Duration::from_secs(5));
 }

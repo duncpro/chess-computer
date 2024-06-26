@@ -1,5 +1,6 @@
 use crate::grid::StandardCoordinate;
 use crate::grid::GridTable;
+use crate::piece::Color;
 use crate::piece::Piece;
 
 pub fn get_unicode_symbol(piece: Piece) -> &'static str {
@@ -32,7 +33,7 @@ pub fn print_board(board: &GridTable<Option<Piece>>) {
         for _ in 0..8 {
             let coord = StandardCoordinate::from_index(i);
             match board[coord] {
-                Some(piece) => print!(get_unicode_symbol(piece)),
+                Some(piece) => print!("{}", get_unicode_symbol(piece)),
                 None => print!(" "),
             }
             print!(" ");
@@ -40,4 +41,9 @@ pub fn print_board(board: &GridTable<Option<Piece>>) {
         }
         print!("\n");
     }
+}
+
+pub fn prompt_ok() {
+    let mut input = String::new();
+    std::io::stdin().read_line(&mut input);
 }

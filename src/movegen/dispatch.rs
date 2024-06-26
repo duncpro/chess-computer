@@ -1,5 +1,4 @@
 use std::cell::RefCell;
-
 use crate::gamestate::FastPosition;
 use crate::makemove::test_pmove;
 use crate::misc::PushCount;
@@ -17,7 +16,7 @@ use crate::movegen::rook::movegen_rooks;
 use crate::movegen::pawn::movegen_pawns;
 use crate::movegen::types::PMGContext;
 
-fn pseudo_movegen_pmoves(ctx: &mut PMGContext<impl Push<PMGMove>>) 
+fn pmove_dispatch(ctx: &mut PMGContext<impl Push<PMGMove>>) 
 {
     movegen_pawns(ctx);
     movegen_rooks(ctx);
@@ -27,29 +26,33 @@ fn pseudo_movegen_pmoves(ctx: &mut PMGContext<impl Push<PMGMove>>)
     movegen_king(ctx);
 }
 
-pub fn movegen_pmoves(state: &mut FastPosition, moves: &mut SegVec<PMGMove>) {
+fn movegen_psuedo_pmoves(state: &mut FastPosition, moves: &mut SegVec<PMGMove>) {
     // Generate pseudo-legal piece moves
-    let mut ctx = PMGContext::new(todo!(), moves);
-    pseudo_movegen_pmoves(&mut ctx);
-    // Filter out illegal moves
+    let state_cell = RefCell::new(state);    
+    let mut ctx = PMGContext::new(&state_cell, moves);
+    pmove_dispatch(&mut ctx);
+}
+
+pub fn movegen_legal_pmoves(state: &mut FastPosition, moves: &mut SegVec<PMGMove>) {
+    movegen_psuedo_pmoves(state, moves);
     moves.retain(|pmove| test_pmove(state, *pmove));
 }
 
-fn movegen_count_pmoves(state: &mut FastPosition) -> usize {
+fn count_legal_pmoves(state: &mut FastPosition) -> usize {
     let state_cell = RefCell::new(state);
     let mut counter = PushFilter::new(PushCount::new(), 
         |pmove| test_pmove(*state_cell.borrow_mut(), *pmove));
     {
         let mut ctx = PMGContext::new(&state_cell, &mut counter);
-        pseudo_movegen_pmoves(&mut ctx);
+        pmove_dispatch(&mut ctx);
     }
     return counter.wrapped().count();
 }
 
-pub fn movegen_count(state: &mut FastPosition) -> usize {
+pub fn count_legal_moves(state: &mut FastPosition) -> usize {
     let mut count: usize = 0;
     count += movegen_castle_kingside(state) as usize;
     count += movegen_castle_queenside(state) as usize;
-    count += movegen_count_pmoves(state);
+    count += count_legal_pmoves(state);
     return count;
 }

@@ -3,6 +3,13 @@ use std::marker::PhantomData;
 use std::cell::RefMut;
 use std::cell::RefCell;
 
+#[macro_export]
+macro_rules! expect_match {
+    ($value:expr, $p:pat) => {
+        let $p = $value else { panic!("bad match") };
+    }
+}
+
 /// A C-style for-loop, usable in `const` contexts.
 #[macro_export]
 macro_rules! cfor {
@@ -177,7 +184,7 @@ where P: Push<T>, F: FnMut(&T) -> bool
 
 pub struct SegVec<'a, T> 
 {
-    vec: &'a RefCell<Vec<T>>,
+    vec_cell: &'a RefCell<Vec<T>>,
     begin: usize
 }
 
@@ -185,39 +192,35 @@ impl<'a, T> SegVec<'a, T> {
     pub fn extend<'b, 'c>(&'b self) -> SegVec<'c, T> 
     where 'a: 'b, 'b: 'c 
     {
-        let begin = self.vec.borrow().len();
-        SegVec { vec: self.vec, begin }
-    }
-
-    // TODO: Bad! Do not leak RefMut
-    pub fn as_mut_slice<'b, 'c>(&'b mut self) -> RefMut<'c, [T]>
-    where 'a: 'b, 'b: 'c
-    {
-        let begin = self.begin;
-        RefMut::map(self.vec.borrow_mut(), 
-            |r| &mut r.as_mut_slice()[begin..])
+        let begin = self.vec_cell.borrow().len();
+        SegVec { vec_cell: self.vec_cell, begin }
     }
 
     pub fn retain<F>(&mut self, mut f: F)
     where F: FnMut(&T) -> bool
     {
-        for i in (self.begin..self.vec.borrow().len()).rev() {
-            let retained = f(&self.vec.borrow()[i]);
-            if !retained { self.vec.borrow_mut().remove(i); }
+        for i in (self.begin..self.vec_cell.borrow().len()).rev() {
+            let retained = f(&self.vec_cell.borrow()[i]);
+            if !retained { self.vec_cell.borrow_mut().remove(i); }
         }
+    }
+
+    pub fn pop(&mut self) -> Option<T> {
+        let mut vec = self.vec_cell.borrow_mut();
+        if self.begin < vec.len() { return vec.pop(); }
+        return None;
     }
 
     pub fn new(vec: &'a mut RefCell<Vec<T>>) -> Self {
         let begin = vec.borrow().len();
-        Self { vec, begin }
+        Self { vec_cell: vec, begin }
     }    
 
-    // TODO: Bad not leak Ref!
-    pub fn as_slice<'b, 'c>(&'b self) -> Ref<'c, [T]>
+    fn as_slice<'b, 'c>(&'b self) -> Ref<'c, [T]>
     where 'a: 'b, 'b: 'c
     {
         let begin = self.begin;
-        Ref::map(self.vec.borrow(), |r| &r.as_slice()[begin..])
+        Ref::map(self.vec_cell.borrow(), |r| &r.as_slice()[begin..])
     }
 
     pub fn is_empty(&self) -> bool { self.as_slice().is_empty() }
@@ -225,13 +228,13 @@ impl<'a, T> SegVec<'a, T> {
 
 impl<'a, T> Drop for SegVec<'a, T> {
     fn drop(&mut self) {
-        self.vec.borrow_mut().truncate(self.begin);
+        self.vec_cell.borrow_mut().truncate(self.begin);
     }
 }
 
 impl<'a, T> Push<T> for SegVec<'a, T> {
     fn push(&mut self, value: T) {
-        self.vec.borrow_mut().push(value);
+        self.vec_cell.borrow_mut().push(value);
     }
 }
 

@@ -159,6 +159,12 @@ impl<T> std::ops::IndexMut<StandardCoordinate> for GridTable<T> {
     }
 }
 
+impl<T: Default + Copy> Default for GridTable<T> {
+    fn default() -> Self {
+        Self { array: [T::default(); 64]  }    
+    }
+}
+
 // # `FileDirection`
 
 #[derive(Clone, Copy)]

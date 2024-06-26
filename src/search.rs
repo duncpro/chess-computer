@@ -7,7 +7,7 @@ use crate::makemove::make_castle;
 use crate::makemove::unmake_move;
 use crate::makemove::swap_active;
 use crate::misc::SegVec;
-use crate::movegen::dispatch::movegen_pmoves;
+use crate::movegen::dispatch::movegen_legal_pmoves;
 use crate::movegen::types::PMGMove;
 use crate::movegen::types::MGAnyMove;
 use crate::gamestate::FastPosition;
@@ -62,10 +62,10 @@ fn search(mut ctx: SearchContext) -> SearchResult {
         };
     }
     
-    movegen_pmoves(ctx.gstate, &mut ctx.pmoves);
-    for pmove in ctx.pmoves.as_slice().iter() {
-        make_pmove(ctx.gstate, *pmove);
-        eval_child!(MGAnyMove::Piece(*pmove));   
+    movegen_legal_pmoves(ctx.gstate, &mut ctx.pmoves);
+    while let Some(pmove) = ctx.pmoves.pop() {
+        make_pmove(ctx.gstate, pmove);
+        eval_child!(MGAnyMove::Piece(pmove));
     }
 
     macro_rules! eval_castle { 

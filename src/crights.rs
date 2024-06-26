@@ -32,6 +32,12 @@ impl CastlingRights {
         self.set(FileDirection::Queenside, color, false);
         self.set(FileDirection::Kingside, color, false);
     }
+
+    pub const INITIAL: Self = Self { data: 0b1111 };
+}
+
+impl Default for CastlingRights {
+    fn default() -> Self { Self::INITIAL }
 }
 
 // # Updating Castling Rights

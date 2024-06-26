@@ -130,6 +130,7 @@ impl<C: CoordinateSystem> Bitboard<C> {
 
 // # `MDBitboard`
 
+#[derive(Clone, Copy, Default)]
 pub struct MDBitboard { array: [RawBitboard; 4] }
 
 impl MDBitboard {
@@ -158,3 +159,4 @@ impl MDBitboard {
         self.get_mut::<AntidiagonalMajorCS>().unset(pos.into());
     }
 }
+

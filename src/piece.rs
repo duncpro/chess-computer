@@ -1,3 +1,4 @@
+use std::fmt::Display;
 use std::num::NonZeroU8;
 
 use crate::impl_enum_table;
@@ -63,6 +64,19 @@ impl Color {
         ]);
         return RANK_LUT[self];
     }
+}
+
+impl Display for Color {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match *self {
+            Color::White => "White",
+            Color::Black => "Black",
+        })
+    }
+}
+
+impl Default for Color {
+    fn default() -> Self { Self::White }
 }
 
 impl_enum_table!(Color);

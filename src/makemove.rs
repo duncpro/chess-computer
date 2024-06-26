@@ -38,7 +38,7 @@ fn clear_tile(state: &mut FastPosition, pos: StandardCoordinate) {
         relativize(pos, state.active_player()));
 }
 
-fn fill_tile(state: &mut FastPosition, pos: StandardCoordinate, piece: Piece) 
+pub fn fill_tile(state: &mut FastPosition, pos: StandardCoordinate, piece: Piece) 
 {
     state.occupant_lut[pos] = Some(piece);
     state.bbs.affilia_bbs[piece.color()].set(pos);
@@ -69,9 +69,9 @@ pub fn make_pmove(state: &mut FastPosition, mgmove: PMGMove) {
     clear_tile(state, mgmove.origin);
     clear_tile(state, mgmove.target);
 
-    let end_species = pick(mgmove.promote.is_some(), 
-        mgmove.promote.unwrap(), piece.species());
-    fill_tile(state, mgmove.destin, Piece::new(piece.color(), end_species));
+    let place_piece = Piece::new(state.active_player(),
+        mgmove.promote.unwrap_or(piece.species()));        
+    fill_tile(state, mgmove.destin, place_piece);
 
     let prev_crights = state.crights;
     update_crights(state); 
@@ -135,7 +135,7 @@ pub fn doturn(state: &mut FastPosition, mov: MGAnyMove) {
 
 // # Unmake
 
-fn unmake_pmove(state: &mut FastPosition, pmove: LoggedPieceMove) {
+fn unmake_pmove(state: &mut FastPosition, pmove: LoggedPieceMove) { 
     let is_promote = (pmove.mgmove.special == Some(SpecialPieceMove::Promote));
     let species = pick(is_promote, Species::Pawn, 
         state.occupant_lut[pmove.mgmove.destin].unwrap().species());
@@ -146,7 +146,7 @@ fn unmake_pmove(state: &mut FastPosition, pmove: LoggedPieceMove) {
     if let Some(piece) = pmove.capture {
         fill_tile(state, pmove.mgmove.target, piece);
     }
-
+    
     fill_tile(state, pmove.mgmove.origin,
         Piece::new(state.active_player(), species));
 }

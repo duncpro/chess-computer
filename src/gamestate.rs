@@ -12,8 +12,8 @@ use crate::grid::GridTable;
 use crate::grid::StandardCoordinate;
 use crate::misc::Push;
 use crate::misc::PushCount;
-use crate::movegen::dispatch::movegen_count;
-use crate::movegen::dispatch::movegen_pmoves;
+use crate::movegen::dispatch::count_legal_moves;
+use crate::movegen::dispatch::movegen_legal_pmoves;
 use crate::movegen::types::PMGMove;
 use crate::piece::Color;
 use crate::piece::ColorTable;
@@ -24,6 +24,7 @@ use crate::setbit;
 
 // # Position
 
+#[derive(Default)]
 pub struct FastPosition {
     pub bbs: Bitboards,
     pub occupant_lut: GridTable<Option<Piece>>,
@@ -32,7 +33,7 @@ pub struct FastPosition {
 }
 
 impl FastPosition {
-    pub fn active_player(&self) -> Color { self.bbs.active_player }
+    pub fn active_player(&self) -> Color { self.bbs.active_player } 
 }
 
 // # Movelog
@@ -61,6 +62,7 @@ pub enum SpecialPieceMove { Promote = 1, PawnDoubleJump = 2 }
 
 // # `Bitboards`
 
+#[derive(Default)]
 pub struct Bitboards {
     // ## MDBitboards
     pub species_bbs: SpeciesTable<MDBitboard>,
@@ -133,8 +135,8 @@ pub enum GameResult {
     Tie
 }
 
-pub fn get_status(state: &mut FastPosition) -> GameStatus {
-    let has_move = movegen_count(state) > 0;
+pub fn status(state: &mut FastPosition) -> GameStatus {
+    let has_move = count_legal_moves(state) > 0;
     if has_move { return GameStatus::Incomplete; }
     if !state.bbs.is_check() { 
         return GameStatus::Complete(GameResult::Tie)
