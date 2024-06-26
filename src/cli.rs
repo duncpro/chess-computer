@@ -17,7 +17,7 @@ pub fn get_unicode_symbol(piece: Piece) -> &'static str {
             King   => "♔",
         },
         Black => match piece.species() {
-            Pawn   => "♟︎",
+            Pawn   => "♟",
             Rook   => "♜",
             Knight => "♞",
             Bishop => "♝",

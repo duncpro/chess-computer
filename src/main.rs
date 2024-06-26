@@ -7,6 +7,10 @@
 use std::time::Duration;
 
 use play::selfplay;
+use crate::bitboard::print_bitboard;
+use crate::grid::{File, Rank, StandardCoordinate};
+use crate::movegen::king::king_attack;
+use crate::movegen::knight::knight_attack;
 
 mod bitboard;
 mod bits;
@@ -29,5 +33,7 @@ mod search;
 mod sliders;
 
 fn main() {
-    selfplay(Duration::from_secs(5));
+    selfplay(Duration::from_millis(5 * 1000));
+    // let coord = StandardCoordinate::new(Rank::from_index(7), File::F);
+    // print_bitboard(king_attack(coord.into()).raw())
 }

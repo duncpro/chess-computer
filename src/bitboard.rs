@@ -128,6 +128,19 @@ impl<C: CoordinateSystem> Bitboard<C> {
     }
 }
 
+pub fn print_bitboard(bb: RawBitboard) {
+    for i in (0..8) {
+        let bitlane = (bb >> (8 * i)) as Bitlane;
+        for j in (0..8) {
+            let mask = 1 << j;
+            let selected: bool = mask & bitlane != 0;
+            print!("{} ", if selected { '1' } else { '0' });
+        }
+        print!("\n");
+    }
+}
+
+
 // # `MDBitboard`
 
 #[derive(Clone, Copy, Default)]

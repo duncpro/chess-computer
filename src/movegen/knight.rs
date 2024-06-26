@@ -70,7 +70,7 @@ build_itable!(KNIGHT_LUT: [RawBitboard; 64], |table| {
             }
 
             // 5. (kingside, up)
-            if ofile < 5 {
+            if ofile < 6 {
                 if orank < 7 {
                     setbit!(bb, i + 8 /* one rank */ + 2 /* two files */);
                 }

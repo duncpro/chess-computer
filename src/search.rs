@@ -55,7 +55,7 @@ fn search(mut ctx: SearchContext) -> SearchResult {
             match result {
                 Some(child_score) => {
                     let score = child_score * -1;
-                    if score > best_score {
+                    if score >= best_score {
                         best_move = Some($mgmove);
                         best_score = score;
                     }
@@ -111,5 +111,6 @@ pub fn iterdeep_search(mut ctx: IterDeepSearchContext) -> Option<MGAnyMove> {
         }
         maxdepth += 1;
     }
+    println!("Reached depth {}", maxdepth);
     return prev_bestmove;
 }

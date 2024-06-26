@@ -1,4 +1,4 @@
-use std::fmt::{Debug, Display, Formatter};
+use std::fmt::{Debug, Display, Formatter, Write};
 use crate::misc::const_min_u8;
 
 // # Laterals
@@ -18,6 +18,12 @@ impl Rank {
     pub const fn index(self) -> u8 { self.index }
 }
 
+impl Display for Rank {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.index() + 1)
+    }
+}
+
 impl File {
     pub const fn from_index(index: u8) -> Self {
         assert!(index < 8);
@@ -34,6 +40,12 @@ impl File {
     pub const F: File = File::from_index(5);
     pub const G: File = File::from_index(6);
     pub const H: File = File::from_index(7);
+}
+
+impl Display for File {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_char(char::from(65 + self.index()))
+    }
 }
 
 // # Diagonals
@@ -139,6 +151,12 @@ impl StandardCoordinate {
     pub fn new(rank: Rank, file: File) -> Self {
         let index = rank.index() * 8 + file.index();
         return Self::from_index(index);
+    }
+}
+
+impl Display for StandardCoordinate {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}{}", self.file(), self.rank())
     }
 }
 

@@ -18,11 +18,11 @@ use crate::movegen::types::PMGContext;
 
 fn pmove_dispatch(ctx: &mut PMGContext<impl Push<PMGMove>>) 
 {
-    // movegen_pawns(ctx);
-    // movegen_rooks(ctx);
-    // movegen_knights(ctx);
-    // movegen_bishops(ctx);
-    // movegen_queens(ctx);
+    movegen_pawns(ctx);
+    movegen_rooks(ctx);
+    movegen_knights(ctx);
+    movegen_bishops(ctx);
+    movegen_queens(ctx);
     movegen_king(ctx);
 }
 

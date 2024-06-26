@@ -148,7 +148,7 @@ fn movegen_capture_kingside(ctx: &mut PMGContext<impl Push<PMGMove>>) {
     }
 
     for destin in bitscan(bb & !PROMOTE_MASK) {
-        push_promote(ctx, destin - 9, destin);
+        push(ctx, destin - 9, destin);
     }
 }
 
@@ -188,7 +188,7 @@ pub fn reverse_pawn_attack(target: u8) -> RawBitboard {
         setbit!(bb, target);
         const BORDER_MASK: RawBitboard = !repeat_byte_u64(0b00000001);
         bb &= BORDER_MASK;
-        bb >>= 1;
+        bb <<= 7;
         attackers |= bb;
     }
     // Attack from kingside
@@ -197,7 +197,7 @@ pub fn reverse_pawn_attack(target: u8) -> RawBitboard {
         setbit!(bb, target);
         const BORDER_MASK: RawBitboard = !repeat_byte_u64(0b10000000);
         bb &= BORDER_MASK;
-        bb <<= 1;
+        bb <<= 9;
         attackers |= bb;
     }
     return attackers;

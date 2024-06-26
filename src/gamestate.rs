@@ -139,7 +139,7 @@ pub enum GameResult {
 pub fn status(state: &mut FastPosition) -> GameStatus {
     let has_move = count_legal_moves(state) > 0;
     if has_move { return GameStatus::Incomplete; }
-    if !state.bbs.is_check() { 
+    if !state.bbs.is_check() {
         return GameStatus::Complete(GameResult::Tie)
     }
     let victor = state.active_player().oppo();

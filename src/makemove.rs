@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 
-use crate::bitboard::RawBitboard;
+use crate::bitboard::{print_bitboard, RawBitboard};
 use crate::bits::swap_bytes_inplace_u64;
 use crate::attack::is_attacked;
 use crate::cli::print_board;
