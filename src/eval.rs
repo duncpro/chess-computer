@@ -9,7 +9,7 @@ use crate::mat_eval::matdiff;
 use crate::misc::SegVec;
 use crate::misc::max_inplace;
 use crate::movegen::dispatch::movegen_pmoves;
-use crate::movegen::moveset::MGPieceMove;
+use crate::movegen::types::PMGMove;
 use crate::movegen_castle;
 use std::time::Instant;
 
@@ -22,7 +22,7 @@ pub const MIN_EVAL_SCORE: i32 = i32::MIN + 1;
 pub struct DeepEvalContext<'a, 'b> {
     pub gstate: &'a mut FastPosition,
     pub maxdepth: u8,
-    pub pmoves: SegVec<'b, MGPieceMove>,
+    pub pmoves: SegVec<'b, PMGMove>,
     pub deadline: Instant
 }
 

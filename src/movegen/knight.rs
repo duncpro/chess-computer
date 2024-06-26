@@ -9,18 +9,18 @@ use crate::grid::StandardCoordinate;
 use crate::misc::Push;
 use crate::piece::Species;
 use crate::setbit;
-use super::moveset::MGPieceMove;
+use crate::movegen::types::PMGContext;
+use crate::movegen::types::PMGMove;
 
-pub fn movegen_knights(state: &FastPosition, moves: &mut impl Push<MGPieceMove>) {
-    let knights: Bitboard<RankMajorCS> = state.bbs.class(
-        state.active_player(), Species::Knight);
+pub fn movegen_knights(ctx: &mut PMGContext<impl Push<PMGMove>>) {
+    let knights = ctx.inspect(|s| s.bbs.class::<RankMajorCS>(
+        s.active_player(), Species::Knight));
         
     for origin in knights.scan() {
         let mut destins = knight_attack(origin);
-        destins &= !state.bbs.affilia_bbs[state.active_player()].get();
+        destins &= !ctx.inspect(|s| s.bbs.affilia_bbs[s.active_player()].get());
         for destin in destins.scan() {
-            moves.push(
-                MGPieceMove::normal(origin.into(), destin.into()));
+            ctx.push(PMGMove::new(origin.into(), destin.into()));
         }
     }
 }

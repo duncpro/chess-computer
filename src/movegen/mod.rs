@@ -7,4 +7,4 @@ pub mod queen;
 pub mod rook;
 pub mod slider;
 pub mod castle;
-pub mod moveset;
+pub mod types;

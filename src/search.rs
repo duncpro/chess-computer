@@ -8,8 +8,8 @@ use crate::makemove::unmake_move;
 use crate::makemove::swap_active;
 use crate::misc::SegVec;
 use crate::movegen::dispatch::movegen_pmoves;
-use crate::movegen::moveset::MGPieceMove;
-use crate::movegen::moveset::MGAnyMove;
+use crate::movegen::types::PMGMove;
+use crate::movegen::types::MGAnyMove;
 use crate::gamestate::FastPosition;
 use crate::grid::FileDirection;
 use std::time::Instant;
@@ -19,7 +19,7 @@ use std::time::Instant;
 pub struct SearchContext<'a, 'b> {
     pub gstate: &'a mut FastPosition,
     pub maxdepth: u8,
-    pub pmoves: SegVec<'b, MGPieceMove>,
+    pub pmoves: SegVec<'b, PMGMove>,
     pub deadline: Instant
 }
 
@@ -87,7 +87,7 @@ fn search(mut ctx: SearchContext) -> SearchResult {
 
 pub struct IterDeepSearchContext<'a, 'b> {
     gstate: &'a mut FastPosition,
-    pmoves: SegVec<'b, MGPieceMove>,
+    pmoves: SegVec<'b, PMGMove>,
     deadline: Instant
 }
 

@@ -189,6 +189,7 @@ impl<'a, T> SegVec<'a, T> {
         SegVec { vec: self.vec, begin }
     }
 
+    // TODO: Bad! Do not leak RefMut
     pub fn as_mut_slice<'b, 'c>(&'b mut self) -> RefMut<'c, [T]>
     where 'a: 'b, 'b: 'c
     {
@@ -211,6 +212,7 @@ impl<'a, T> SegVec<'a, T> {
         Self { vec, begin }
     }    
 
+    // TODO: Bad not leak Ref!
     pub fn as_slice<'b, 'c>(&'b self) -> Ref<'c, [T]>
     where 'a: 'b, 'b: 'c
     {
@@ -232,3 +234,4 @@ impl<'a, T> Push<T> for SegVec<'a, T> {
         self.vec.borrow_mut().push(value);
     }
 }
+

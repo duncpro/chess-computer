@@ -12,7 +12,7 @@ mod crights;
 mod eval;
 mod gamestate;
 mod grid;
-mod lane;
+mod laneutils;
 mod makemove;
 mod mat_eval;
 mod misc;

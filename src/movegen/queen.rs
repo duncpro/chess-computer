@@ -6,11 +6,12 @@ use crate::coordinates::FileMajorCS;
 use crate::misc::Push;
 use crate::piece::Species::Queen;
 use crate::movegen::slider::movegen_sliders;
-use crate::movegen::moveset::MGPieceMove;
+use crate::movegen::types::PMGMove;
+use crate::movegen::types::PMGContext;
 
-pub fn movegen_queens(state: &FastPosition, moves: &mut impl Push<MGPieceMove>) {
-    movegen_sliders::<FileMajorCS>(state, Queen, moves); 
-    movegen_sliders::<RankMajorCS>(state, Queen, moves);
-    movegen_sliders::<ProdiagonalMajorCS>(state, Queen, moves);
-    movegen_sliders::<AntidiagonalMajorCS>(state, Queen, moves);
+pub fn movegen_queens(ctx: &mut PMGContext<impl Push<PMGMove>>) {
+    movegen_sliders::<FileMajorCS>(ctx, Queen); 
+    movegen_sliders::<RankMajorCS>(ctx, Queen);
+    movegen_sliders::<ProdiagonalMajorCS>(ctx, Queen);
+    movegen_sliders::<AntidiagonalMajorCS>(ctx, Queen);
 }

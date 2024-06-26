@@ -12,8 +12,9 @@ use crate::grid::GridTable;
 use crate::grid::StandardCoordinate;
 use crate::misc::Push;
 use crate::misc::PushCount;
+use crate::movegen::dispatch::movegen_count;
 use crate::movegen::dispatch::movegen_pmoves;
-use crate::movegen::moveset::MGPieceMove;
+use crate::movegen::types::PMGMove;
 use crate::piece::Color;
 use crate::piece::ColorTable;
 use crate::piece::Piece;
@@ -36,11 +37,13 @@ impl FastPosition {
 
 // # Movelog
 
+#[derive(Clone, Copy)]
 pub struct MovelogEntry {
     pub prev_crights: CastlingRights,
     pub lmove: LoggedMove
 }
 
+#[derive(Clone, Copy)]
 pub enum LoggedMove {
     Castle(FileDirection),
     Piece(LoggedPieceMove)
@@ -48,7 +51,7 @@ pub enum LoggedMove {
 
 #[derive(Clone, Copy)]
 pub struct LoggedPieceMove {
-    pub mgmove: MGPieceMove,
+    pub mgmove: PMGMove,
     pub capture: Option<Piece>,
 }
 
@@ -102,12 +105,6 @@ impl Bitboards {
     pub fn is_check(&self) -> bool { 
         is_check(&self, locate_king_stdc(&self)) 
     }
-
-    pub fn status(&mut self) -> GameStatus {
-        // let mut move_count = PushCount::new();
-        // movegen_pmoves(self, )
-        todo!()
-    }
 }
 
 
@@ -136,3 +133,12 @@ pub enum GameResult {
     Tie
 }
 
+pub fn get_status(state: &mut FastPosition) -> GameStatus {
+    let has_move = movegen_count(state) > 0;
+    if has_move { return GameStatus::Incomplete; }
+    if !state.bbs.is_check() { 
+        return GameStatus::Complete(GameResult::Tie)
+    }
+    let victor = state.active_player().oppo();
+    return GameStatus::Complete(GameResult::Diff(victor));
+}

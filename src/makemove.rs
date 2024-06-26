@@ -16,7 +16,7 @@ use crate::piece::Color;
 use crate::piece::Piece;
 use crate::piece::Species;
 use crate::misc::pick;
-use crate::movegen::moveset::MGPieceMove;
+use crate::movegen::types::PMGMove;
 use crate::gamestate::FastPosition;
 use crate::rmrel::relativize;
 use crate::setbit;
@@ -61,7 +61,7 @@ pub fn swap_active(state: &mut FastPosition) {
 
 // # Make
 
-pub fn make_pmove(state: &mut FastPosition, mgmove: MGPieceMove) {
+pub fn make_pmove(state: &mut FastPosition, mgmove: PMGMove) {
     let piece = state.occupant_lut[mgmove.origin].unwrap();
     let capture = state.occupant_lut[mgmove.target];
     
@@ -198,7 +198,7 @@ pub fn unmake_move(state: &mut FastPosition) {
 /// Calculates the legality of a pseudo-legal move.
 /// This procedure returns `true` if the move is legal, 
 /// and false otherwise.
-pub fn test_pmove(state: &mut FastPosition, pmove: MGPieceMove) -> bool {
+pub fn test_pmove(state: &mut FastPosition, pmove: PMGMove) -> bool {
     make_pmove(state, pmove);
     let is_legal = !state.bbs.is_check();
     swap_active(state);

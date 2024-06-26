@@ -4,10 +4,11 @@ use crate::gamestate::FastPosition;
 use crate::misc::Push;
 use crate::piece::Species::Rook;
 use crate::movegen::slider::movegen_sliders;
-use crate::movegen::moveset::MGPieceMove;
+use crate::movegen::types::PMGMove;
+use crate::movegen::types::PMGContext;
 
-pub fn movegen_rooks(state: &FastPosition, moves: &mut impl Push<MGPieceMove>) {
-    movegen_sliders::<FileMajorCS>(state, Rook, moves);
-    movegen_sliders::<RankMajorCS>(state, Rook, moves);
+pub fn movegen_rooks(ctx: &mut PMGContext<impl Push<PMGMove>>) {
+    movegen_sliders::<FileMajorCS>(ctx, Rook);
+    movegen_sliders::<RankMajorCS>(ctx, Rook);
 }
 

@@ -3,29 +3,34 @@ use crate::coordinates::StandardCS;
 use crate::coordinates::CoordinateSystem;
 use crate::gamestate::FastPosition;
 use crate::grid::StandardCoordinate;
-use crate::lane::lanescan;
+use crate::laneutils::lanescan;
 use crate::misc::Push;
 use crate::piece::Species;
-use crate::movegen::moveset::MGPieceMove;
+use crate::movegen::types::PMGMove;
+use crate::movegen::types::PMGContext;
 
-pub fn movegen_sliders<C: CoordinateSystem>(state: &FastPosition, kind: Species,
-    moves: &mut impl Push<MGPieceMove>)
+pub fn movegen_sliders<C>(ctx: &mut PMGContext<impl Push<PMGMove>>, species: Species)
+where C: CoordinateSystem
 {
     let mut bb: Bitboard<StandardCS> = 
-        state.bbs.class(state.active_player(), kind);
+        ctx.class(ctx.active_player(), species);
     
     for origin in bb.scan() {
-        let origin_stdc: StandardCoordinate = origin.into();
-        movegen_slider::<C>(state, origin_stdc, moves);
+        movegen_slider::<C>(ctx, origin.into());
     }
 }
 
-fn movegen_slider<C: CoordinateSystem>(state: &FastPosition, origin: StandardCoordinate,
-    moves: &mut impl Push<MGPieceMove>)
+fn movegen_slider<C>(ctx: &mut PMGContext<impl Push<PMGMove>>,
+    origin: StandardCoordinate)
+where C: CoordinateSystem
 {
-    let mut bb: Bitboard<C> = lanescan(&state.bbs, origin);
-    bb &= !state.bbs.affilia_bbs[state.active_player()].get();
+    let mut bb = ctx.inspect(|s| lanescan::<C>(&s.bbs, origin));
+    
+    let friendly_bb = ctx.inspect(|s| 
+        s.bbs.affilia_bbs[s.active_player()].get::<C>());
+    bb &= !friendly_bb;
+    
     for destin in bb.scan() {
-        moves.push(MGPieceMove::normal(origin, destin.into()))
+        ctx.push(PMGMove::new(origin, destin.into()))
     }
 }

@@ -8,16 +8,17 @@ use crate::gamestate::FastPosition;
 use crate::gamestate::locate_king;
 use crate::grid::StandardCoordinate;
 use crate::misc::Push;
-use crate::movegen::moveset::MGPieceMove;
+use crate::movegen::types::PMGMove;
+use crate::movegen::types::PMGContext;
 use crate::setbit;
 
-pub fn movegen_king(state: &FastPosition, moves: &mut impl Push<MGPieceMove>) {
-    let origin: Coordinate<RankMajorCS> = locate_king(&state.bbs);
+pub fn movegen_king(ctx: &mut PMGContext<impl Push<PMGMove>>) {
+    let origin = ctx.inspect(|s| locate_king::<RankMajorCS>(&s.bbs));
+    
     let mut bb = king_attack(origin);
-    bb &= !state.bbs.occupancy();
+    bb &= !ctx.inspect(|s| s.bbs.occupancy());
     for destin in bb.scan() {
-        moves.push(MGPieceMove::normal(origin.into(), 
-            destin.into()));
+        ctx.push(PMGMove::new(origin.into(), destin.into()));
     }
 }
 
