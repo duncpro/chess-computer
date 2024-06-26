@@ -86,11 +86,14 @@ fn search(mut ctx: SearchContext) -> SearchResult {
 // # Iterative Deepening Search
 
 pub struct IterDeepSearchContext<'a, 'b> {
-    gstate: &'a mut FastPosition,
-    pmoves: SegVec<'b, PMGMove>,
-    deadline: Instant
+    pub gstate: &'a mut FastPosition,
+    pub pmoves: SegVec<'b, PMGMove>,
+    pub deadline: Instant
 }
 
+/// Conducts a time-limited search for the optimal move.
+/// If the game is ended, then there are no legal moves,
+/// so this procedure returns `None`.
 pub fn iterdeep_search(mut ctx: IterDeepSearchContext) -> Option<MGAnyMove> {
     let mut maxdepth: u8 = 0;
     let mut prev_bestmove: Option<MGAnyMove> = None;

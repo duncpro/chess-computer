@@ -12,6 +12,7 @@ use crate::gamestate::locate_king_stdc;
 use crate::grid::File;
 use crate::grid::FileDirection;
 use crate::grid::StandardCoordinate;
+use crate::movegen::types::MGAnyMove;
 use crate::piece::Color;
 use crate::piece::Piece;
 use crate::piece::Species;
@@ -122,6 +123,14 @@ pub fn make_castle(state: &mut FastPosition, side: FileDirection) {
         prev_crights,
         lmove: LoggedMove::Castle(side)
     });
+}
+
+pub fn doturn(state: &mut FastPosition, mov: MGAnyMove) {
+    match mov {
+        MGAnyMove::Piece(pmove) => make_pmove(state, pmove),
+        MGAnyMove::Castle(side) => make_castle(state, side),
+    }
+    swap_active(state);
 }
 
 // # Unmake
