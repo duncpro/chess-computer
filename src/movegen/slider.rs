@@ -9,8 +9,8 @@ use crate::piece::Species;
 use crate::movegen::types::PMGMove;
 use crate::movegen::types::PMGContext;
 
-pub fn movegen_sliders<C>(ctx: &mut PMGContext<impl Push<PMGMove>>, species: Species)
-where C: CoordinateSystem
+pub fn movegen_sliders<C>(ctx: &mut PMGContext<impl Push<PMGMove>>, 
+    species: Species) where C: CoordinateSystem
 {
     let mut bb: Bitboard<StandardCS> = 
         ctx.class(ctx.active_player(), species);
@@ -21,8 +21,7 @@ where C: CoordinateSystem
 }
 
 fn movegen_slider<C>(ctx: &mut PMGContext<impl Push<PMGMove>>,
-    origin: StandardCoordinate)
-where C: CoordinateSystem
+    origin: StandardCoordinate) where C: CoordinateSystem
 {
     let mut bb = ctx.inspect(|s| lanescan::<C>(&s.bbs, origin));
     
