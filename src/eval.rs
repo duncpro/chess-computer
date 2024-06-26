@@ -1,4 +1,4 @@
-use crate::check::is_check;
+use crate::attack::is_attacked;
 use crate::gamestate::FastPosition;
 use crate::grid::FileDirection;
 use crate::makemove::make_pmove;
@@ -33,7 +33,7 @@ pub struct DeepEvalContext<'a, 'b> {
 pub fn deep_eval(mut ctx: DeepEvalContext) -> Option<i32> {
     movegen_legal_pmoves(ctx.gstate, &mut ctx.pmoves);
 
-    // In the case there are no legal moves, its a stalemate,
+    // In the case there are no legal moves, it's a stalemate,
     // or we're in checkmate. Either way, this is not a good
     // position to be in, so it gets the minimum score.
     if ctx.pmoves.is_empty() { return Some(MIN_EVAL_SCORE); }

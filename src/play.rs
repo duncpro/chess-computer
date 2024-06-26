@@ -22,14 +22,14 @@ pub fn new_game() -> FastPosition {
     use crate::piece::Color::*;
     use crate::piece::Species::*;
     let mut state = FastPosition::default();
-    for i in 0..8u8 {
+    /* for i in 0..8u8 {
         fill_tile(&mut state, StandardCoordinate::new(
             Rank::from_index(1), File::from_index(i)),
             Piece::new(White, Pawn));
         fill_tile(&mut state, StandardCoordinate::new(
             Rank::from_index(6), File::from_index(i)),
             Piece::new(Black, Pawn));
-    }
+    } */
 
     macro_rules! fill_base_rank {
         ($color:expr) => {            
@@ -76,8 +76,10 @@ pub fn selfplay(think_time: Duration) {
     println!("New Self-Play Game");
     print_board(&state.occupant_lut);
     print!("\n");
+    prompt_ok();
     
     while matches!(status(&mut state), GameStatus::Incomplete) {
+        println!("{}'s turn to move", state.active_player());
         automove(&mut state, think_time);
         print_board(&state.occupant_lut);
         print!("\n");

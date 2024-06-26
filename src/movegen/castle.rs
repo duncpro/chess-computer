@@ -1,4 +1,4 @@
-use crate::check::is_check;
+use crate::attack::is_attacked;
 use crate::coordinates::StandardCS;
 use crate::grid::FileDirection;
 use crate::grid::StandardCoordinate;
@@ -23,14 +23,14 @@ pub fn movegen_castle_kingside(state: &mut FastPosition) -> bool{
     {
         let king_destin_file = File::from_index(6);
         let king_destin = StandardCoordinate::new(base_rank, king_destin_file);
-        can_castle &= !is_check(&state.bbs, king_destin);
+        can_castle &= !is_attacked(&state.bbs, king_destin);
         can_castle &= !state.bbs.occupancy::<StandardCS>()
             .includes(king_destin.into());
     }
     {
         let rook_destin_file = File::from_index(5);
         let rook_destin = StandardCoordinate::new(base_rank, rook_destin_file);   
-        can_castle &= !is_check(&state.bbs, rook_destin);
+        can_castle &= !is_attacked(&state.bbs, rook_destin);
         can_castle &= !state.bbs.occupancy::<StandardCS>()
             .includes(rook_destin.into());
     }
@@ -47,14 +47,14 @@ pub fn movegen_castle_queenside(state: &mut FastPosition) -> bool {
     {    
         let king_destin_file = File::from_index(2);
         let king_destin = StandardCoordinate::new(base_rank, king_destin_file);
-        can_castle &= !is_check(&state.bbs, king_destin);
+        can_castle &= !is_attacked(&state.bbs, king_destin);
         can_castle &= !state.bbs.occupancy::<StandardCS>()
             .includes(king_destin.into());
     }
     {
         let rook_destin_file = File::from_index(3);
         let rook_destin = StandardCoordinate::new(base_rank, rook_destin_file);
-        can_castle &= !is_check(&state.bbs, rook_destin);
+        can_castle &= !is_attacked(&state.bbs, rook_destin);
         can_castle &= !state.bbs.occupancy::<StandardCS>()
             .includes(rook_destin.into());
     }

@@ -2,7 +2,8 @@ use std::cell::RefCell;
 
 use crate::bitboard::RawBitboard;
 use crate::bits::swap_bytes_inplace_u64;
-use crate::check::is_check;
+use crate::attack::is_attacked;
+use crate::cli::print_board;
 use crate::crights::update_crights;
 use crate::gamestate::LoggedMove;
 use crate::gamestate::LoggedPieceMove;
@@ -135,7 +136,7 @@ pub fn doturn(state: &mut FastPosition, mov: MGAnyMove) {
 
 // # Unmake
 
-fn unmake_pmove(state: &mut FastPosition, pmove: LoggedPieceMove) { 
+fn unmake_pmove(state: &mut FastPosition, pmove: LoggedPieceMove) {
     let is_promote = (pmove.mgmove.special == Some(SpecialPieceMove::Promote));
     let species = pick(is_promote, Species::Pawn, 
         state.occupant_lut[pmove.mgmove.destin].unwrap().species());

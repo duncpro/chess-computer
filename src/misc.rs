@@ -56,10 +56,10 @@ pub const fn const_min_u8(left: u8, right: u8) -> u8 {
     if left < right { left } else { right }
 }
 
-pub const fn pick<T>(condition: bool, left: T, right: T) -> T 
+pub const fn pick<T>(condition: bool, if_true: T, if_false: T) -> T
 where T: Copy
 {
-    let lut: [T; 2] = [left, right];
+    let lut: [T; 2] = [if_false, if_true];
     return lut[condition as usize];
 }
 
@@ -199,9 +199,10 @@ impl<'a, T> SegVec<'a, T> {
     pub fn retain<F>(&mut self, mut f: F)
     where F: FnMut(&T) -> bool
     {
-        for i in (self.begin..self.vec_cell.borrow().len()).rev() {
-            let retained = f(&self.vec_cell.borrow()[i]);
-            if !retained { self.vec_cell.borrow_mut().remove(i); }
+        let mut vec = self.vec_cell.borrow_mut();
+        for i in (self.begin..vec.len()).rev() {
+            let retained = f(&vec[i]);
+            if !retained { vec.remove(i); }
         }
     }
 

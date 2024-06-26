@@ -1,7 +1,8 @@
 use crate::bitboard::Bitboard;
 use crate::bitboard::MDBitboard;
 use crate::bitboard::RawBitboard;
-use crate::check::is_check;
+use crate::attack::is_attacked;
+use crate::cli::print_board;
 use crate::coordinates::Coordinate;
 use crate::coordinates::CoordinateSystem;
 use crate::coordinates::StandardCS;
@@ -105,7 +106,7 @@ impl Bitboards {
 
     /// Determines if the active-player's king is in check.
     pub fn is_check(&self) -> bool { 
-        is_check(&self, locate_king_stdc(&self)) 
+        is_attacked(&self, locate_king_stdc(&self))
     }
 }
 

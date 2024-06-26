@@ -10,7 +10,7 @@ use play::selfplay;
 
 mod bitboard;
 mod bits;
-mod check;
+mod attack;
 mod cli;
 mod coordinates;
 mod crights;

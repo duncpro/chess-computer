@@ -53,9 +53,12 @@ fn search(mut ctx: SearchContext) -> SearchResult {
                 deadline: ctx.deadline, });
             unmake_move(ctx.gstate);
             match result {
-                Some(score) => if score > best_score {
-                    best_move = Some($mgmove);
-                    best_score = score;
+                Some(child_score) => {
+                    let score = child_score * -1;
+                    if score > best_score {
+                        best_move = Some($mgmove);
+                        best_score = score;
+                    }
                 },
                 None => return SearchResult::DeadlineElapsed,
             }
@@ -101,8 +104,10 @@ pub fn iterdeep_search(mut ctx: IterDeepSearchContext) -> Option<MGAnyMove> {
         let result = search(SearchContext { gstate: ctx.gstate, maxdepth, 
             pmoves: ctx.pmoves.extend(), deadline: ctx.deadline });
         match result {
-            SearchResult::DeadlineElapsed => { assert!(maxdepth > 0); break }, 
-            SearchResult::Completed(bestmove) => prev_bestmove = bestmove,
+            SearchResult::DeadlineElapsed =>
+                { assert!(maxdepth > 0); break },
+            SearchResult::Completed(bestmove) =>
+                prev_bestmove = bestmove,
         }
         maxdepth += 1;
     }

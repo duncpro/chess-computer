@@ -11,33 +11,35 @@ use crate::gamestate::locate_king;
 use crate::gamestate::locate_king_stdc;
 use crate::grid::StandardCoordinate;
 use crate::laneutils::lanelimit;
+use crate::movegen::king::king_attack;
 use crate::piece::Color;
 use crate::piece::Species;
 use crate::movegen::knight::knight_attack;
 use crate::movegen::pawn::reverse_pawn_attack;
 use crate::rmrel::relativize;
 
-/// Determines if a hypothetical king placed on `vuln_sq` is currently 
-/// checked by the opponent.
-pub fn is_check(board: &Bitboards, vuln_sq: StandardCoordinate) -> bool {
-    let mut check: bool = false;
-    let args = CheckQuery { board,  vuln_sq };
-    check |= is_check_pawn(args);
-    check |= is_check_rankslide(args);
-    check |= is_check_fileslide(args);
-    check |= is_check_prodiag_slide(args);
-    check |= is_check_antidiag_slide(args);
-    check |= is_check_knight(args);
-    return check;
+/// Determines if a hypothetical piece placed on `vuln_sq` is currently
+/// targeted by the opponent.
+pub fn is_attacked(board: &Bitboards, vuln_sq: StandardCoordinate) -> bool {
+    let mut attacked: bool = false;
+    let args = AttackQuery { board,  vuln_sq };
+    attacked |= is_attacked_pawn(args);
+    attacked |= is_attacked_rankslide(args);
+    attacked |= is_attacked_fileslide(args);
+    attacked |= is_attacked_prodiag_slide(args);
+    attacked |= is_attacked_antidiag_slide(args);
+    attacked |= is_attacked_knight(args);
+    attacked |= is_attacked_king(args);
+    return attacked;
 }
 
 #[derive(Clone, Copy)]
-struct CheckQuery<'a> { 
+struct AttackQuery<'a> {
     board: &'a Bitboards,
-    vuln_sq: StandardCoordinate 
+    vuln_sq: StandardCoordinate
 }
 
-fn is_check_pawn(args: CheckQuery) -> bool {
+fn is_attacked_pawn(args: AttackQuery) -> bool {
     let king_rmrel = relativize(locate_king_stdc(args.board),
         args.board.active_player);
 
@@ -48,7 +50,7 @@ fn is_check_pawn(args: CheckQuery) -> bool {
     return bb != 0;
 }
 
-fn is_check_rankslide(args: CheckQuery) -> bool {
+fn is_attacked_rankslide(args: AttackQuery) -> bool {
     let mut bb: Bitboard<RankMajorCS> = Bitboard::empty();
     bb |= args.board.species_bbs[Species::Rook].get();
     bb |= args.board.species_bbs[Species::Queen].get();
@@ -57,7 +59,7 @@ fn is_check_rankslide(args: CheckQuery) -> bool {
     return bb.is_not_empty();
 }
 
-fn is_check_fileslide(args: CheckQuery) -> bool {
+fn is_attacked_fileslide(args: AttackQuery) -> bool {
     let mut bb: Bitboard<FileMajorCS> = Bitboard::empty();
     bb |= args.board.species_bbs[Species::Rook].get();
     bb |= args.board.species_bbs[Species::Queen].get();
@@ -66,7 +68,7 @@ fn is_check_fileslide(args: CheckQuery) -> bool {
     return bb.is_not_empty();
 }
 
-fn is_check_prodiag_slide(args: CheckQuery) -> bool {
+fn is_attacked_prodiag_slide(args: AttackQuery) -> bool {
     let mut bb: Bitboard<ProdiagonalMajorCS> = Bitboard::empty();
     bb |= args.board.species_bbs[Species::Bishop].get();
     bb |= args.board.species_bbs[Species::Queen].get();
@@ -75,7 +77,7 @@ fn is_check_prodiag_slide(args: CheckQuery) -> bool {
     return bb.is_not_empty();
 }
 
-fn is_check_antidiag_slide(args: CheckQuery) -> bool {
+fn is_attacked_antidiag_slide(args: AttackQuery) -> bool {
     let mut bb: Bitboard<AntidiagonalMajorCS> = Bitboard::empty();
     bb |= args.board.species_bbs[Species::Bishop].get();
     bb |= args.board.species_bbs[Species::Queen].get();
@@ -84,9 +86,16 @@ fn is_check_antidiag_slide(args: CheckQuery) -> bool {
     return bb.is_not_empty();
 }
 
-fn is_check_knight(args: CheckQuery) -> bool {
+fn is_attacked_knight(args: AttackQuery) -> bool {
     let mut bb: Bitboard<RankMajorCS> = Bitboard::empty();
     bb = args.board.class(args.board.active_player.oppo(), Species::Knight);
     bb &= knight_attack(args.vuln_sq.into());
+    return bb.is_not_empty();
+}
+
+fn is_attacked_king(args: AttackQuery) -> bool {
+    let mut bb: Bitboard<RankMajorCS> = Bitboard::empty();
+    bb = args.board.class(args.board.active_player.oppo(), Species::King);
+    bb &= king_attack(args.vuln_sq.into());
     return bb.is_not_empty();
 }

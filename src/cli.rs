@@ -12,7 +12,7 @@ pub fn get_unicode_symbol(piece: Piece) -> &'static str {
             Pawn   => "♙",
             Rook   => "♖",
             Knight => "♘",
-            Bishop => "♙",
+            Bishop => "♗",
             Queen  => "♕",
             King   => "♔",
         },
@@ -29,6 +29,7 @@ pub fn get_unicode_symbol(piece: Piece) -> &'static str {
 
 pub fn print_board(board: &GridTable<Option<Piece>>) {
     let mut i: u8 = 0;
+    print!("\n");
     for _ in 0..8 {
         for _ in 0..8 {
             let coord = StandardCoordinate::from_index(i);
