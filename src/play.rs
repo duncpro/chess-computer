@@ -69,7 +69,7 @@ pub fn automove(gstate: &mut FastPosition, think_time: Duration) {
         gstate, movebuf: SegVec::new(&mut RefCell::default()),
         deadline: Instant::now() + think_time });
 
-    println!("Depth: {} (ply(s) considered)", search_result.depth_achieved);
+    println!("Depth: {} (plys considered)", search_result.depth_achieved);
 
     if let MGAnyMove::Piece(piece_move) = search_result.bestmove {
         println!("Move: {} to {}", piece_move.origin, piece_move.destin);

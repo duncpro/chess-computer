@@ -32,5 +32,5 @@ use crate::movegen::king::king_attack;
 use crate::movegen::knight::knight_attack;
 
 fn main() {
-    selfplay(Duration::from_millis(25 * 1000));
+    selfplay(Duration::from_millis(5 * 1000));
 }
