@@ -21,7 +21,7 @@ use std::time::Instant;
 
 // # Search
 
-pub struct SearchContext<'a, 'b> {
+struct SearchContext<'a, 'b> {
     pub gstate: &'a mut FastPosition,
     /// The `lookahead` (as in [`DeepEvilWDeadlineContext`]) used when
     /// evaluating each position resultant from each legal move
