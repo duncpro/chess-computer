@@ -34,7 +34,7 @@ pub fn movegen_pawns(ctx: &mut PMGContext<impl Push<PMGMove>>) {
 fn movegen_forward1(ctx: &mut PMGContext<impl Push<PMGMove>>) {
     let mut bb: RawBitboard = 0;
 
-    // Select all of the active-player's pawns.
+    // Select the active-player's pawns.
     bb =  ctx.inspect(|s| s.bbs.affilia_rel_bbs[s.active_player()]);
     bb &= ctx.inspect(|s| s.bbs.pawn_rel_bb);
     
@@ -42,7 +42,7 @@ fn movegen_forward1(ctx: &mut PMGContext<impl Push<PMGMove>>) {
     // the opponent.
     bb <<= 8;
 
-    // Filter out all pawns intersecting an occupied square.
+    // Filter out pawns intersecting occupied squares.
     bb &= !ctx.inspect(|s| s.bbs.rel_occupancy());
 
     const PROMOTE_MASK: RawBitboard = 0b11111111 << (8 * 7);
@@ -58,7 +58,7 @@ fn movegen_forward1(ctx: &mut PMGContext<impl Push<PMGMove>>) {
 fn movegen_forward2(ctx: &mut PMGContext<impl Push<PMGMove>>) {
     let mut bb: RawBitboard = 0;
 
-    // Select all of the active-player's pawns.
+    // Select the active-player's pawns.
     bb =  ctx.inspect(|s| s.bbs.affilia_rel_bbs[s.active_player()]);
     bb &= ctx.inspect(|s| s.bbs.pawn_rel_bb);
 

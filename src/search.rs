@@ -1,6 +1,9 @@
-use crate::eval::DeepEvalContext;
-use crate::eval::MIN_EVAL_SCORE;
-use crate::eval::deep_eval;
+use crate::eval::DeadlineElapsed;
+use crate::eval::DeepEvalWDeadlineContext;
+use crate::eval::MIN_SCORE;
+use crate::eval::deep_eval_w_deadline;
+use crate::eval::eval_shallow;
+use crate::misc::Max;
 use crate::movegen_castle;
 use crate::makemove::make_pmove;
 use crate::makemove::make_castle;
@@ -12,105 +15,115 @@ use crate::movegen::types::PMGMove;
 use crate::movegen::types::MGAnyMove;
 use crate::gamestate::FastPosition;
 use crate::grid::FileDirection;
+use crate::movegen::castle::movegen_castle_queenside;
+use crate::movegen::castle::movegen_castle_kingside;
 use std::time::Instant;
 
 // # Search
 
 pub struct SearchContext<'a, 'b> {
     pub gstate: &'a mut FastPosition,
-    pub maxdepth: u8,
-    pub pmoves: SegVec<'b, PMGMove>,
+    /// The `lookahead` (as in [`EvalDeepDeadlineContext`]) used when
+    /// evaluating each position resultant from each legal move
+    /// the active-player has to choose from.
+    pub eval_lookahead: u8,
+    pub movebuf: SegVec<'b, PMGMove>,
     pub deadline: Instant
 }
 
-enum SearchResult {
-    DeadlineElapsed,
-    Completed(Option<MGAnyMove>)
-}
+/// Conducts a time-limited depth-first search for the optimal/
+/// approximately optimal move. 
+///
+/// This procedure assumes that the game **is not** concluded,
+/// and so there **must be** an optimal move. If this procedure
+/// is called while the game is completed (there are no legal moves)
+/// it will [`panic`]. When the deadline elapses, search is cancelled and
+/// `Err(DeadlineElapsed)` is returned.
+fn search(mut ctx: SearchContext) -> Result<MGAnyMove, DeadlineElapsed> {
+    let mut best: Max<MGAnyMove, i32> = Max::new(MIN_SCORE);
 
-/// Conducts a depth-limited time-limited search for the 
-/// optimal move. 
-/// - If the deadline elapses before the search completes, 
-///   `SearchResult::DeadlineElapsed` is returned. 
-/// - If the maximum depth is exhausted before reaching
-///   a conclusion, the approximate optimal move is returned.
-/// - If the player has no legal moves, `SearchResult::Completed(None)` 
-///   is returned. 
-/// 
-/// Note that when the maximum depth is set to zero, this procedure
-/// will *never* return `SearchResult::DeadlineElapsed`. Instead,
-/// it will perform a complete but shallow evaluation of each move,
-/// regardless of the imposed deadline.
-fn search(mut ctx: SearchContext) -> SearchResult {
-    let mut best_move: Option<MGAnyMove> = None;
-    let mut best_score: i32 = MIN_EVAL_SCORE;
-
-    macro_rules! eval_child {
-        ($mgmove:expr) => { 
-            swap_active(ctx.gstate);
-            let result = deep_eval(DeepEvalContext { gstate: ctx.gstate,
-                maxdepth: ctx.maxdepth, pmoves: ctx.pmoves.extend(),
-                deadline: ctx.deadline, });
-            unmake_move(ctx.gstate);
-            match result {
-                Some(child_score) => {
-                    let score = child_score * -1;
-                    if score >= best_score {
-                        best_move = Some($mgmove);
-                        best_score = score;
-                    }
-                },
-                None => return SearchResult::DeadlineElapsed,
-            }
-        };
+    fn eval_unmake(ctx: &mut SearchContext) -> Result<i32, DeadlineElapsed> {
+        swap_active(ctx.gstate);
+        let score = deep_eval_w_deadline(DeepEvalWDeadlineContext { 
+            gstate: ctx.gstate, lookahead: ctx.eval_lookahead, 
+            movebuf: ctx.movebuf.extend(), deadline: ctx.deadline });
+        unmake_move(ctx.gstate);
+        return Ok(score? * -1);
     }
-    
-    movegen_legal_pmoves(ctx.gstate, &mut ctx.pmoves);
-    while let Some(pmove) = ctx.pmoves.pop() {
+       
+    movegen_legal_pmoves(ctx.gstate, &mut ctx.movebuf); 
+    while let Some(pmove) = ctx.movebuf.pop() {        
         make_pmove(ctx.gstate, pmove);
-        eval_child!(MGAnyMove::Piece(pmove));
+        best.push(MGAnyMove::Piece(pmove), eval_unmake(&mut ctx)?);
+    }
+    if movegen_castle_queenside(ctx.gstate) {
+        make_castle(ctx.gstate, FileDirection::Queenside);
+        best.push(MGAnyMove::Castle(FileDirection::Queenside), eval_unmake(&mut ctx)?);
+    }
+    if movegen_castle_kingside(ctx.gstate) {
+        make_castle(ctx.gstate, FileDirection::Kingside);
+        best.push(MGAnyMove::Castle(FileDirection::Kingside), eval_unmake(&mut ctx)?);
     }
 
-    macro_rules! eval_castle { 
-        ($side:ident) => {
-            if movegen_castle!($side, ctx.gstate) {
-                make_castle(ctx.gstate, FileDirection::$side);
-                eval_child!(MGAnyMove::Castle(FileDirection::$side));
-            }
-        };
-    }
-
-    eval_castle!(Kingside);
-    eval_castle!(Queenside);
-
-    return SearchResult::Completed(best_move);
+    return Ok(best.take().unwrap());
 }
+
+
+pub fn search_shallow(gstate: &mut FastPosition, mut movebuf: SegVec<PMGMove>) -> MGAnyMove {
+    let mut best: Max<MGAnyMove, i32> = Max::new(MIN_SCORE);
+
+    fn eval_unmake(gstate: &mut FastPosition) -> i32 {
+        swap_active(gstate);
+        let score = -1 * eval_shallow(gstate);
+        unmake_move(gstate);
+        return score;
+    }
+       
+    movegen_legal_pmoves(gstate, &mut movebuf); 
+    while let Some(pmove) = movebuf.pop() {        
+        make_pmove(gstate, pmove);
+        best.push(MGAnyMove::Piece(pmove), eval_unmake(gstate));
+    }
+    if movegen_castle_queenside(gstate) {
+        make_castle(gstate, FileDirection::Queenside);
+        best.push(MGAnyMove::Castle(FileDirection::Queenside), eval_unmake(gstate));
+    }
+    if movegen_castle_kingside(gstate) {
+        make_castle(gstate, FileDirection::Kingside);
+        best.push(MGAnyMove::Castle(FileDirection::Kingside), eval_unmake(gstate));
+    }
+
+    return best.take().unwrap();
+}
+
 
 // # Iterative Deepening Search
 
 pub struct IterDeepSearchContext<'a, 'b> {
     pub gstate: &'a mut FastPosition,
-    pub pmoves: SegVec<'b, PMGMove>,
+    pub movebuf: SegVec<'b, PMGMove>,
     pub deadline: Instant
+}
+
+pub struct IterDeepSearchResult {
+    pub bestmove: MGAnyMove,
+    pub depth_achieved: u8
 }
 
 /// Conducts a time-limited search for the optimal move.
 /// If the game is ended, then there are no legal moves,
 /// so this procedure returns `None`.
-pub fn iterdeep_search(mut ctx: IterDeepSearchContext) -> Option<MGAnyMove> {
-    let mut maxdepth: u8 = 0;
-    let mut prev_bestmove: Option<MGAnyMove> = None;
+pub fn iterdeep_search(mut ctx: IterDeepSearchContext) -> IterDeepSearchResult {
+    let mut bestmove = search_shallow(ctx.gstate, ctx.movebuf.extend());
+    let mut eval_lookahead: u8 = 1;
     loop {
-        let result = search(SearchContext { gstate: ctx.gstate, maxdepth, 
-            pmoves: ctx.pmoves.extend(), deadline: ctx.deadline });
+        let result = search(SearchContext { gstate: ctx.gstate, eval_lookahead, 
+            movebuf: ctx.movebuf.extend(), deadline: ctx.deadline });
         match result {
-            SearchResult::DeadlineElapsed =>
-                { assert!(maxdepth > 0); break },
-            SearchResult::Completed(bestmove) =>
-                prev_bestmove = bestmove,
+            Err(DeadlineElapsed) => break,
+            Ok(mov) => bestmove = mov,
         }
-        maxdepth += 1;
+        eval_lookahead += 1;
     }
-    println!("Reached depth {}", maxdepth);
-    return prev_bestmove;
+    return IterDeepSearchResult { bestmove, depth_achieved: eval_lookahead };
 }

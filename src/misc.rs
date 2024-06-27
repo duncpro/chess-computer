@@ -69,6 +69,25 @@ where T: Ord + Copy
     *left = std::cmp::max(*left, right);
 }
 
+// # Max
+
+pub struct Max<T, V: Ord> { obj: Option<T>, value: V }
+
+impl<T, V: Ord> Max<T, V> {
+    pub fn new(min: V) -> Self {
+        Self { obj: None, value: min }
+    }
+    
+    pub fn push(&mut self, obj: T, value: V) {
+        if value >= self.value {
+            self.obj = Some(obj);
+            self.value = value;
+        }
+    }
+
+    pub fn take(self) -> Option<T> { self.obj }
+}
+
 /// This macro provides support for enum tables. An enum table is a wrapper 
 /// around an array that implements [`std::ops::Index`] and [`std::ops::IndexMut`]
 /// so that the table can be indexed by the enum directly instead of indirectly though

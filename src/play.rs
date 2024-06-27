@@ -65,16 +65,17 @@ pub fn automove(gstate: &mut FastPosition, think_time: Duration) {
 
     println!("Legal Move Count: {}", count_legal_moves(gstate));
     
-    let best_move = iterdeep_search(IterDeepSearchContext {
-        gstate, pmoves: SegVec::new(&mut RefCell::default()),
-        deadline: Instant::now() + think_time }).unwrap();
+    let search_result = iterdeep_search(IterDeepSearchContext {
+        gstate, movebuf: SegVec::new(&mut RefCell::default()),
+        deadline: Instant::now() + think_time });
 
-    if let MGAnyMove::Piece(piece_move) = best_move {
+    println!("Depth: {} (ply(s) considered)", search_result.depth_achieved);
+
+    if let MGAnyMove::Piece(piece_move) = search_result.bestmove {
         println!("Move: {} to {}", piece_move.origin, piece_move.destin);
     }
 
-
-    doturn(gstate, best_move);
+    doturn(gstate, search_result.bestmove);
  }
 
 
