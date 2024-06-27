@@ -208,7 +208,7 @@ pub struct SegVec<'a, T>
 }
 
 impl<'a, T> SegVec<'a, T> {
-    pub fn extend<'b, 'c>(&'b self) -> SegVec<'c, T> 
+    pub fn extend<'b, 'c>(&'b mut self) -> SegVec<'c, T> 
     where 'a: 'b, 'b: 'c 
     {
         let begin = self.vec_cell.borrow().len();
@@ -257,4 +257,3 @@ impl<'a, T> Push<T> for SegVec<'a, T> {
         self.vec_cell.borrow_mut().push(value);
     }
 }
-
