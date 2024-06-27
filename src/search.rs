@@ -52,9 +52,9 @@ fn search(mut ctx: SearchContext) -> Result<MGAnyMove, DeadlineElapsed> {
             deadline: ctx.deadline, cutoff: best.value() });
         unmake_move(ctx.gstate);
         match result {
-            Ok(score) => { best.push(mov, score * -1); Ok(()) },
             Err(DeepEvalException::DeadlineElapsed) => Err(DeadlineElapsed),
             Err(DeepEvalException::Cut) => Ok(()),
+            Ok(score) => { best.push(mov, score * -1); Ok(()) }
         }
     }
        
@@ -65,12 +65,12 @@ fn search(mut ctx: SearchContext) -> Result<MGAnyMove, DeadlineElapsed> {
      }
     if movegen_castle_queenside(ctx.gstate) {
         make_castle(ctx.gstate, FileDirection::Queenside);
-        eval_unmake(&mut ctx, &mut best, 
+        eval_unmake(&mut ctx, &mut best,
             MGAnyMove::Castle(FileDirection::Queenside))?;
     }
     if movegen_castle_kingside(ctx.gstate) {
         make_castle(ctx.gstate, FileDirection::Kingside);
-        eval_unmake(&mut ctx, &mut best, 
+        eval_unmake(&mut ctx, &mut best,
             MGAnyMove::Castle(FileDirection::Kingside))?;
     }
 

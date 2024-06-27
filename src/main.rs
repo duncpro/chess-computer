@@ -22,13 +22,9 @@ mod rmrel;
 mod search;
 mod sliders;
 
-use std::time::Duration;
-use crate::play::selfplay;
-use crate::bitboard::print_bitboard;
-use crate::grid::{File, Rank, StandardCoordinate};
-use crate::movegen::king::king_attack;
-use crate::movegen::knight::knight_attack;
 
 fn main() {
-    selfplay(Duration::from_millis(5 * 1000));
+    use std::time::Duration;
+    use crate::play::selfplay;
+    selfplay(Duration::from_millis(10 * 1000));
 }

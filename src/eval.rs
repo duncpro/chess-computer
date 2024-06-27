@@ -21,11 +21,15 @@ pub const MIN_SCORE: i32 = i32::MIN + 1;
 pub struct DeepEvalContext<'a, 'b> {
     pub gstate: &'a mut FastPosition,
     /// The number of complete plys to play-out before applying 
-    /// the heuristic score function to the position. When zero
-    /// the aforementioned function is applied immediately.
+    /// the heuristic score function to the position. When zero,
+    /// the heuristic score function is applied immediately.
     pub lookahead: u8,
     pub movebuf: SegVec<'b, PMGMove>,
     pub deadline: Instant,
+    /// The best score that the parent is assured of.
+    /// If a move is encountered which a score less than `cutoff`,
+    /// this branch is pruned (not explored), as the opponent
+    /// will surely take this branch, and so it is not interesting.
     pub cutoff: i32
 }
 
@@ -38,8 +42,8 @@ pub enum DeepEvalException {
 /// given perfect play. When the deadline elapses, search is
 /// cancelled and `Err(DeadlineElapsed)` is returned.
 pub fn deep_eval(mut ctx: DeepEvalContext) -> Result<i32, DeepEvalException> {
-    if Instant::now() > ctx.deadline { 
-        return Err(DeepEvalException::DeadlineElapsed); }
+    use DeepEvalException::*;
+    if Instant::now() > ctx.deadline { return Err(DeadlineElapsed); }
     movegen_legal_pmoves(ctx.gstate, &mut ctx.movebuf);
     // In the case there are no legal moves, it's a stalemate,
     // or we're in checkmate. Either way, this is not a good
@@ -58,11 +62,10 @@ pub fn deep_eval(mut ctx: DeepEvalContext) -> Result<i32, DeepEvalException> {
             deadline: ctx.deadline, cutoff: *best_score });
         unmake_move(ctx.gstate);
         match result {
-            Err(DeepEvalException::DeadlineElapsed) => 
-                Err(DeepEvalException::DeadlineElapsed),
+            Err(DeadlineElapsed) => Err(DeadlineElapsed),
             Err(DeepEvalException::Cut) => Ok(()),
             Ok(score) => {
-                if ctx.cutoff > score { return Err(DeepEvalException::Cut); }
+                if score * -1 > ctx.cutoff * -1 { return Err(Cut); }
                 max_inplace(best_score, -1 * score);
                 Ok(())
             },
