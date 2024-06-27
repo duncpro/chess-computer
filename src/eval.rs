@@ -1,4 +1,3 @@
-use crate::attack::is_attacked;
 use crate::gamestate::FastPosition;
 use crate::grid::FileDirection;
 use crate::makemove::make_pmove;
@@ -12,34 +11,35 @@ use crate::movegen::castle::movegen_castle_kingside;
 use crate::movegen::castle::movegen_castle_queenside;
 use crate::movegen::dispatch::count_legal_moves;
 use crate::movegen::dispatch::movegen_legal_pmoves;
-use crate::movegen::types::MGAnyMove;
 use crate::movegen::types::PMGMove;
-use crate::movegen_castle;
 use std::time::Instant;
 
 pub const MIN_SCORE: i32 = i32::MIN + 1;
 
 // # Time Constrained Evaluation
 
-pub struct DeepEvalWDeadlineContext<'a, 'b> {
+pub struct DeepEvalContext<'a, 'b> {
     pub gstate: &'a mut FastPosition,
     /// The number of complete plys to play-out before applying 
     /// the heuristic score function to the position. When zero
     /// the aforementioned function is applied immediately.
     pub lookahead: u8,
     pub movebuf: SegVec<'b, PMGMove>,
-    pub deadline: Instant
+    pub deadline: Instant,
+    pub cutoff: i32
 }
 
-pub struct DeadlineElapsed;
+pub enum DeepEvalException {
+    DeadlineElapsed,
+    Cut
+}
 
 /// Computes the lowest score the active-player is assured of
 /// given perfect play. When the deadline elapses, search is
 /// cancelled and `Err(DeadlineElapsed)` is returned.
-pub fn deep_eval_w_deadline(mut ctx: DeepEvalWDeadlineContext) 
--> Result<i32, DeadlineElapsed> 
-{
-    if Instant::now() > ctx.deadline { return Err(DeadlineElapsed); }
+pub fn deep_eval(mut ctx: DeepEvalContext) -> Result<i32, DeepEvalException> {
+    if Instant::now() > ctx.deadline { 
+        return Err(DeepEvalException::DeadlineElapsed); }
     movegen_legal_pmoves(ctx.gstate, &mut ctx.movebuf);
     // In the case there are no legal moves, it's a stalemate,
     // or we're in checkmate. Either way, this is not a good
@@ -49,16 +49,24 @@ pub fn deep_eval_w_deadline(mut ctx: DeepEvalWDeadlineContext)
      
     let mut best_score: i32 = MIN_SCORE;
 
-    fn eval_unmake(ctx: &mut DeepEvalWDeadlineContext, best_score: &mut i32)
-    -> Result<(), DeadlineElapsed>
+    fn eval_unmake(ctx: &mut DeepEvalContext, best_score: &mut i32)
+    -> Result<(), DeepEvalException>
     {
         swap_active(ctx.gstate);
-        let score = deep_eval_w_deadline(DeepEvalWDeadlineContext { 
-            gstate: ctx.gstate, lookahead: ctx.lookahead - 1, 
-            movebuf: ctx.movebuf.extend(), deadline: ctx.deadline });
+        let result = deep_eval(DeepEvalContext { gstate: ctx.gstate, 
+            lookahead: ctx.lookahead - 1, movebuf: ctx.movebuf.extend(), 
+            deadline: ctx.deadline, cutoff: *best_score });
         unmake_move(ctx.gstate);
-        max_inplace(best_score, -1 * score?);
-        return Ok(());
+        match result {
+            Err(DeepEvalException::DeadlineElapsed) => 
+                Err(DeepEvalException::DeadlineElapsed),
+            Err(DeepEvalException::Cut) => Ok(()),
+            Ok(score) => {
+                if ctx.cutoff > score { return Err(DeepEvalException::Cut); }
+                max_inplace(best_score, -1 * score);
+                Ok(())
+            },
+        }
     }
     
     while let Some(pmove) = ctx.movebuf.pop() {        

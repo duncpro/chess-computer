@@ -5,17 +5,6 @@ use crate::grid::StandardCoordinate;
 use crate::grid::File;
 use crate::gamestate::FastPosition;
 
-#[macro_export]
-macro_rules! movegen_castle {
-    ($side:ident /* either Kingside or Queenside */, $state:expr) => {{
-        ::paste::paste! {
-            use crate::movegen::castle::movegen_castle_kingside;
-            use crate::movegen::castle::movegen_castle_queenside;
-            [< movegen_castle _ $side:lower >]($state)
-        }}
-    };
-}
-
 pub fn movegen_castle_kingside(state: &mut FastPosition) -> bool{    
     let mut can_castle = false;
         

@@ -1,10 +1,9 @@
-use crate::eval::DeadlineElapsed;
-use crate::eval::DeepEvalWDeadlineContext;
+use crate::eval::DeepEvalContext;
+use crate::eval::DeepEvalException;
 use crate::eval::MIN_SCORE;
-use crate::eval::deep_eval_w_deadline;
+use crate::eval::deep_eval;
 use crate::eval::shallow_eval;
 use crate::misc::Max;
-use crate::movegen_castle;
 use crate::makemove::make_pmove;
 use crate::makemove::make_castle;
 use crate::makemove::unmake_move;
@@ -31,6 +30,8 @@ struct SearchContext<'a, 'b> {
     pub deadline: Instant
 }
 
+pub struct DeadlineElapsed;
+
 /// Conducts a time-limited depth-first search for the optimal/
 /// approximately optimal move. 
 ///
@@ -42,27 +43,35 @@ struct SearchContext<'a, 'b> {
 fn search(mut ctx: SearchContext) -> Result<MGAnyMove, DeadlineElapsed> {
     let mut best: Max<MGAnyMove, i32> = Max::new(MIN_SCORE);
 
-    fn eval_unmake(ctx: &mut SearchContext) -> Result<i32, DeadlineElapsed> {
+    fn eval_unmake(ctx: &mut SearchContext, best: &mut Max<MGAnyMove, i32>, 
+        mov: MGAnyMove) -> Result<(), DeadlineElapsed> 
+    {
         swap_active(ctx.gstate);
-        let score = deep_eval_w_deadline(DeepEvalWDeadlineContext { 
-            gstate: ctx.gstate, lookahead: ctx.eval_lookahead, 
-            movebuf: ctx.movebuf.extend(), deadline: ctx.deadline });
+        let result = deep_eval(DeepEvalContext { gstate: ctx.gstate, 
+            lookahead: ctx.eval_lookahead, movebuf: ctx.movebuf.extend(), 
+            deadline: ctx.deadline, cutoff: best.value() });
         unmake_move(ctx.gstate);
-        return Ok(score? * -1);
+        match result {
+            Ok(score) => { best.push(mov, score * -1); Ok(()) },
+            Err(DeepEvalException::DeadlineElapsed) => Err(DeadlineElapsed),
+            Err(DeepEvalException::Cut) => Ok(()),
+        }
     }
        
     movegen_legal_pmoves(ctx.gstate, &mut ctx.movebuf); 
     while let Some(pmove) = ctx.movebuf.pop() {        
         make_pmove(ctx.gstate, pmove);
-        best.push(MGAnyMove::Piece(pmove), eval_unmake(&mut ctx)?);
-    }
+        eval_unmake(&mut ctx, &mut best, MGAnyMove::Piece(pmove))?;
+     }
     if movegen_castle_queenside(ctx.gstate) {
         make_castle(ctx.gstate, FileDirection::Queenside);
-        best.push(MGAnyMove::Castle(FileDirection::Queenside), eval_unmake(&mut ctx)?);
+        eval_unmake(&mut ctx, &mut best, 
+            MGAnyMove::Castle(FileDirection::Queenside))?;
     }
     if movegen_castle_kingside(ctx.gstate) {
         make_castle(ctx.gstate, FileDirection::Kingside);
-        best.push(MGAnyMove::Castle(FileDirection::Kingside), eval_unmake(&mut ctx)?);
+        eval_unmake(&mut ctx, &mut best, 
+            MGAnyMove::Castle(FileDirection::Kingside))?;
     }
 
     return Ok(best.take().unwrap());

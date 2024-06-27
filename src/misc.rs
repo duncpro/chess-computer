@@ -71,9 +71,9 @@ where T: Ord + Copy
 
 // # Max
 
-pub struct Max<T, V: Ord> { obj: Option<T>, value: V }
+pub struct Max<T, V: Ord + Copy> { obj: Option<T>, value: V }
 
-impl<T, V: Ord> Max<T, V> {
+impl<T, V: Ord + Copy> Max<T, V> {
     pub fn new(min: V) -> Self {
         Self { obj: None, value: min }
     }
@@ -86,6 +86,7 @@ impl<T, V: Ord> Max<T, V> {
     }
 
     pub fn take(self) -> Option<T> { self.obj }
+    pub fn value(&self) -> V { self.value }
 }
 
 /// This macro provides support for enum tables. An enum table is a wrapper 
