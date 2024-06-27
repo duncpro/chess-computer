@@ -38,9 +38,9 @@ pub enum DeepEvalException {
     Cut
 }
 
-/// Computes the lowest score the active-player is assured of
-/// given perfect play. When the deadline elapses, search is
-/// cancelled and `Err(DeadlineElapsed)` is returned.
+/// Computes the highest score the active-player is assured of
+/// given perfect play by the opponent. If the deadline elapses, the 
+/// search is cancelled and `Err(DeadlineElapsed)` is returned.
 pub fn deep_eval(mut ctx: DeepEvalContext) -> Result<i32, DeepEvalException> {
     use DeepEvalException::*;
     if Instant::now() > ctx.deadline { return Err(DeadlineElapsed); }
