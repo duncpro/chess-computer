@@ -1,5 +1,3 @@
-#![allow(unused)]
-
 // Unstable features are used **only** in testing modules
 // and never in the actual application.
 #![feature(variant_count)]
