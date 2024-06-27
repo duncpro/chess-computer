@@ -79,7 +79,7 @@ pub fn deep_eval_w_deadline(mut ctx: DeepEvalWDeadlineContext)
 // # Shallow Evaluation
 
 /// Evaluates the given position with no lookahead.
-pub fn eval_shallow(gstate: &mut FastPosition) -> i32 {
+pub fn shallow_eval(gstate: &mut FastPosition) -> i32 {
     // In the case there are no legal moves, it's a stalemate,
     // or we're in checkmate. Either way, this is not a good
     // position to be in, so it gets the minimum score.

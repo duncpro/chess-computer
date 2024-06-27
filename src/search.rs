@@ -2,7 +2,7 @@ use crate::eval::DeadlineElapsed;
 use crate::eval::DeepEvalWDeadlineContext;
 use crate::eval::MIN_SCORE;
 use crate::eval::deep_eval_w_deadline;
-use crate::eval::eval_shallow;
+use crate::eval::shallow_eval;
 use crate::misc::Max;
 use crate::movegen_castle;
 use crate::makemove::make_pmove;
@@ -74,7 +74,7 @@ fn search_shallow(gstate: &mut FastPosition, mut movebuf: SegVec<PMGMove>) -> MG
 
     fn eval_unmake(gstate: &mut FastPosition) -> i32 {
         swap_active(gstate);
-        let score = -1 * eval_shallow(gstate);
+        let score = -1 * shallow_eval(gstate);
         unmake_move(gstate);
         return score;
     }
