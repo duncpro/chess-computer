@@ -6,6 +6,7 @@ use crate::grid::Rank;
 use crate::grid::StandardCoordinate;
 use crate::makemove::doturn;
 use crate::makemove::fill_tile;
+use crate::mat_eval::matdiff;
 use crate::misc::SegVec;
 use crate::piece::Piece;
 use crate::search::iterdeep_search;
@@ -15,6 +16,7 @@ use crate::gamestate::GameStatus;
 use crate::gamestate::status;
 use crate::movegen::types::MGAnyMove;
 use std::cell::RefCell;
+use std::io::Write;
 use std::time::Duration;
 use std::time::Instant;
 use crate::movegen::dispatch::count_legal_moves;
@@ -62,8 +64,6 @@ pub fn new_game() -> FastPosition {
 pub fn automove(gstate: &mut FastPosition, think_time: Duration) {
     if matches!(status(gstate), GameStatus::Complete(_)) {
         return; }
-
-    println!("Legal Move Count: {}", count_legal_moves(gstate));
     
     let search_result = iterdeep_search(IterDeepSearchContext {
         gstate, movebuf: SegVec::new(&mut RefCell::default()),
@@ -89,9 +89,13 @@ pub fn selfplay(think_time: Duration) {
     
     while matches!(status(&mut state), GameStatus::Incomplete) {
         println!("{}'s turn to move", state.active_player());
+        println!("Legal Moves: {}", count_legal_moves(&mut state));
+        println!("Move #: {}", state.movelog.len() + 1);
         automove(&mut state, think_time);
+        println!("Material Difference: {}", -1 * matdiff(&state.bbs));
         print_board(&state.occupant_lut);
         print!("\n");
+        std::io::stdout().flush();
         // prompt_ok();
     }
     

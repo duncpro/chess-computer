@@ -30,14 +30,17 @@ pub fn get_unicode_symbol(piece: Piece) -> &'static str {
 pub fn print_board(board: &GridTable<Option<Piece>>) {
     let mut i: u8 = 0;
     print!("\n");
-    for _ in 0..8 {
-        for _ in 0..8 {
+    for rank_i in 0..8u8 {
+        for file_i in 0..8u8 {
             let coord = StandardCoordinate::from_index(i);
+            let is_colored_sq = (((rank_i % 2) + file_i) % 2) == 0;
+            if is_colored_sq { print!("\x1b[42m") }
             match board[coord] {
                 Some(piece) => print!("{}", get_unicode_symbol(piece)),
                 None => print!(" "),
             }
             print!(" ");
+            print!("\x1b[0m");
             i += 1;
         }
         print!("\n");
