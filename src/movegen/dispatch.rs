@@ -46,7 +46,7 @@ fn count_legal_pmoves(state: &mut FastPosition) -> usize {
         let mut ctx = PMGContext::new(&state_cell, &mut counter);
         pmove_dispatch(&mut ctx);
     }
-    return counter.wrapped().count();
+    return counter.inner().count();
 }
 
 pub fn count_legal_moves(state: &mut FastPosition) -> usize {

@@ -176,7 +176,7 @@ pub struct PushFilter<T, F, P>
 where P: Push<T>, F: FnMut(&T) -> bool
 {
     filter_fn: F,
-    wrapped: P,
+    inner: P,
     pd: PhantomData<T>
 }
 
@@ -185,7 +185,7 @@ where P: Push<T>, F: FnMut(&T) -> bool
 {
     fn push(&mut self, value: T) {
         let pass = (self.filter_fn)(&value);
-        if pass { self.wrapped.push(value); }
+        if pass { self.inner.push(value); }
     }
 }
 
@@ -193,9 +193,9 @@ where P: Push<T>, F: FnMut(&T) -> bool
 impl<T, F, P> PushFilter<T, F, P>
 where P: Push<T>, F: FnMut(&T) -> bool
 {
-    pub fn wrapped(&self) -> &P { &self.wrapped }
-    pub fn new(wrapped: P, filter_fn: F) -> Self {
-        Self { filter_fn, wrapped, pd: PhantomData }
+    pub fn inner(&self) -> &P { &self.inner }
+    pub fn new(inner: P, filter_fn: F) -> Self {
+        Self { filter_fn, inner, pd: PhantomData }
     }
 }
 
