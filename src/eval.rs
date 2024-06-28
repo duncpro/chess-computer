@@ -27,10 +27,11 @@ pub struct DeepEvalContext<'a, 'b> {
     pub lookahead: u8,
     pub movebuf: SegVec<'b, PMGMove>,
     pub deadline: Instant,
-    /// The best score that the parent is assured of.
-    /// If a move is encountered which a score less than `cutoff`,
-    /// this branch is pruned (not explored), as the opponent
-    /// will surely take this branch, and so it is not interesting.
+    /// The best score that the parent is assured of so-far.
+    /// If a child (opponent) move is encountered with a score 
+    /// better than `cutoff`, this branch is pruned (not explored), 
+    /// as the opponent will surely take this branch, 
+    /// and so it is not interesting to us.
     pub cutoff: i32
 }
 
