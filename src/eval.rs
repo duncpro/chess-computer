@@ -51,13 +51,8 @@ pub fn deep_eval(mut ctx: DeepEvalContext) -> Result<i32, DeepEvalException> {
     use DeepEvalException::*;
     
     if Instant::now() > ctx.deadline { return Err(DeadlineElapsed); }
-    movegen_legal_pmoves(ctx.gstate, &mut ctx.movebuf);
-    // In the case there are no legal moves, it's a stalemate,
-    // or we're in checkmate. Either way, this is not a good
-    // position to be in, so it gets the minimum score.
-    if ctx.movebuf.is_empty() { return Ok(MIN_SCORE); }
-    if ctx.lookahead == 0 { return Ok(matdiff(&ctx.gstate.bbs)); }
-     
+    if ctx.lookahead == 0 { return Ok(shallow_eval(ctx.gstate)); }
+
     let mut best_score: i32 = MIN_SCORE;
 
     fn eval_unmake(ctx: &mut DeepEvalContext, best_score: &mut i32)
@@ -79,10 +74,16 @@ pub fn deep_eval(mut ctx: DeepEvalContext) -> Result<i32, DeepEvalException> {
         }
     }
     
+    movegen_legal_pmoves(ctx.gstate, &mut ctx.movebuf);
+    // In the case there are no legal moves, it's a stalemate,
+    // or we're in checkmate. Either way, this is not a good
+    // position to be in, so it gets the minimum score.
+    if ctx.movebuf.is_empty() { return Ok(MIN_SCORE); }
     while let Some(pmove) = ctx.movebuf.pop() {        
         make_pmove(ctx.gstate, pmove);
         eval_unmake(&mut ctx, &mut best_score)?;
     }
+    
     if movegen_castle_queenside(ctx.gstate) {
         make_castle(ctx.gstate, FileDirection::Queenside);
         eval_unmake(&mut ctx, &mut best_score)?;
@@ -91,6 +92,7 @@ pub fn deep_eval(mut ctx: DeepEvalContext) -> Result<i32, DeepEvalException> {
         make_castle(ctx.gstate, FileDirection::Kingside);
         eval_unmake(&mut ctx, &mut best_score)?;
     }
+    
     return Ok(best_score);
 }
 
