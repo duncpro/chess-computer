@@ -226,6 +226,12 @@ impl<'a, T> SegVec<'a, T> {
         }
     }
 
+    pub fn sort_unstable_by_key<K, F>(&mut self, f: F)
+    where F: FnMut(&T) -> K, K: Ord
+    {
+        self.as_mut_slice().sort_unstable_by_key(f);
+    }
+
     pub fn pop(&mut self) -> Option<T> {
         let mut vec = self.vec_cell.borrow_mut();
         if self.begin < vec.len() { return vec.pop(); }
@@ -242,6 +248,14 @@ impl<'a, T> SegVec<'a, T> {
     {
         let begin = self.begin;
         Ref::map(self.vec_cell.borrow(), |r| &r.as_slice()[begin..])
+    }
+    
+    fn as_mut_slice<'b, 'c>(&'b self) -> RefMut<'c, [T]>
+    where 'a: 'b, 'b: 'c
+    {
+        let begin = self.begin;
+        RefMut::map(self.vec_cell.borrow_mut(), 
+            |r| &mut r.as_mut_slice()[begin..])
     }
 
     pub fn is_empty(&self) -> bool { self.as_slice().is_empty() }

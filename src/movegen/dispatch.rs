@@ -15,6 +15,7 @@ use crate::movegen::queen::movegen_queens;
 use crate::movegen::rook::movegen_rooks;
 use crate::movegen::pawn::movegen_pawns;
 use crate::movegen::types::PMGContext;
+use crate::movegen::movesort::movesort;
 
 fn pmove_dispatch(ctx: &mut PMGContext<impl Push<PMGMove>>) 
 {
@@ -36,6 +37,7 @@ fn movegen_psuedo_pmoves(state: &mut FastPosition, moves: &mut SegVec<PMGMove>) 
 pub fn movegen_legal_pmoves(state: &mut FastPosition, moves: &mut SegVec<PMGMove>) {
     movegen_psuedo_pmoves(state, moves);
     moves.retain(|pmove| test_pmove(state, *pmove));
+    movesort(state, moves);
 }
 
 fn count_legal_pmoves(state: &mut FastPosition) -> usize {

@@ -25,12 +25,16 @@ pub struct DeepEvalContext<'a, 'b> {
     /// the heuristic score function to the position. When zero,
     /// the heuristic score function is applied immediately.
     pub lookahead: u8,
+    /// The buffer used to hold lookahead moves after they
+    /// are generated but before they are evaluated. This
+    /// buffer should be empty when `DeepEvalContext` is
+    /// constructed by the caller.
     pub movebuf: SegVec<'b, PMGMove>,
     pub deadline: Instant,
     /// The best score that the parent is assured of so-far.
     /// If a child (opponent) move is encountered with a score 
     /// better than `cutoff`, this branch is pruned (not explored), 
-    /// as the opponent will surely take this branch, 
+    /// as the opponent will surely take this branch given the opportunity,
     /// and so it is not interesting to us.
     pub cutoff: i32
 }
