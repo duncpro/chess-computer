@@ -14,7 +14,8 @@ use crate::movegen::dispatch::movegen_legal_pmoves;
 use crate::movegen::types::PMGMove;
 use std::time::Instant;
 
-pub const MIN_SCORE: i32 = i32::MIN + 1;
+pub const MIN_SCORE: i32 = i32::MIN + 2;
+pub const BELOW_MIN_SCORE: i32 = i32::MIN + 1;
 
 // # Time Constrained Evaluation
 
@@ -43,6 +44,7 @@ pub enum DeepEvalException {
 /// search is cancelled and `Err(DeadlineElapsed)` is returned.
 pub fn deep_eval(mut ctx: DeepEvalContext) -> Result<i32, DeepEvalException> {
     use DeepEvalException::*;
+    
     if Instant::now() > ctx.deadline { return Err(DeadlineElapsed); }
     movegen_legal_pmoves(ctx.gstate, &mut ctx.movebuf);
     // In the case there are no legal moves, it's a stalemate,
@@ -63,9 +65,9 @@ pub fn deep_eval(mut ctx: DeepEvalContext) -> Result<i32, DeepEvalException> {
         unmake_move(ctx.gstate);
         match result {
             Err(DeadlineElapsed) => Err(DeadlineElapsed),
-            Err(DeepEvalException::Cut) => Ok(()),
+            Err(Cut) => Ok(()),
             Ok(score) => {
-                if score * -1 > ctx.cutoff * -1 { return Err(Cut); }
+                if score * -1 >= ctx.cutoff * -1 { return Err(Cut); }
                 max_inplace(best_score, -1 * score);
                 Ok(())
             },

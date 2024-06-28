@@ -1,3 +1,4 @@
+use crate::eval::BELOW_MIN_SCORE;
 use crate::eval::DeepEvalContext;
 use crate::eval::DeepEvalException;
 use crate::eval::MIN_SCORE;
@@ -41,7 +42,7 @@ pub struct DeadlineElapsed;
 /// it will [`panic`]. When the deadline elapses, search is cancelled and
 /// `Err(DeadlineElapsed)` is returned.
 fn search(mut ctx: SearchContext) -> Result<MGAnyMove, DeadlineElapsed> {
-    let mut best: Max<MGAnyMove, i32> = Max::new(MIN_SCORE);
+    let mut best: Max<MGAnyMove, i32> = Max::new(BELOW_MIN_SCORE);
 
     fn eval_unmake(ctx: &mut SearchContext, best: &mut Max<MGAnyMove, i32>, 
         mov: MGAnyMove) -> Result<(), DeadlineElapsed> 

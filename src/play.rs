@@ -8,6 +8,7 @@ use crate::makemove::doturn;
 use crate::makemove::fill_tile;
 use crate::mat_eval::matdiff;
 use crate::misc::SegVec;
+use crate::piece::ColorTable;
 use crate::piece::Piece;
 use crate::search::iterdeep_search;
 use crate::search::IterDeepSearchContext;
@@ -79,7 +80,7 @@ pub fn automove(gstate: &mut FastPosition, think_time: Duration) {
  }
 
 
-pub fn selfplay(think_time: Duration) {
+pub fn selfplay(time_constraints: ColorTable<Duration>) {
     let mut state: FastPosition = new_game();
 
     println!("New Self-Play Game");
@@ -91,6 +92,7 @@ pub fn selfplay(think_time: Duration) {
         println!("{}'s turn to move", state.active_player());
         println!("Legal Moves: {}", count_legal_moves(&mut state));
         println!("Move #: {}", state.movelog.len() + 1);
+        let think_time = time_constraints[state.active_player()];
         automove(&mut state, think_time);
         println!("Material Difference: {}", -1 * matdiff(&state.bbs));
         print_board(&state.occupant_lut);

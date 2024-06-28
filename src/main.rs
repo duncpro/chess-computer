@@ -22,9 +22,11 @@ mod rmrel;
 mod search;
 mod sliders;
 
-
 fn main() {
     use std::time::Duration;
     use crate::play::selfplay;
-    selfplay(Duration::from_millis(10 * 1000));
+    use crate::piece::ColorTable;
+    let time_constraints = ColorTable::new([Duration::from_secs(1), 
+        Duration::from_secs(5)]);
+    selfplay(time_constraints);
 }
