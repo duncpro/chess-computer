@@ -26,7 +26,7 @@ fn main() {
     use std::time::Duration;
     use crate::play::selfplay;
     use crate::piece::ColorTable;
-    let time_constraints = ColorTable::new([Duration::from_secs(1), 
+    let time_constraints = ColorTable::new([Duration::from_secs(5), 
         Duration::from_secs(5)]);
     selfplay(time_constraints);
 }

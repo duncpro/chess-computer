@@ -17,6 +17,6 @@ fn calc_sort_key(state: &FastPosition, pmove: PMGMove) -> i32 {
         .map(|p| SPECIES_VALUE[usize::from(p.species().index())])
         .unwrap_or(attacker_value);    
 
-    return i32::from(victim_value) - i32::from(attacker_value);
+    return i32::from(attacker_value) - i32::from(victim_value);
 }
 

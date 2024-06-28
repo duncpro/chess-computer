@@ -19,12 +19,12 @@ use crate::movegen::movesort::movesort;
 
 fn pmove_dispatch(ctx: &mut PMGContext<impl Push<PMGMove>>) 
 {
-    movegen_queens(ctx);
-    movegen_rooks(ctx);
-    movegen_bishops(ctx);
-    movegen_knights(ctx);
-    movegen_pawns(ctx);
     movegen_king(ctx);
+    movegen_knights(ctx);
+    movegen_bishops(ctx);
+    movegen_rooks(ctx);
+    movegen_queens(ctx);
+    movegen_pawns(ctx);
 }
 
 fn movegen_psuedo_pmoves(state: &mut FastPosition, moves: &mut SegVec<PMGMove>) {
