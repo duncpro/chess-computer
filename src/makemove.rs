@@ -1,21 +1,17 @@
-use std::cell::RefCell;
-
-use crate::bitboard::{print_bitboard, RawBitboard};
+use crate::bitboard::RawBitboard;
 use crate::bits::swap_bytes_inplace_u64;
-use crate::attack::is_attacked;
-use crate::cli::print_board;
 use crate::crights::update_crights;
 use crate::gamestate::LoggedMove;
 use crate::gamestate::LoggedPieceMove;
 use crate::gamestate::MovelogEntry;
 use crate::gamestate::SpecialPieceMove;
-use crate::gamestate::locate_king_stdc;
 use crate::grid::File;
 use crate::grid::FileDirection;
 use crate::grid::StandardCoordinate;
 use crate::movegen::types::MGAnyMove;
 use crate::piece::Color;
 use crate::piece::Piece;
+use crate::piece::PieceGrid;
 use crate::piece::Species;
 use crate::misc::pick;
 use crate::movegen::types::PMGMove;
@@ -27,8 +23,8 @@ use crate::unsetbit;
 // # Utilities
 
 fn clear_tile(state: &mut FastPosition, pos: StandardCoordinate) {    
-    let occupant = state.occupant_lut[pos];
-    state.occupant_lut[pos] = None;
+    let occupant = state.p_lut.get(pos);
+    state.p_lut.set(pos, None);
     if let Some(piece) = occupant {
         state.bbs.affilia_bbs[piece.color()].unset(pos);
         state.bbs.species_bbs[piece.species()].unset(pos);
@@ -41,14 +37,14 @@ fn clear_tile(state: &mut FastPosition, pos: StandardCoordinate) {
 
 pub fn fill_tile(state: &mut FastPosition, pos: StandardCoordinate, piece: Piece) 
 {
-    state.occupant_lut[pos] = Some(piece);
+    state.p_lut.set(pos, Some(piece));
     state.bbs.affilia_bbs[piece.color()].set(pos);
     state.bbs.species_bbs[piece.species()].set(pos);
     
     let rel_pos = relativize(pos, state.active_player());
     setbit!(state.bbs.affilia_rel_bbs[piece.color()], rel_pos);
     let is_pawn = piece.species() == Species::Pawn;
-    state.bbs.pawn_rel_bb |= ((1 << rel_pos) * (is_pawn as RawBitboard));
+    state.bbs.pawn_rel_bb |= (1 << rel_pos) * (is_pawn as RawBitboard);
 }
 
 pub fn swap_active(state: &mut FastPosition) {
@@ -57,15 +53,15 @@ pub fn swap_active(state: &mut FastPosition) {
         &mut state.bbs.affilia_rel_bbs[Color::White]);
     swap_bytes_inplace_u64(
         &mut state.bbs.affilia_rel_bbs[Color::Black]);
-    state.bbs.active_player = state.bbs.active_player.oppo();
+    state.bbs.active_player.swap();
 }
 
 
 // # Make
 
 pub fn make_pmove(state: &mut FastPosition, mgmove: PMGMove) {
-    let piece = state.occupant_lut[mgmove.origin].unwrap();
-    let capture = state.occupant_lut[mgmove.target];
+    let piece = state.p_lut.get(mgmove.origin).unwrap();
+    let capture = state.p_lut.get(mgmove.target);
     
     clear_tile(state, mgmove.origin);
     clear_tile(state, mgmove.target);
@@ -137,9 +133,9 @@ pub fn doturn(state: &mut FastPosition, mov: MGAnyMove) {
 // # Unmake
 
 fn unmake_pmove(state: &mut FastPosition, pmove: LoggedPieceMove) {
-    let is_promote = (pmove.mgmove.special == Some(SpecialPieceMove::Promote));
+    let is_promote = pmove.mgmove.special == Some(SpecialPieceMove::Promote);
     let species = pick(is_promote, Species::Pawn, 
-        state.occupant_lut[pmove.mgmove.destin].unwrap().species());
+        state.p_lut.get(pmove.mgmove.destin).unwrap().species());
     
     clear_tile(state, pmove.mgmove.destin);
     clear_tile(state, pmove.mgmove.target);
@@ -151,6 +147,7 @@ fn unmake_pmove(state: &mut FastPosition, pmove: LoggedPieceMove) {
     fill_tile(state, pmove.mgmove.origin,
         Piece::new(state.active_player(), species));
 }
+
 
 fn unmake_castle(state: &mut FastPosition, side: FileDirection) {
     const ROOK_ORIGIN_LUT: [File; 2] = [

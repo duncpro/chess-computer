@@ -1,12 +1,12 @@
 use std::fmt::Display;
 use std::num::NonZeroU8;
-
+use std::ops::{IndexMut, Index};
 use crate::impl_enum_table;
-use crate::grid::Rank;
+use crate::grid::{Rank, StandardCoordinate};
 
 // # `Species`
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 #[repr(u8)]
 pub enum Species {
     Pawn   = 1,
@@ -64,6 +64,8 @@ impl Color {
         ]);
         return RANK_LUT[self];
     }
+
+    pub fn swap(&mut self) { *self = self.oppo(); }
 }
 
 impl Display for Color {
@@ -85,31 +87,49 @@ impl_enum_table!(Color);
 
 #[derive(Clone, Copy)]
 #[repr(transparent)]
-pub struct Piece {
-    // LSB 8 7 6 5 4 3 2 1
-    //  Species  -----
-    //          Color  ---
-    data: NonZeroU8 
-}
+pub struct Piece { data: NonZeroU8 }
 
 impl Piece {
-    pub fn color(self) -> Color {
-        let index = (self.data.get() & 0b11) - 1;
-        return Color::from_index(index);
-    }
-    
-    pub fn species(self) -> Species {
-        let index = (self.data.get() >> 2) - 1;
-        return Species::from_index(index);
+    pub fn new(color: Color, species: Species) -> Self {
+        let index = 6 * color.index() + species.index();
+        let data  = NonZeroU8::new(index + 1).unwrap();
+        return Self { data }
     }
 
-    pub fn new(color: Color, species: Species) -> Self {
-        let mut data = 0;
-        data |= color.index() + 1;
-        data |= (species.index() + 1) << 2;
-        return Self { 
-            data: NonZeroU8::new(data).unwrap()  
-        }
+    pub fn color(self) -> Color {
+        let class_index = self.data.get() - 1;
+        let color_index = class_index / 6;
+        return Color::from_index(color_index);
+    }
+
+    pub fn species(self) -> Species {
+        let class_index = self.data.get() - 1;
+        let species_index = class_index % 6;
+        return Species::from_index(species_index);
+    }
+
+    pub fn set_species(&mut self, species: Species) {
+        *self = Piece::new(self.color(), species);
     }
 }
 
+
+#[derive(Clone, Copy, Default, PartialEq, Eq)]
+pub struct PieceGrid { data: [u8; 32] }
+
+impl PieceGrid {
+    pub fn set(&mut self, pos: StandardCoordinate, piece: Option<Piece>) {
+        let data: u8 = unsafe { std::mem::transmute(piece) };
+        let lut_index = usize::from(pos.index() / 2);
+        let byte_offset = (pos.index() % 2) * 4;
+        self.data[lut_index] &= !(0b1111 << byte_offset);
+        self.data[lut_index] |= data << byte_offset;
+    }
+
+    pub fn get(&self, pos: StandardCoordinate) -> Option<Piece> {        
+        let lut_index = usize::from(pos.index() / 2);
+        let byte_offset = (pos.index() % 2) * 4;
+        let data = (self.data[lut_index] >> byte_offset) & 0b1111;
+        return unsafe { std::mem::transmute(data) };
+    }
+}

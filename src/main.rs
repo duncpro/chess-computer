@@ -1,6 +1,5 @@
-// Unstable features are used **only** in testing modules
-// and never in the actual application.
 #![feature(variant_count)]
+#![feature(core_intrinsics)]
 
 mod bitboard;
 mod bits;
@@ -19,6 +18,7 @@ mod movegen;
 mod piece;
 mod play;
 mod rmrel;
+mod repetitions;
 mod search;
 mod sliders;
 

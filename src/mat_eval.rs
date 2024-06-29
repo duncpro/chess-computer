@@ -42,7 +42,7 @@ fn matval(board: &Bitboards, color: Color) -> i32 {
     return total;
 }
 
-pub fn matdiff(board: &Bitboards) -> i32 {
+pub fn calc_matdiff(board: &Bitboards) -> i32 {
     let mut value: i32 = 0;
     value += matval(board, board.active_player);
     value -= matval(board, board.active_player.oppo());

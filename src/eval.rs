@@ -4,16 +4,19 @@ use crate::makemove::make_pmove;
 use crate::makemove::unmake_move;
 use crate::makemove::swap_active;
 use crate::makemove::make_castle;
-use crate::mat_eval::matdiff;
+use crate::mat_eval::calc_matdiff;
 use crate::misc::SegVec;
 use crate::misc::max_inplace;
+use crate::misc::pick;
 use crate::movegen::castle::movegen_castle_kingside;
 use crate::movegen::castle::movegen_castle_queenside;
 use crate::movegen::dispatch::count_legal_moves;
 use crate::movegen::dispatch::movegen_legal_pmoves;
 use crate::movegen::types::PMGMove;
+use crate::repetitions::is_5rep_tie;
 use std::time::Instant;
 
+pub const MAX_SCORE: i32 = i32::MAX;
 pub const MIN_SCORE: i32 = i32::MIN + 2;
 pub const BELOW_MIN_SCORE: i32 = i32::MIN + 1;
 
@@ -32,10 +35,10 @@ pub struct DeepEvalContext<'a, 'b> {
     pub movebuf: SegVec<'b, PMGMove>,
     pub deadline: Instant,
     /// The best score that the parent is assured of so-far.
-    /// If a child (opponent) move is encountered with a score 
-    /// better than `cutoff`, this branch is pruned (not explored), 
-    /// as the opponent will surely take this branch given the opportunity,
-    /// and so it is not interesting to us.
+    /// If a child/opponent move is encountered with a score 
+    /// better than `cutoff`, this branch is pruned (not explored),
+    /// as the opponent will surely take this branch given the
+    ///  opportunity, and so it is not interesting to us.
     pub cutoff: i32
 }
 
@@ -52,6 +55,10 @@ pub fn deep_eval(mut ctx: DeepEvalContext) -> Result<i32, DeepEvalException> {
     
     if Instant::now() > ctx.deadline { return Err(DeadlineElapsed); }
     if ctx.lookahead == 0 { return Ok(shallow_eval(ctx.gstate)); }
+    if is_5rep_tie(ctx.gstate) { 
+        let matdiff = calc_matdiff(&ctx.gstate.bbs);
+        return Ok(pick(matdiff < 0, MAX_SCORE, MIN_SCORE));
+    }
 
     let mut best_score: i32 = MIN_SCORE;
 
@@ -103,6 +110,11 @@ pub fn shallow_eval(gstate: &mut FastPosition) -> i32 {
     // In the case there are no legal moves, it's a stalemate,
     // or we're in checkmate. Either way, this is not a good
     // position to be in, so it gets the minimum score.
-    if count_legal_moves(gstate) == 0 { return MIN_SCORE };
-    return matdiff(&gstate.bbs);
+    if count_legal_moves(gstate) == 0 { return MIN_SCORE };    
+    let matdiff = calc_matdiff(&gstate.bbs);
+    if is_5rep_tie(gstate) {
+        return pick(matdiff < 0, MAX_SCORE, MIN_SCORE);
+    }
+    return matdiff;
 }
+

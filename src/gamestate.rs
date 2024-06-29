@@ -2,33 +2,27 @@ use crate::bitboard::Bitboard;
 use crate::bitboard::MDBitboard;
 use crate::bitboard::RawBitboard;
 use crate::attack::is_attacked;
-use crate::cli::print_board;
 use crate::coordinates::Coordinate;
 use crate::coordinates::CoordinateSystem;
 use crate::coordinates::StandardCS;
 use crate::crights::CastlingRights;
-use crate::getbit;
 use crate::grid::FileDirection;
-use crate::grid::GridTable;
 use crate::grid::StandardCoordinate;
-use crate::misc::Push;
-use crate::misc::PushCount;
 use crate::movegen::dispatch::count_legal_moves;
-use crate::movegen::dispatch::movegen_legal_pmoves;
 use crate::movegen::types::PMGMove;
 use crate::piece::Color;
 use crate::piece::ColorTable;
 use crate::piece::Piece;
+use crate::piece::PieceGrid;
 use crate::piece::Species;
 use crate::piece::SpeciesTable;
-use crate::setbit;
 
-// # Position
+// # `FastPosition`
 
 #[derive(Default)]
 pub struct FastPosition {
     pub bbs: Bitboards,
-    pub occupant_lut: GridTable<Option<Piece>>,
+    pub p_lut: PieceGrid,
     pub movelog: Vec<MovelogEntry>,
     pub crights: CastlingRights
 }
@@ -123,6 +117,7 @@ pub fn locate_king<C: CoordinateSystem>(board: &Bitboards) -> Coordinate<C> {
 pub fn locate_king_stdc(board: &Bitboards) -> StandardCoordinate {
     locate_king::<StandardCS>(board).into()
 }
+
 
 // # Status
 

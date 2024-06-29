@@ -9,11 +9,11 @@ pub fn movesort(state: &FastPosition, movebuf: &mut SegVec<PMGMove>) {
 }
 
 fn calc_sort_key(state: &FastPosition, pmove: PMGMove) -> i32 {
-    let attacker_value = state.occupant_lut[pmove.origin]
+    let attacker_value = state.p_lut.get(pmove.origin)
         .map(|p| SPECIES_VALUE[usize::from(p.species().index())])
         .unwrap();
 
-    let victim_value = state.occupant_lut[pmove.target]
+    let victim_value = state.p_lut.get(pmove.target)
         .map(|p| SPECIES_VALUE[usize::from(p.species().index())])
         .unwrap_or(attacker_value);    
 

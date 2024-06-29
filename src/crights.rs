@@ -1,5 +1,4 @@
 use crate::bitboard::Bitboard;
-use crate::coordinates::Coordinate;
 use crate::coordinates::StandardCS;
 use crate::gamestate::locate_king_stdc;
 use crate::getbit;
@@ -12,7 +11,7 @@ use crate::piece::Species;
 
 // # `CastlingRights`
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct CastlingRights { data: u8 }
 
 impl CastlingRights {

@@ -3,10 +3,10 @@ use crate::misc::const_min_u8;
 
 // # Laterals
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct Rank { index: u8 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct File { index: u8 }
 
 impl Rank {
@@ -160,29 +160,6 @@ impl Display for StandardCoordinate {
     }
 }
 
-// # `GridTable`
-
-pub struct GridTable<T> { array: [T; 64] }
-
-impl<T> std::ops::Index<StandardCoordinate> for GridTable<T> {
-    type Output = T;
-
-    fn index(&self, coord: StandardCoordinate) -> &Self::Output {
-        &self.array[usize::from(coord.index())]
-    }
-}
-
-impl<T> std::ops::IndexMut<StandardCoordinate> for GridTable<T> {
-    fn index_mut(&mut self, coord: StandardCoordinate) -> &mut Self::Output {
-        &mut self.array[usize::from(coord.index())]
-    }
-}
-
-impl<T: Default + Copy> Default for GridTable<T> {
-    fn default() -> Self {
-        Self { array: [T::default(); 64]  }    
-    }
-}
 
 // # `FileDirection`
 

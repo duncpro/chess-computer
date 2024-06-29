@@ -6,7 +6,7 @@ use crate::grid::Rank;
 use crate::grid::StandardCoordinate;
 use crate::makemove::doturn;
 use crate::makemove::fill_tile;
-use crate::mat_eval::matdiff;
+use crate::mat_eval::calc_matdiff;
 use crate::misc::SegVec;
 use crate::piece::ColorTable;
 use crate::piece::Piece;
@@ -84,7 +84,7 @@ pub fn selfplay(time_constraints: ColorTable<Duration>) {
     let mut state: FastPosition = new_game();
 
     println!("New Self-Play Game");
-    print_board(&state.occupant_lut);
+    print_board(&state.p_lut);
     print!("\n");
     // prompt_ok();
     
@@ -94,8 +94,8 @@ pub fn selfplay(time_constraints: ColorTable<Duration>) {
         println!("Move #: {}", state.movelog.len() + 1);
         let think_time = time_constraints[state.active_player()];
         automove(&mut state, think_time);
-        println!("Material Difference: {}", -1 * matdiff(&state.bbs));
-        print_board(&state.occupant_lut);
+        println!("Material Difference: {}", -1 * calc_matdiff(&state.bbs));
+        print_board(&state.p_lut);
         print!("\n");
         std::io::stdout().flush();
         // prompt_ok();

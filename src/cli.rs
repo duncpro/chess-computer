@@ -1,7 +1,7 @@
 use crate::grid::StandardCoordinate;
-use crate::grid::GridTable;
 use crate::piece::Color;
 use crate::piece::Piece;
+use crate::piece::PieceGrid;
 
 pub fn get_unicode_symbol(piece: Piece) -> &'static str {
     use crate::piece::Color::*;
@@ -27,7 +27,7 @@ pub fn get_unicode_symbol(piece: Piece) -> &'static str {
     }
 }
 
-pub fn print_board(board: &GridTable<Option<Piece>>) {
+pub fn print_board(board: &PieceGrid) {
     let mut i: u8 = 0;
     print!("\n");
     for rank_i in 0..8u8 {
@@ -35,7 +35,7 @@ pub fn print_board(board: &GridTable<Option<Piece>>) {
             let coord = StandardCoordinate::from_index(i);
             let is_colored_sq = (((rank_i % 2) + file_i) % 2) == 0;
             if is_colored_sq { print!("\x1b[42m") }
-            match board[coord] {
+            match board.get(coord) {
                 Some(piece) => print!("{}", get_unicode_symbol(piece)),
                 None => print!(" "),
             }
