@@ -32,6 +32,8 @@ impl CastlingRights {
         self.set(FileDirection::Kingside, color, false);
     }
 
+    pub fn data(self) -> u8 { self.data }
+
     pub const INITIAL: Self = Self { data: 0b1111 };
 }
 

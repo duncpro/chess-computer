@@ -11,7 +11,6 @@ use crate::grid::StandardCoordinate;
 use crate::movegen::types::MGAnyMove;
 use crate::piece::Color;
 use crate::piece::Piece;
-use crate::piece::PieceGrid;
 use crate::piece::Species;
 use crate::misc::pick;
 use crate::movegen::types::PMGMove;
@@ -73,8 +72,16 @@ pub fn make_pmove(state: &mut FastPosition, mgmove: PMGMove) {
     let prev_crights = state.crights;
     update_crights(state); 
 
-    state.movelog.push(MovelogEntry { prev_crights,
-        lmove: LoggedMove::Piece(LoggedPieceMove { mgmove, capture }) });
+    let prev_halfmoveclock = state.halfmoveclock;
+    state.halfmoveclock += 1;
+    let reset_halfmoveclock = capture.is_some() 
+        | (piece.species() == Species::Pawn);
+    state.halfmoveclock *= !reset_halfmoveclock as u16;
+
+    let lpm = LoggedPieceMove { mgmove, capture };
+    let mle = MovelogEntry { prev_crights, prev_halfmoveclock,
+        lmove: LoggedMove::Piece(lpm) };
+    state.movelog.push(mle);
 }
 
 pub fn make_castle(state: &mut FastPosition, side: FileDirection) {
@@ -116,10 +123,11 @@ pub fn make_castle(state: &mut FastPosition, side: FileDirection) {
     let prev_crights = state.crights;
     state.crights.revoke(state.active_player());
 
-    state.movelog.push(MovelogEntry { 
-        prev_crights,
-        lmove: LoggedMove::Castle(side)
-    });
+    let prev_halfmoveclock = state.halfmoveclock;
+    state.halfmoveclock += 1;
+
+    state.movelog.push(MovelogEntry { prev_crights, prev_halfmoveclock,
+        lmove: LoggedMove::Castle(side) });
 }
 
 pub fn doturn(state: &mut FastPosition, mov: MGAnyMove) {
@@ -191,6 +199,7 @@ fn unmake_castle(state: &mut FastPosition, side: FileDirection) {
 pub fn unmake_move(state: &mut FastPosition) {
     let last_entry = state.movelog.pop().unwrap();
     state.crights = last_entry.prev_crights;
+    state.halfmoveclock = last_entry.prev_halfmoveclock;
         
     swap_active(state);
     

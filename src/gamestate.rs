@@ -24,7 +24,8 @@ pub struct FastPosition {
     pub bbs: Bitboards,
     pub p_lut: PieceGrid,
     pub movelog: Vec<MovelogEntry>,
-    pub crights: CastlingRights
+    pub crights: CastlingRights,
+    pub halfmoveclock: u16
 }
 
 impl FastPosition {
@@ -36,7 +37,8 @@ impl FastPosition {
 #[derive(Clone, Copy)]
 pub struct MovelogEntry {
     pub prev_crights: CastlingRights,
-    pub lmove: LoggedMove
+    pub prev_halfmoveclock: u16,
+    pub lmove: LoggedMove,
 }
 
 #[derive(Clone, Copy)]
@@ -65,11 +67,8 @@ pub struct Bitboards {
 
     // ## Relative Bitboards
     pub affilia_rel_bbs: ColorTable<RawBitboard>,
-    // 1 bitboard * 8 bytes each = 8 bytes
     pub pawn_rel_bb: RawBitboard,
     pub active_player: Color
-    // So in total `Bitboards` has memory expenditure of
-    // 224 + 96 + 24 + 8 + 1 = 321 bytes.
 }
 
 impl Bitboards {

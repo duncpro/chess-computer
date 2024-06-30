@@ -4,6 +4,7 @@
 mod bitboard;
 mod bits;
 mod attack;
+mod cache;
 mod cli;
 mod coordinates;
 mod crights;

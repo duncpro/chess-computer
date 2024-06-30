@@ -2,11 +2,9 @@ use crate::bitboard::Bitboard;
 use crate::build_itable;
 use crate::coordinates::StandardCS;
 use crate::piece::Color;
-use crate::piece::Color::*;
 use crate::piece::Species;
 use crate::piece::Species::*;
 use crate::gamestate::Bitboards;
-use crate::piece::SpeciesTable;
 
 build_itable!(SPECIES_VALUE: [u8; 6], |table| {
     macro_rules! put { ($species:expr, $value:expr) => {{
@@ -20,19 +18,19 @@ build_itable!(SPECIES_VALUE: [u8; 6], |table| {
     put!(Queen, 9)
 });
 
-fn count_class(board: &Bitboards, color: Color, species: Species) -> i32 {
+fn count_class(board: &Bitboards, color: Color, species: Species) -> i16 {
     let bitboard: Bitboard<StandardCS> = board.class(color, species);
-    return i32::from(bitboard.count());
+    return i16::from(bitboard.count());
 }
 
-fn matval_class(board: &Bitboards, color: Color, species: Species) -> i32 {
+fn matval_class(board: &Bitboards, color: Color, species: Species) -> i16 {
     let count = count_class(board, color, species);
     let lut_key = usize::from(species.index());
-    return count * i32::from(SPECIES_VALUE[lut_key]);
+    return count * i16::from(SPECIES_VALUE[lut_key]);
 }
 
-fn matval(board: &Bitboards, color: Color) -> i32 {
-    let mut total: i32 = 0;
+fn matval(board: &Bitboards, color: Color) -> i16 {
+    let mut total: i16 = 0;
     total += matval_class(board, color, King);
     total += matval_class(board, color, Pawn);
     total += matval_class(board, color, Knight);
@@ -42,8 +40,8 @@ fn matval(board: &Bitboards, color: Color) -> i32 {
     return total;
 }
 
-pub fn calc_matdiff(board: &Bitboards) -> i32 {
-    let mut value: i32 = 0;
+pub fn calc_matdiff(board: &Bitboards) -> i16 {
+    let mut value: i16 = 0;
     value += matval(board, board.active_player);
     value -= matval(board, board.active_player.oppo());
     return value;

@@ -231,6 +231,12 @@ impl<'a, T> SegVec<'a, T> {
     {
         self.as_mut_slice().sort_unstable_by_key(f);
     }
+    
+    pub fn sort_by_key<K, F>(&mut self, f: F)
+    where F: FnMut(&T) -> K, K: Ord
+    {
+        self.as_mut_slice().sort_by_key(f);
+    }
 
     pub fn pop(&mut self) -> Option<T> {
         let mut vec = self.vec_cell.borrow_mut();

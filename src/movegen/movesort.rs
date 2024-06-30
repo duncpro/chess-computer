@@ -4,7 +4,7 @@ use crate::movegen::types::PMGMove;
 use crate::gamestate::FastPosition;
 
 pub fn movesort(state: &FastPosition, movebuf: &mut SegVec<PMGMove>) {
-    movebuf.sort_unstable_by_key(
+    movebuf.sort_by_key(
         |pmove| -1 * calc_sort_key(state, *pmove));
 }
 

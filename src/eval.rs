@@ -7,18 +7,17 @@ use crate::makemove::make_castle;
 use crate::mat_eval::calc_matdiff;
 use crate::misc::SegVec;
 use crate::misc::max_inplace;
-use crate::misc::pick;
 use crate::movegen::castle::movegen_castle_kingside;
 use crate::movegen::castle::movegen_castle_queenside;
 use crate::movegen::dispatch::count_legal_moves;
 use crate::movegen::dispatch::movegen_legal_pmoves;
 use crate::movegen::types::PMGMove;
-use crate::repetitions::is_5rep_tie;
+use crate::repetitions::count_repetitions;
 use std::time::Instant;
 
-pub const MAX_SCORE: i32 = i32::MAX;
-pub const MIN_SCORE: i32 = i32::MIN + 2;
-pub const BELOW_MIN_SCORE: i32 = i32::MIN + 1;
+pub const MAX_SCORE: i16 = i16::MAX - 1;
+pub const MIN_SCORE: i16 = i16::MIN + 2;
+pub const BELOW_MIN_SCORE: i16 = i16::MIN + 1;
 
 // # Time Constrained Evaluation
 
@@ -39,7 +38,7 @@ pub struct DeepEvalContext<'a, 'b> {
     /// better than `cutoff`, this branch is pruned (not explored),
     /// as the opponent will surely take this branch given the
     ///  opportunity, and so it is not interesting to us.
-    pub cutoff: i32
+    pub cutoff: i16
 }
 
 pub enum DeepEvalException {
@@ -50,19 +49,16 @@ pub enum DeepEvalException {
 /// Computes the highest score the active-player is assured of
 /// given perfect play by the opponent. If the deadline elapses, the 
 /// search is cancelled and `Err(DeadlineElapsed)` is returned.
-pub fn deep_eval(mut ctx: DeepEvalContext) -> Result<i32, DeepEvalException> {
+pub fn deep_eval(mut ctx: DeepEvalContext) -> Result<i16, DeepEvalException> {
     use DeepEvalException::*;
     
     if Instant::now() > ctx.deadline { return Err(DeadlineElapsed); }
     if ctx.lookahead == 0 { return Ok(shallow_eval(ctx.gstate)); }
-    if is_5rep_tie(ctx.gstate) { 
-        let matdiff = calc_matdiff(&ctx.gstate.bbs);
-        return Ok(pick(matdiff < 0, MAX_SCORE, MIN_SCORE));
-    }
+    if is_drawable(ctx.gstate) { return Ok(0); }
 
-    let mut best_score: i32 = MIN_SCORE;
+    let mut best_score: i16 = MIN_SCORE;
 
-    fn eval_unmake(ctx: &mut DeepEvalContext, best_score: &mut i32)
+    fn eval_unmake(ctx: &mut DeepEvalContext, best_score: &mut i16)
     -> Result<(), DeepEvalException>
     {
         swap_active(ctx.gstate);
@@ -106,15 +102,18 @@ pub fn deep_eval(mut ctx: DeepEvalContext) -> Result<i32, DeepEvalException> {
 // # Shallow Evaluation
 
 /// Evaluates the given position with no lookahead.
-pub fn shallow_eval(gstate: &mut FastPosition) -> i32 {
+pub fn shallow_eval(gstate: &mut FastPosition) -> i16 {
     // In the case there are no legal moves, it's a stalemate,
     // or we're in checkmate. Either way, this is not a good
     // position to be in, so it gets the minimum score.
     if count_legal_moves(gstate) == 0 { return MIN_SCORE };    
     let matdiff = calc_matdiff(&gstate.bbs);
-    if is_5rep_tie(gstate) {
-        return pick(matdiff < 0, MAX_SCORE, MIN_SCORE);
-    }
+    if is_drawable(gstate) { return 0; }
     return matdiff;
 }
 
+fn is_drawable(gstate: &mut FastPosition) -> bool {
+    let by_repetition = count_repetitions(gstate) >= 3;
+    let by_50moverule = gstate.halfmoveclock >= 100;
+    return by_repetition | by_50moverule;
+}

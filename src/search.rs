@@ -42,9 +42,9 @@ pub struct DeadlineElapsed;
 /// it will [`panic`]. When the deadline elapses, search is cancelled and
 /// `Err(DeadlineElapsed)` is returned.
 fn search(mut ctx: SearchContext) -> Result<MGAnyMove, DeadlineElapsed> {
-    let mut best: Max<MGAnyMove, i32> = Max::new(BELOW_MIN_SCORE);
+    let mut best: Max<MGAnyMove, i16> = Max::new(BELOW_MIN_SCORE);
 
-    fn eval_unmake(ctx: &mut SearchContext, best: &mut Max<MGAnyMove, i32>, 
+    fn eval_unmake(ctx: &mut SearchContext, best: &mut Max<MGAnyMove, i16>, 
         mov: MGAnyMove) -> Result<(), DeadlineElapsed> 
     {
         swap_active(ctx.gstate);
@@ -80,9 +80,9 @@ fn search(mut ctx: SearchContext) -> Result<MGAnyMove, DeadlineElapsed> {
 
 
 fn search_shallow(gstate: &mut FastPosition, mut movebuf: SegVec<PMGMove>) -> MGAnyMove {
-    let mut best: Max<MGAnyMove, i32> = Max::new(MIN_SCORE);
+    let mut best: Max<MGAnyMove, i16> = Max::new(MIN_SCORE);
 
-    fn eval_unmake(gstate: &mut FastPosition) -> i32 {
+    fn eval_unmake(gstate: &mut FastPosition) -> i16 {
         swap_active(gstate);
         let score = -1 * shallow_eval(gstate);
         unmake_move(gstate);

@@ -10,12 +10,7 @@ use crate::piece::Color;
 use crate::piece::PieceGrid;
 use crate::piece::Species;
 
-pub fn is_5rep_tie(current: &FastPosition) -> bool {
-    let count = count_repetitions(current);
-    return count >= 5;
-}
-
-fn count_repetitions(current: &FastPosition) -> usize {    
+pub fn count_repetitions(current: &FastPosition) -> usize {    
     let mut past_p_lut = current.p_lut;
     let mut past_active_player = current.active_player();
     let mut repeat_count: usize = 0;

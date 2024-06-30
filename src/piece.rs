@@ -111,6 +111,8 @@ impl Piece {
     pub fn set_species(&mut self, species: Species) {
         *self = Piece::new(self.color(), species);
     }
+
+    pub fn index(self) -> u8 { self.data.get() - 1 } 
 }
 
 
