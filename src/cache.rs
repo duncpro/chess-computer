@@ -23,7 +23,6 @@ impl Cache {
     }
 }
 
-
 pub struct IncrementalHash { 
     value: u64,
     chs: HashChars
