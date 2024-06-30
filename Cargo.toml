@@ -5,3 +5,5 @@ edition = "2021"
 
 [dependencies]
 paste = "1.0.15"
+rand = { version = "0.8.5", features = ["min_const_gen"] }
+
