@@ -29,6 +29,7 @@ fn clear_tile(state: &mut FastPosition, pos: StandardCoordinate) {
         state.bbs.species_bbs[piece.species()].unset(pos);
         unsetbit!(state.bbs.affilia_rel_bbs[piece.color()],
             relativize(pos, state.active_player()));
+        state.hash.toggle_tile(pos, piece);
     }
     unsetbit!(state.bbs.pawn_rel_bb, 
         relativize(pos, state.active_player()));
@@ -39,6 +40,7 @@ pub fn fill_tile(state: &mut FastPosition, pos: StandardCoordinate, piece: Piece
     state.p_lut.set(pos, Some(piece));
     state.bbs.affilia_bbs[piece.color()].set(pos);
     state.bbs.species_bbs[piece.species()].set(pos);
+    state.hash.toggle_tile(pos, piece);
     
     let rel_pos = relativize(pos, state.active_player());
     setbit!(state.bbs.affilia_rel_bbs[piece.color()], rel_pos);
@@ -53,8 +55,8 @@ pub fn swap_active(state: &mut FastPosition) {
     swap_bytes_inplace_u64(
         &mut state.bbs.affilia_rel_bbs[Color::Black]);
     state.bbs.active_player.swap();
+    state.hash.toggle_active();
 }
-
 
 // # Make
 
@@ -71,6 +73,8 @@ pub fn make_pmove(state: &mut FastPosition, mgmove: PMGMove) {
 
     let prev_crights = state.crights;
     update_crights(state); 
+    state.hash.toggle_crights(prev_crights);
+    state.hash.toggle_crights(state.crights);
 
     let prev_halfmoveclock = state.halfmoveclock;
     state.halfmoveclock += 1;
@@ -122,6 +126,8 @@ pub fn make_castle(state: &mut FastPosition, side: FileDirection) {
 
     let prev_crights = state.crights;
     state.crights.revoke(state.active_player());
+    state.hash.toggle_crights(prev_crights);
+    state.hash.toggle_crights(state.crights);
 
     let prev_halfmoveclock = state.halfmoveclock;
     state.halfmoveclock += 1;
@@ -198,9 +204,13 @@ fn unmake_castle(state: &mut FastPosition, side: FileDirection) {
 
 pub fn unmake_move(state: &mut FastPosition) {
     let last_entry = state.movelog.pop().unwrap();
+    
+    state.hash.toggle_crights(state.crights);
+    state.hash.toggle_crights(last_entry.prev_crights);
+    
     state.crights = last_entry.prev_crights;
     state.halfmoveclock = last_entry.prev_halfmoveclock;
-        
+
     swap_active(state);
     
     match last_entry.lmove {

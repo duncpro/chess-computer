@@ -2,6 +2,8 @@ use crate::bitboard::Bitboard;
 use crate::bitboard::MDBitboard;
 use crate::bitboard::RawBitboard;
 use crate::attack::is_attacked;
+use crate::cache::HashChars;
+use crate::cache::IncrementalHash;
 use crate::coordinates::Coordinate;
 use crate::coordinates::CoordinateSystem;
 use crate::coordinates::StandardCS;
@@ -19,17 +21,28 @@ use crate::piece::SpeciesTable;
 
 // # `FastPosition`
 
-#[derive(Default)]
 pub struct FastPosition {
     pub bbs: Bitboards,
     pub p_lut: PieceGrid,
     pub movelog: Vec<MovelogEntry>,
     pub crights: CastlingRights,
-    pub halfmoveclock: u16
+    pub halfmoveclock: u16,
+    pub hash: IncrementalHash
 }
 
 impl FastPosition {
     pub fn active_player(&self) -> Color { self.bbs.active_player } 
+
+    pub fn new(hash_ch: HashChars) -> Self {
+        let bbs = Bitboards::new();
+        let p_lut = PieceGrid::empty();
+        let movelog: Vec<MovelogEntry> = Vec::new();
+        let crights = CastlingRights::INITIAL;
+        let halfmoveclock = 0u16;
+        let hash = IncrementalHash::new(hash_ch);
+        return Self { bbs, p_lut, movelog, crights, halfmoveclock,
+            hash }
+    }
 }
 
 // # Movelog
@@ -59,7 +72,6 @@ pub enum SpecialPieceMove { Promote = 1, PawnDoubleJump = 2 }
 
 // # `Bitboards`
 
-#[derive(Default)]
 pub struct Bitboards {
     // ## MDBitboards
     pub species_bbs: SpeciesTable<MDBitboard>,
@@ -101,6 +113,18 @@ impl Bitboards {
     pub fn is_check(&self) -> bool { 
         is_attacked(&self, locate_king_stdc(&self))
     }
+
+    /// Constructs `Bitbaords` representing an completely empty 
+    /// board where white is the active player.
+    pub fn new() -> Self {
+        Self {
+            species_bbs: SpeciesTable::default(),
+            affilia_bbs: ColorTable::default(),
+            affilia_rel_bbs: ColorTable::default(),
+            pawn_rel_bb: 0,
+            active_player: Color::White
+        }
+    }   
 }
 
 

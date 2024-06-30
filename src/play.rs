@@ -1,3 +1,4 @@
+use crate::cache::HashChars;
 use crate::cli::print_board;
 use crate::cli::prompt_ok;
 use crate::expect_match;
@@ -25,7 +26,8 @@ use crate::movegen::dispatch::count_legal_moves;
 pub fn new_game() -> FastPosition {
     use crate::piece::Color::*;
     use crate::piece::Species::*;
-    let mut state = FastPosition::default();
+    let mut state = FastPosition::new(HashChars::new([0; 32]));
+
     for i in 0..8u8 {
         fill_tile(&mut state, StandardCoordinate::new(
             Rank::from_index(1), File::from_index(i)),
@@ -54,7 +56,7 @@ pub fn new_game() -> FastPosition {
             fill_tile(&mut state, StandardCoordinate::new(
                 $color.base_rank(), File::H), Piece::new($color, Rook));
         }
-    };
+    }
 
     fill_base_rank!(White);
     fill_base_rank!(Black);

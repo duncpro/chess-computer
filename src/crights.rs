@@ -34,11 +34,11 @@ impl CastlingRights {
 
     pub fn data(self) -> u8 { self.data }
 
+    /// Value of `CastlingRights` at the beginning of a chess
+    /// game, before any moves have been made. This value corresponds
+    /// to the state of both players having both their castling
+    /// rights.
     pub const INITIAL: Self = Self { data: 0b1111 };
-}
-
-impl Default for CastlingRights {
-    fn default() -> Self { Self::INITIAL }
 }
 
 // # Updating Castling Rights

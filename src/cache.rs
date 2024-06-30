@@ -1,9 +1,3 @@
-use std::mem::size_of;
-
-use rand::Rng;
-use rand::SeedableRng;
-use rand::rngs::StdRng;
-
 use crate::crights::CastlingRights;
 use crate::gamestate::FastPosition;
 use crate::grid::File;
@@ -11,6 +5,9 @@ use crate::grid::StandardCoordinate;
 use crate::piece::Piece;
 use crate::piece::PieceGrid;
 use crate::piece::Color;
+use rand::Rng;
+use rand::SeedableRng;
+use rand::rngs::StdRng;
 
 #[derive(Clone, Copy)]
 pub struct CacheEntry {
@@ -27,17 +24,17 @@ impl Cache {
 }
 
 
-pub struct IncrementalHash<'a> { 
+pub struct IncrementalHash { 
     value: u64,
-    chs: &'a Characteristics
+    chs: HashChars
 }
 
-impl<'a> IncrementalHash<'a> {
-    pub fn new(chs: &'a Characteristics) -> Self {
+impl IncrementalHash {
+    pub fn new(chs: HashChars) -> Self {
         Self { value: 0, chs }
     }
     
-    pub fn toggle_square(&mut self, pos: StandardCoordinate, piece: Piece) {
+    pub fn toggle_tile(&mut self, pos: StandardCoordinate, piece: Piece) {
         let lut_key = usize::from(pos.index() * 12 + piece.index());
         let ch = self.chs.piece_placements[lut_key];
         self.value %= ch;
@@ -60,7 +57,7 @@ impl<'a> IncrementalHash<'a> {
     }
 }
 
-pub struct Characteristics {
+pub struct HashChars {
     piece_placements: [u64; 6 * 2 * 64],
     crights: [u64; 16],
     ep_vuln: [u64; 8],    
@@ -68,7 +65,7 @@ pub struct Characteristics {
 }
 
 
-impl Characteristics {
+impl HashChars {
     pub fn new(seed: [u8; 32]) -> Self {
         let mut piece_placements = [0u64; 12 * 64];
         let mut crights = [0u64; 16]; 

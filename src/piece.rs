@@ -116,7 +116,7 @@ impl Piece {
 }
 
 
-#[derive(Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct PieceGrid { data: [u8; 32] }
 
 impl PieceGrid {
@@ -134,4 +134,6 @@ impl PieceGrid {
         let data = (self.data[lut_index] >> byte_offset) & 0b1111;
         return unsafe { std::mem::transmute(data) };
     }
+
+    pub fn empty() -> Self { Self { data: [0; 32] } }
 }
