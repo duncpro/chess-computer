@@ -173,15 +173,19 @@ impl<T> PushCount<T> {
     }
 }
 
-pub struct PushFilter<T, F, P> 
+impl<T> Push<T> for Vec<T> {
+    fn push(&mut self, value: T) { Vec::push(self, value) }
+}
+
+pub struct PushFilter<'a, T, F, P> 
 where P: Push<T>, F: FnMut(&T) -> bool
 {
     filter_fn: F,
-    inner: P,
+    inner: &'a mut P,
     pd: PhantomData<T>
 }
 
-impl<T, F, P> Push<T> for PushFilter<T, F, P>
+impl<'a, T, F, P> Push<T> for PushFilter<'a, T, F, P>
 where P: Push<T>, F: FnMut(&T) -> bool
 {
     fn push(&mut self, value: T) {
@@ -191,12 +195,41 @@ where P: Push<T>, F: FnMut(&T) -> bool
 }
 
 
-impl<T, F, P> PushFilter<T, F, P>
+impl<'a, T, F, P> PushFilter<'a, T, F, P>
 where P: Push<T>, F: FnMut(&T) -> bool
 {
     pub fn inner(&self) -> &P { &self.inner }
-    pub fn new(inner: P, filter_fn: F) -> Self {
+    pub fn new(inner: &'a mut P, filter_fn: F) -> Self {
         Self { filter_fn, inner, pd: PhantomData }
+    }
+}
+
+pub struct PushMap<'a, T, R, F, P> 
+where P: Push<R>, F: FnMut(&T) -> R
+{
+    map_fn: F,
+    inner: &'a mut P,
+    pd1: PhantomData<T>,
+    pd2: PhantomData<R>
+}
+
+impl<'a, T, R, F, P> Push<T> for PushMap<'a, T, R, F, P>
+where P: Push<R>, F: FnMut(&T) -> R
+{
+    fn push(&mut self, value: T) {
+        let mapped = (self.map_fn)(&value);
+        self.inner.push(mapped);
+    }
+}
+
+
+impl<'a, T, R, F, P> PushMap<'a, T, R, F, P>
+where P: Push<R>, F: FnMut(&T) -> R
+{
+    pub fn inner(&self) -> &P { &self.inner }
+    pub fn new(inner: &'a mut P, map_fn: F) -> Self {
+        Self { map_fn, inner, pd1: PhantomData,
+            pd2: PhantomData }
     }
 }
 

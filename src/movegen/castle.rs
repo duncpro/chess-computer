@@ -5,7 +5,7 @@ use crate::grid::StandardCoordinate;
 use crate::grid::File;
 use crate::gamestate::FastPosition;
 
-pub fn movegen_castle_kingside(state: &mut FastPosition) -> bool{    
+pub fn movegen_castle_kingside(state: &FastPosition) -> bool{    
     let mut can_castle = false;
         
     let base_rank = state.active_player().base_rank();
@@ -29,7 +29,7 @@ pub fn movegen_castle_kingside(state: &mut FastPosition) -> bool{
     return can_castle; 
 }
 
-pub fn movegen_castle_queenside(state: &mut FastPosition) -> bool {
+pub fn movegen_castle_queenside(state: &FastPosition) -> bool {
     let mut can_castle = false;
         
     let base_rank = state.active_player().base_rank();

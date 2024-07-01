@@ -1,4 +1,8 @@
+use crate::gamestate::FastPosition;
+use crate::grid::FileDirection;
 use crate::grid::StandardCoordinate;
+use crate::movegen::dispatch::movegen_legal;
+use crate::movegen::types::MGAnyMove;
 use crate::piece::Color;
 use crate::piece::Piece;
 use crate::piece::PieceGrid;
@@ -30,7 +34,9 @@ pub fn get_unicode_symbol(piece: Piece) -> &'static str {
 pub fn print_board(board: &PieceGrid) {
     let mut i: u8 = 0;
     print!("\n");
+    println!("  A B C D E F G H");
     for rank_i in 0..8u8 {
+        print!("{} ", rank_i + 1);
         for file_i in 0..8u8 {
             let coord = StandardCoordinate::from_index(i);
             let is_colored_sq = (((rank_i % 2) + file_i) % 2) == 0;
@@ -48,6 +54,37 @@ pub fn print_board(board: &PieceGrid) {
 }
 
 pub fn prompt_ok() {
+    println!("Press any key to continue");
     let mut input = String::new();
     std::io::stdin().read_line(&mut input);
+}
+
+pub fn prompt_move(state: &mut FastPosition) -> MGAnyMove {
+    let mut moves: Vec<MGAnyMove> = Vec::new();
+    movegen_legal(state, &mut moves);
+    for (i, mov) in moves.iter().enumerate() {
+        print!("{}. ", i);
+        match mov {
+            MGAnyMove::Piece(pmov) => print!("{} -> {}", pmov.origin, pmov.destin),
+            MGAnyMove::Castle(direction) => {
+                print!("Castle ");
+                match direction {
+                    FileDirection::Queenside => print!("Queenside"),
+                    FileDirection::Kingside => print!("Kingside"),
+                }
+            }
+        }
+        print!("\n");
+    }
+
+    print!("Move #: ");
+    let selected_index = prompt_usize();
+    return moves[selected_index];
+}
+
+pub fn prompt_usize() -> usize {
+    let mut input = String::new();
+    std::io::stdin().read_line(&mut input);
+    input.pop();
+    return input.parse::<usize>().unwrap();
 }

@@ -32,6 +32,8 @@ impl File {
 
     pub const fn index(self) -> u8 { self.index }
 
+    pub fn letter(self) -> char { char::from(65 + self.index()) }
+
     pub const A: File = File::from_index(0);
     pub const B: File = File::from_index(1);
     pub const C: File = File::from_index(2);
@@ -156,7 +158,7 @@ impl StandardCoordinate {
 
 impl Display for StandardCoordinate {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}{}", self.file(), self.rank())
+        write!(f, "{}{}", self.file().letter(), self.rank())
     }
 }
 

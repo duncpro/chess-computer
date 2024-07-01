@@ -14,7 +14,6 @@ pub struct CacheEntry {
     pub bestmove: u8
 }
 
-
 struct Cache { vec: Vec<Option<CacheEntry>> }
 
 impl Cache {

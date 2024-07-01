@@ -1,17 +1,12 @@
 use crate::gamestate::FastPosition;
-use crate::grid::FileDirection;
-use crate::makemove::make_pmove;
+use crate::makemove::make_move;
 use crate::makemove::unmake_move;
-use crate::makemove::swap_active;
-use crate::makemove::make_castle;
 use crate::mat_eval::calc_matdiff;
 use crate::misc::SegVec;
 use crate::misc::max_inplace;
-use crate::movegen::castle::movegen_castle_kingside;
-use crate::movegen::castle::movegen_castle_queenside;
 use crate::movegen::dispatch::count_legal_moves;
-use crate::movegen::dispatch::movegen_legal_pmoves;
-use crate::movegen::types::PMGMove;
+use crate::movegen::dispatch::movegen_legal;
+use crate::movegen::types::MGAnyMove;
 use crate::repetitions::count_repetitions;
 use std::time::Instant;
 
@@ -31,7 +26,7 @@ pub struct DeepEvalContext<'a, 'b> {
     /// are generated but before they are evaluated. This
     /// buffer should be empty when `DeepEvalContext` is
     /// constructed by the caller.
-    pub movebuf: SegVec<'b, PMGMove>,
+    pub movebuf: SegVec<'b, MGAnyMove>,
     pub deadline: Instant,
     /// The best score that the parent is assured of so-far.
     /// If a child/opponent move is encountered with a score 
@@ -61,7 +56,6 @@ pub fn deep_eval(mut ctx: DeepEvalContext) -> Result<i16, DeepEvalException> {
     fn eval_unmake(ctx: &mut DeepEvalContext, best_score: &mut i16)
     -> Result<(), DeepEvalException>
     {
-        swap_active(ctx.gstate);
         let result = deep_eval(DeepEvalContext { gstate: ctx.gstate, 
             lookahead: ctx.lookahead - 1, movebuf: ctx.movebuf.extend(), 
             deadline: ctx.deadline, cutoff: *best_score });
@@ -76,26 +70,15 @@ pub fn deep_eval(mut ctx: DeepEvalContext) -> Result<i16, DeepEvalException> {
             },
         }
     }
-    
-    movegen_legal_pmoves(ctx.gstate, &mut ctx.movebuf);
+    movegen_legal(ctx.gstate, &mut ctx.movebuf);
     // In the case there are no legal moves, it's a stalemate,
     // or we're in checkmate. Either way, this is not a good
     // position to be in, so it gets the minimum score.
     if ctx.movebuf.is_empty() { return Ok(MIN_SCORE); }
-    while let Some(pmove) = ctx.movebuf.pop() {        
-        make_pmove(ctx.gstate, pmove);
+    while let Some(mov) = ctx.movebuf.pop() {        
+        make_move(ctx.gstate, mov);
         eval_unmake(&mut ctx, &mut best_score)?;
     }
-    
-    if movegen_castle_queenside(ctx.gstate) {
-        make_castle(ctx.gstate, FileDirection::Queenside);
-        eval_unmake(&mut ctx, &mut best_score)?;
-    }
-    if movegen_castle_kingside(ctx.gstate) {
-        make_castle(ctx.gstate, FileDirection::Kingside);
-        eval_unmake(&mut ctx, &mut best_score)?;
-    }
-    
     return Ok(best_score);
 }
 

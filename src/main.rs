@@ -1,6 +1,8 @@
 #![feature(variant_count)]
 #![feature(core_intrinsics)]
 
+use crate::play::humanplay;
+
 mod bitboard;
 mod bits;
 mod attack;
@@ -27,7 +29,5 @@ fn main() {
     use std::time::Duration;
     use crate::play::selfplay;
     use crate::piece::ColorTable;
-    let time_constraints = ColorTable::new([Duration::from_secs(5), 
-        Duration::from_secs(5)]);
-    selfplay(time_constraints);
+    humanplay(Duration::from_secs(45));
 }

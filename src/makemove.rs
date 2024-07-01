@@ -140,7 +140,7 @@ pub fn make_castle(state: &mut FastPosition, side: FileDirection) {
         lmove: LoggedMove::Castle(side) });
 }
 
-pub fn doturn(state: &mut FastPosition, mov: MGAnyMove) {
+pub fn make_move(state: &mut FastPosition, mov: MGAnyMove) {
     match mov {
         MGAnyMove::Piece(pmove) => make_pmove(state, pmove),
         MGAnyMove::Castle(side) => make_castle(state, side),

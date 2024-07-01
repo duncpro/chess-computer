@@ -4,19 +4,13 @@ use crate::eval::DeepEvalException;
 use crate::eval::MIN_SCORE;
 use crate::eval::deep_eval;
 use crate::eval::shallow_eval;
+use crate::makemove::make_move;
 use crate::misc::Max;
-use crate::makemove::make_pmove;
-use crate::makemove::make_castle;
 use crate::makemove::unmake_move;
-use crate::makemove::swap_active;
 use crate::misc::SegVec;
-use crate::movegen::dispatch::movegen_legal_pmoves;
-use crate::movegen::types::PMGMove;
+use crate::movegen::dispatch::movegen_legal;
 use crate::movegen::types::MGAnyMove;
 use crate::gamestate::FastPosition;
-use crate::grid::FileDirection;
-use crate::movegen::castle::movegen_castle_queenside;
-use crate::movegen::castle::movegen_castle_kingside;
 use std::time::Instant;
 
 // # Search
@@ -27,7 +21,7 @@ struct SearchContext<'a, 'b> {
     /// evaluating each position resultant from each legal move
     /// the active-player has to choose from.
     pub eval_lookahead: u8,
-    pub movebuf: SegVec<'b, PMGMove>,
+    pub movebuf: SegVec<'b, MGAnyMove>,
     pub deadline: Instant
 }
 
@@ -47,7 +41,6 @@ fn search(mut ctx: SearchContext) -> Result<MGAnyMove, DeadlineElapsed> {
     fn eval_unmake(ctx: &mut SearchContext, best: &mut Max<MGAnyMove, i16>, 
         mov: MGAnyMove) -> Result<(), DeadlineElapsed> 
     {
-        swap_active(ctx.gstate);
         let result = deep_eval(DeepEvalContext { gstate: ctx.gstate, 
             lookahead: ctx.eval_lookahead, movebuf: ctx.movebuf.extend(), 
             deadline: ctx.deadline, cutoff: best.value() });
@@ -59,50 +52,30 @@ fn search(mut ctx: SearchContext) -> Result<MGAnyMove, DeadlineElapsed> {
         }
     }
        
-    movegen_legal_pmoves(ctx.gstate, &mut ctx.movebuf); 
-    while let Some(pmove) = ctx.movebuf.pop() {        
-        make_pmove(ctx.gstate, pmove);
-        eval_unmake(&mut ctx, &mut best, MGAnyMove::Piece(pmove))?;
-     }
-    if movegen_castle_queenside(ctx.gstate) {
-        make_castle(ctx.gstate, FileDirection::Queenside);
-        eval_unmake(&mut ctx, &mut best,
-            MGAnyMove::Castle(FileDirection::Queenside))?;
+    movegen_legal(ctx.gstate, &mut ctx.movebuf); 
+    while let Some(mov) = ctx.movebuf.pop() {        
+        make_move(ctx.gstate, mov);
+        eval_unmake(&mut ctx, &mut best, mov)?;
     }
-    if movegen_castle_kingside(ctx.gstate) {
-        make_castle(ctx.gstate, FileDirection::Kingside);
-        eval_unmake(&mut ctx, &mut best,
-            MGAnyMove::Castle(FileDirection::Kingside))?;
-    }
-
     return Ok(best.take().unwrap());
 }
 
 
-fn search_shallow(gstate: &mut FastPosition, mut movebuf: SegVec<PMGMove>) -> MGAnyMove {
+fn search_shallow(gstate: &mut FastPosition, mut movebuf: SegVec<MGAnyMove>) -> MGAnyMove {
     let mut best: Max<MGAnyMove, i16> = Max::new(MIN_SCORE);
 
     fn eval_unmake(gstate: &mut FastPosition) -> i16 {
-        swap_active(gstate);
         let score = -1 * shallow_eval(gstate);
         unmake_move(gstate);
         return score;
     }
        
-    movegen_legal_pmoves(gstate, &mut movebuf); 
-    while let Some(pmove) = movebuf.pop() {        
-        make_pmove(gstate, pmove);
-        best.push(MGAnyMove::Piece(pmove), eval_unmake(gstate));
+    movegen_legal(gstate, &mut movebuf); 
+    while let Some(mov) = movebuf.pop() {        
+        make_move(gstate, mov);
+        best.push(mov, eval_unmake(gstate));
     }
-    if movegen_castle_queenside(gstate) {
-        make_castle(gstate, FileDirection::Queenside);
-        best.push(MGAnyMove::Castle(FileDirection::Queenside), eval_unmake(gstate));
-    }
-    if movegen_castle_kingside(gstate) {
-        make_castle(gstate, FileDirection::Kingside);
-        best.push(MGAnyMove::Castle(FileDirection::Kingside), eval_unmake(gstate));
-    }
-
+    
     return best.take().unwrap();
 }
 
@@ -111,7 +84,7 @@ fn search_shallow(gstate: &mut FastPosition, mut movebuf: SegVec<PMGMove>) -> MG
 
 pub struct IterDeepSearchContext<'a, 'b> {
     pub gstate: &'a mut FastPosition,
-    pub movebuf: SegVec<'b, PMGMove>,
+    pub movebuf: SegVec<'b, MGAnyMove>,
     pub deadline: Instant
 }
 
