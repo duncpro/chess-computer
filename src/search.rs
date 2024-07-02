@@ -62,7 +62,7 @@ fn search(mut ctx: SearchContext) -> Result<MGAnyMove, DeadlineElapsed> {
 
 
 fn search_shallow(gstate: &mut FastPosition, mut movebuf: SegVec<MGAnyMove>) -> MGAnyMove {
-    let mut best: Max<MGAnyMove, i16> = Max::new(MIN_SCORE);
+    let mut best: Max<MGAnyMove, i16> = Max::new(BELOW_MIN_SCORE);
 
     fn eval_unmake(gstate: &mut FastPosition) -> i16 {
         let score = -1 * shallow_eval(gstate);

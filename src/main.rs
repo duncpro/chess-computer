@@ -1,7 +1,4 @@
 #![feature(variant_count)]
-#![feature(core_intrinsics)]
-
-use crate::play::humanplay;
 
 mod bitboard;
 mod bits;
@@ -10,6 +7,7 @@ mod cache;
 mod cli;
 mod coordinates;
 mod crights;
+mod enpassant;
 mod eval;
 mod gamestate;
 mod grid;
@@ -24,10 +22,13 @@ mod rmrel;
 mod repetitions;
 mod search;
 mod sliders;
+mod stdinit;
 
 fn main() {
     use std::time::Duration;
     use crate::play::selfplay;
+    use crate::play::humanplay;
     use crate::piece::ColorTable;
-    humanplay(Duration::from_secs(45));
+    // humanplay(Duration::from_secs(45));
+    selfplay(ColorTable::new([Duration::from_secs(5); 2]));
 }

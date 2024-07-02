@@ -1,6 +1,7 @@
 use crate::bitboard::RawBitboard;
 use crate::bits::swap_bytes_inplace_u64;
 use crate::crights::update_crights;
+use crate::enpassant::is_enpassant_vuln;
 use crate::gamestate::LoggedMove;
 use crate::gamestate::LoggedPieceMove;
 use crate::gamestate::MovelogEntry;
@@ -141,11 +142,17 @@ pub fn make_castle(state: &mut FastPosition, side: FileDirection) {
 }
 
 pub fn make_move(state: &mut FastPosition, mov: MGAnyMove) {
+    if let Some(file) = is_enpassant_vuln(state) {
+        state.hash.toggle_ep_vuln(file);
+    }
     match mov {
         MGAnyMove::Piece(pmove) => make_pmove(state, pmove),
         MGAnyMove::Castle(side) => make_castle(state, side),
     }
     swap_active(state);
+    if let Some(file) = is_enpassant_vuln(state) {
+        state.hash.toggle_ep_vuln(file);
+    }
 }
 
 // # Unmake
@@ -207,11 +214,11 @@ fn unmake_castle(state: &mut FastPosition, side: FileDirection) {
 }
 
 pub fn unmake_move(state: &mut FastPosition) {
+    if let Some(file) = is_enpassant_vuln(state) {
+        state.hash.toggle_ep_vuln(file);
+    }
+    
     let last_entry = state.movelog.pop().unwrap();
-
-    // TODO: Enpassant
-    // If the move we just undid was a PawnDoubleJump,
-    // then we need to untoggle enpassant for the file.
     
     state.hash.toggle_crights(state.crights);
     state.hash.toggle_crights(last_entry.prev_crights);
@@ -226,9 +233,9 @@ pub fn unmake_move(state: &mut FastPosition) {
         LoggedMove::Piece(pmove) => unmake_pmove(state, pmove),
     }
 
-    // TODO: Enpassant
-    // If the move at the top of the movelog is now PawnDoubleJump,
-    // then we need to toggle enpassant.
+    if let Some(file) = is_enpassant_vuln(state) {
+        state.hash.toggle_ep_vuln(file);
+    }
 }
 
 // # Test

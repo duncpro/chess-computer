@@ -1,24 +1,51 @@
+use std::ops::Index;
+use std::ops::IndexMut;
+
 use crate::crights::CastlingRights;
-use crate::gamestate::FastPosition;
 use crate::grid::File;
 use crate::grid::StandardCoordinate;
 use crate::piece::Piece;
-use crate::piece::PieceGrid;
-use crate::piece::Color;
 use rand::Rng;
 use rand::SeedableRng;
 use rand::rngs::StdRng;
 
 #[derive(Clone, Copy)]
 pub struct CacheEntry {
-    pub bestmove: u8
+    pub score: i16,
+    pub depth: u8
 }
 
-struct Cache { vec: Vec<Option<CacheEntry>> }
+pub struct Cache { vec: Vec<Option<CacheEntry>> }
 
 impl Cache {
-    fn new(size: usize) -> Self {
-        Self { vec: vec![None; size] }
+    pub fn new(mem_capacity: u64) -> Self {
+        let ewidth = u64::try_from(std::mem::size_of::<CacheEntry>()).unwrap();
+        let len = (mem_capacity * u64::pow(2, 20)) / ewidth;
+        Self { vec: vec![None; usize::try_from(len).unwrap()] }
+    }
+
+    pub fn lookup_score(&self, hash: u64, depth: u8) -> Option<i16> {
+        let entry = self[hash]?;
+        if entry.depth != depth { return None; }
+        return Some(entry.score);
+    }
+}
+
+impl Index<u64> for Cache {
+    type Output = Option<CacheEntry>;
+
+    fn index(&self, hash: u64) -> &Self::Output {
+        let vec_len = u64::try_from(self.vec.len()).unwrap();
+        let key = usize::try_from(hash % vec_len).unwrap();
+        return &self.vec[key];
+    }
+}
+
+impl IndexMut<u64> for Cache {
+    fn index_mut(&mut self, hash: u64) -> &mut Self::Output {
+        let vec_len = u64::try_from(self.vec.len()).unwrap();
+        let key = usize::try_from(hash % vec_len).unwrap();
+        return &mut self.vec[key];
     }
 }
 
@@ -53,6 +80,8 @@ impl IncrementalHash {
         let ch = self.chs.ep_vuln[lut_key];
         self.value %= ch;
     }
+
+    pub fn value(&self) -> u64 { self.value }
 }
 
 pub struct HashChars {

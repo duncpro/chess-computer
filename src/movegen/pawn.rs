@@ -18,10 +18,10 @@ use crate::movegen::types::PMGMove;
 use crate::rmrel::absolutize;
 use crate::rmrel::relativize;
 use crate::setbit;
+use crate::movegen::types::PMGContext;
 use std::ops::BitAnd;
 use std::ops::Not;
 use std::ops::BitAndAssign;
-use crate::movegen::types::PMGContext;
 
 pub fn movegen_pawns(ctx: &mut PMGContext<impl Push<PMGMove>>) {
     movegen_forward1(ctx);
@@ -161,7 +161,7 @@ fn movegen_enpassant(ctx: &mut PMGContext<impl Push<PMGMove>>) {
                 
                 let destin_rmrel = target_rmrel + 8;
 
-                let mut bb = reverse_pawn_attack(target_rmrel);
+                let mut bb = reverse_pawn_attack(destin_rmrel);
                 bb &= ctx.inspect(|s| s.bbs.affilia_rel_bbs[s.active_player()]);
                 bb &= ctx.inspect(|s| s.bbs.pawn_rel_bb);
 

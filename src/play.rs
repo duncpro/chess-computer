@@ -19,52 +19,12 @@ use crate::gamestate::FastPosition;
 use crate::gamestate::GameStatus;
 use crate::gamestate::status;
 use crate::movegen::types::MGAnyMove;
+use crate::stdinit::new_std_chess_position;
 use std::cell::RefCell;
 use std::io::Write;
 use std::time::Duration;
 use std::time::Instant;
 use crate::movegen::dispatch::count_legal_moves;
-
-pub fn new_game() -> FastPosition {
-    use crate::piece::Color::*;
-    use crate::piece::Species::*;
-    let mut state = FastPosition::new(HashChars::new([0; 32]));
-
-    for i in 0..8u8 {
-        fill_tile(&mut state, StandardCoordinate::new(
-            Rank::from_index(1), File::from_index(i)),
-            Piece::new(White, Pawn));
-        fill_tile(&mut state, StandardCoordinate::new(
-            Rank::from_index(6), File::from_index(i)),
-            Piece::new(Black, Pawn));
-    }
-
-    macro_rules! fill_base_rank {
-        ($color:expr) => {            
-            fill_tile(&mut state, StandardCoordinate::new(
-                $color.base_rank(), File::A), Piece::new($color, Rook));
-            fill_tile(&mut state, StandardCoordinate::new(
-                $color.base_rank(), File::B), Piece::new($color, Knight));
-            fill_tile(&mut state, StandardCoordinate::new(
-                $color.base_rank(), File::C), Piece::new($color, Bishop));
-            fill_tile(&mut state, StandardCoordinate::new(
-                $color.base_rank(), File::D), Piece::new($color, Queen));
-            fill_tile(&mut state, StandardCoordinate::new(
-                $color.base_rank(), File::E), Piece::new($color, King));
-            fill_tile(&mut state, StandardCoordinate::new(
-                $color.base_rank(), File::F), Piece::new($color, Bishop));
-            fill_tile(&mut state, StandardCoordinate::new(
-                $color.base_rank(), File::G), Piece::new($color, Knight));
-            fill_tile(&mut state, StandardCoordinate::new(
-                $color.base_rank(), File::H), Piece::new($color, Rook));
-        }
-    }
-
-    fill_base_rank!(White);
-    fill_base_rank!(Black);
-    
-    return state;
-}
 
 pub fn automove(gstate: &mut FastPosition, think_time: Duration) {
     if matches!(status(gstate), GameStatus::Complete(_)) {
@@ -86,7 +46,7 @@ pub fn automove(gstate: &mut FastPosition, think_time: Duration) {
 
 
 pub fn selfplay(time_constraints: ColorTable<Duration>) {
-    let mut state: FastPosition = new_game();
+    let mut state: FastPosition = new_std_chess_position();
 
     println!("New Self-Play Game");
     print_board(&state.p_lut);
@@ -122,7 +82,7 @@ pub fn humanmove(gstate: &mut FastPosition) {
 }
 
 pub fn humanplay(think_time: Duration) {
-    let mut state: FastPosition = new_game();
+    let mut state: FastPosition = new_std_chess_position();
 
     println!("New Self-Play Game");
     print_board(&state.p_lut);

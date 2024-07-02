@@ -1,3 +1,4 @@
+use crate::cache::CacheEntry;
 use crate::gamestate::FastPosition;
 use crate::makemove::make_move;
 use crate::makemove::unmake_move;
@@ -41,6 +42,7 @@ pub enum DeepEvalException {
     Cut
 }
 
+
 /// Computes the highest score the active-player is assured of
 /// given perfect play by the opponent. If the deadline elapses, the 
 /// search is cancelled and `Err(DeadlineElapsed)` is returned.
@@ -51,7 +53,7 @@ pub fn deep_eval(mut ctx: DeepEvalContext) -> Result<i16, DeepEvalException> {
     if ctx.lookahead == 0 { return Ok(shallow_eval(ctx.gstate)); }
     if is_drawable(ctx.gstate) { return Ok(0); }
 
-    let mut best_score: i16 = MIN_SCORE;
+    let mut best_score: i16 = BELOW_MIN_SCORE;
 
     fn eval_unmake(ctx: &mut DeepEvalContext, best_score: &mut i16)
     -> Result<(), DeepEvalException>

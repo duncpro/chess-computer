@@ -2,6 +2,7 @@ use crate::bitboard::Bitboard;
 use crate::bitboard::MDBitboard;
 use crate::bitboard::RawBitboard;
 use crate::attack::is_attacked;
+use crate::cache::Cache;
 use crate::cache::HashChars;
 use crate::cache::IncrementalHash;
 use crate::coordinates::Coordinate;
@@ -27,21 +28,24 @@ pub struct FastPosition {
     pub movelog: Vec<MovelogEntry>,
     pub crights: CastlingRights,
     pub halfmoveclock: u16,
-    pub hash: IncrementalHash
+    pub hash: IncrementalHash,
+    pub cache: Cache
 }
 
 impl FastPosition {
     pub fn active_player(&self) -> Color { self.bbs.active_player } 
 
-    pub fn new(hash_ch: HashChars) -> Self {
+    /// Constructs an empty board with white as the active player
+    /// and no castling rights for either side. 
+    pub fn new(hash_ch: HashChars, cache: Cache) -> Self {
         let bbs = Bitboards::new();
         let p_lut = PieceGrid::empty();
         let movelog: Vec<MovelogEntry> = Vec::new();
-        let crights = CastlingRights::INITIAL;
+        let crights = CastlingRights::NONE;
         let halfmoveclock = 0u16;
         let hash = IncrementalHash::new(hash_ch);
         return Self { bbs, p_lut, movelog, crights, halfmoveclock,
-            hash }
+            hash, cache }
     }
 }
 
