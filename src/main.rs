@@ -29,6 +29,6 @@ fn main() {
     use crate::play::selfplay;
     use crate::play::humanplay;
     use crate::piece::ColorTable;
-    // humanplay(Duration::from_secs(45));
-    selfplay(ColorTable::new([Duration::from_secs(5); 2]));
+    humanplay(Duration::from_secs(5));
+    // selfplay(ColorTable::new([Duration::from_secs(5); 2]));
 }

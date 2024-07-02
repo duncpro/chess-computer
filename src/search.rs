@@ -93,9 +93,9 @@ pub struct IterDeepSearchResult {
     pub depth_achieved: u8
 }
 
-/// Conducts a time-limited search for the optimal move.
-/// If the game is ended, then there are no legal moves,
-/// so this procedure returns `None`.
+/// Conducts a time-limited search for the optimal move. 
+/// This procedure will complete at least a shallow search, regardless of 
+/// the deadline, but deeper searches are time-constrained.
 pub fn iterdeep_search(mut ctx: IterDeepSearchContext) -> IterDeepSearchResult {
     let mut bestmove = search_shallow(ctx.gstate, ctx.movebuf.extend());
     let mut eval_lookahead: u8 = 1;
