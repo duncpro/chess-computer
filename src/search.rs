@@ -17,7 +17,7 @@ use std::time::Instant;
 
 struct SearchContext<'a, 'b> {
     pub gstate: &'a mut FastPosition,
-    /// The `lookahead` (as in [`DeepEvilWDeadlineContext`]) used when
+    /// The `lookahead` (as in [`DeepEvalWDeadlineContext`]) used when
     /// evaluating each position resultant from each legal move
     /// the active-player has to choose from.
     pub eval_lookahead: u8,
@@ -36,26 +36,19 @@ pub struct DeadlineElapsed;
 /// it will [`panic`]. When the deadline elapses, search is cancelled and
 /// `Err(DeadlineElapsed)` is returned.
 fn search(mut ctx: SearchContext) -> Result<MGAnyMove, DeadlineElapsed> {
-    let mut best: Max<MGAnyMove, i16> = Max::new(BELOW_MIN_SCORE);
-
-    fn eval_unmake(ctx: &mut SearchContext, best: &mut Max<MGAnyMove, i16>, 
-        mov: MGAnyMove) -> Result<(), DeadlineElapsed> 
-    {
+    let mut best: Max<MGAnyMove, i16> = Max::new(BELOW_MIN_SCORE);       
+    movegen_legal(ctx.gstate, &mut ctx.movebuf); 
+    while let Some(mov) = ctx.movebuf.pop() {        
+        make_move(ctx.gstate, mov);
         let result = deep_eval(DeepEvalContext { gstate: ctx.gstate, 
             lookahead: ctx.eval_lookahead, movebuf: ctx.movebuf.extend(), 
             deadline: ctx.deadline, cutoff: best.value() });
         unmake_move(ctx.gstate);
         match result {
-            Err(DeepEvalException::DeadlineElapsed) => Err(DeadlineElapsed),
-            Err(DeepEvalException::Cut) => Ok(()),
-            Ok(score) => { best.push(mov, score * -1); Ok(()) }
+            Err(DeepEvalException::DeadlineElapsed) => return Err(DeadlineElapsed),
+            Err(DeepEvalException::Cut) => {},
+            Ok(score) => { best.push(mov, score * -1) }
         }
-    }
-       
-    movegen_legal(ctx.gstate, &mut ctx.movebuf); 
-    while let Some(mov) = ctx.movebuf.pop() {        
-        make_move(ctx.gstate, mov);
-        eval_unmake(&mut ctx, &mut best, mov)?;
     }
     return Ok(best.take().unwrap());
 }
@@ -63,19 +56,13 @@ fn search(mut ctx: SearchContext) -> Result<MGAnyMove, DeadlineElapsed> {
 
 fn search_shallow(gstate: &mut FastPosition, mut movebuf: SegVec<MGAnyMove>) -> MGAnyMove {
     let mut best: Max<MGAnyMove, i16> = Max::new(BELOW_MIN_SCORE);
-
-    fn eval_unmake(gstate: &mut FastPosition) -> i16 {
-        let score = -1 * shallow_eval(gstate);
-        unmake_move(gstate);
-        return score;
-    }
-       
     movegen_legal(gstate, &mut movebuf); 
     while let Some(mov) = movebuf.pop() {        
         make_move(gstate, mov);
-        best.push(mov, eval_unmake(gstate));
+        let score = -1 * shallow_eval(gstate);
+        unmake_move(gstate);
+        best.push(mov, score);
     }
-    
     return best.take().unwrap();
 }
 

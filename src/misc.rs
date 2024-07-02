@@ -4,6 +4,24 @@ use std::cell::RefMut;
 use std::cell::RefCell;
 
 #[macro_export]
+macro_rules! early_return {
+    ($option:expr) => {
+        if let Some(value) = $option {
+            return value;
+        }
+    }
+}
+
+#[macro_export]
+macro_rules! early_ok {
+    ($option:expr) => {
+        if let Some(value) = $option {
+            return Ok(value);
+        }
+    }
+}
+
+#[macro_export]
 macro_rules! expect_match {
     ($value:expr, $p:pat) => {
         let $p = $value else { panic!("bad match") };
