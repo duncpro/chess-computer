@@ -1,2 +1,2 @@
 # Computer Chess Agent
-![readme-assets/screenshot.png]()
+![screenshot](readme-assets/screenshot.png)
