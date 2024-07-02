@@ -19,7 +19,7 @@ pub struct CacheEntry {
     pub score: i16,
     pub depth: u8,
     // pub key: PackedPosition,
-    pub hash: u64,
+    pub hash: u64
 }
 
 pub struct Cache { 
