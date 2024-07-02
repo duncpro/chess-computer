@@ -43,6 +43,15 @@ pub enum Color {
 impl Color {
     pub const COUNT: usize = 2;
 
+
+    /// Calculates the index of the color `self`.
+    ///
+    /// ```text
+    /// Color |  Index
+    /// ----- | ------
+    /// White |    0
+    /// Black |    1
+    /// ```
     pub const fn index(self) -> u8 { (self as u8) - 1 }
 
     pub fn from_index(index: u8) -> Self {
@@ -57,12 +66,21 @@ impl Color {
         return Self::from_index(index);
     }
 
-    pub fn base_rank(self) -> Rank {
-        const RANK_LUT: ColorTable<Rank> = ColorTable::new([
-            Rank::from_index(0),
-            Rank::from_index(7)
-        ]);
-        return RANK_LUT[self];
+    /// Calculates the sign of the color `self`.
+    ///
+    /// ```text
+    /// Color |  Sign
+    /// ----- | ------
+    /// White |    1
+    /// Black |   -1
+    /// ```
+    pub fn sign(self) -> i8 { -1 * (((self.index() as i8) * 2) - 1) }
+
+    pub fn base_rank(self) -> Rank { Rank::from_index(self.index() * 7) }
+
+    pub fn pawn_rank(self) -> Rank { 
+        let sindex = (self.base_rank().index() as i8) + self.sign();
+        return Rank::from_index(sindex as u8);
     }
 
     pub fn swap(&mut self) { *self = self.oppo(); }

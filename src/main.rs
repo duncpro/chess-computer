@@ -30,5 +30,5 @@ fn main() {
     use crate::play::humanplay;
     use crate::piece::ColorTable;
     // humanplay(Duration::from_secs(5));
-    selfplay(ColorTable::new([Duration::from_secs(5); 2]));
+    selfplay(ColorTable::from_array([Duration::from_secs(5); 2]));
 }

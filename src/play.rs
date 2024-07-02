@@ -1,3 +1,4 @@
+use crate::cache::Cache;
 use crate::cache::HashChars;
 use crate::cli::print_board;
 use crate::cli::prompt_move;
@@ -26,13 +27,13 @@ use std::time::Duration;
 use std::time::Instant;
 use crate::movegen::dispatch::count_legal_moves;
 
-pub fn automove(gstate: &mut FastPosition, think_time: Duration) {
+pub fn automove(gstate: &mut FastPosition, think_time: Duration, cache: &mut Cache) {
     if matches!(status(gstate), GameStatus::Complete(_)) {
         return; }
     
     let search_result = iterdeep_search(IterDeepSearchContext {
         gstate, movebuf: SegVec::new(&mut RefCell::default()),
-        deadline: Instant::now() + think_time });
+        deadline: Instant::now() + think_time, cache });
 
     println!("Depth: {} (plys considered)", search_result.depth_achieved);
 
@@ -47,6 +48,7 @@ pub fn automove(gstate: &mut FastPosition, think_time: Duration) {
 
 pub fn selfplay(time_constraints: ColorTable<Duration>) {
     let mut state: FastPosition = new_std_chess_position();
+    let mut cache: Cache = Cache::new(1024 * 6);
 
     println!("New Self-Play Game");
     print_board(&state.p_lut);
@@ -58,9 +60,9 @@ pub fn selfplay(time_constraints: ColorTable<Duration>) {
         println!("Legal Moves: {}", count_legal_moves(&mut state));
         println!("Move #: {}", state.movelog.len() + 1);
         let think_time = time_constraints[state.active_player()];
-        automove(&mut state, think_time);
-        println!("Material Difference: {}", -1 * calc_matdiff(&state.bbs));
+        automove(&mut state, think_time, &mut cache);
         print_board(&state.p_lut);
+        println!("Hash: {}", state.hash.value());
         print!("\n");
         std::io::stdout().flush();
         // prompt_ok();
@@ -83,6 +85,7 @@ pub fn humanmove(gstate: &mut FastPosition) {
 
 pub fn humanplay(think_time: Duration) {
     let mut state: FastPosition = new_std_chess_position();
+    let mut cache: Cache = Cache::new(1024 * 4);
 
     println!("New Self-Play Game");
     print_board(&state.p_lut);
@@ -96,7 +99,7 @@ pub fn humanplay(think_time: Duration) {
 
         match state.active_player() {
             Color::White => humanmove(&mut state),
-            Color::Black => automove(&mut state, think_time),
+            Color::Black => automove(&mut state, think_time, &mut cache),
         }
         
         println!("Material Difference: {}", -1 * calc_matdiff(&state.bbs));

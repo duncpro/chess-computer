@@ -8,7 +8,7 @@ use crate::rmrel::relativize;
 /// Determines if the opponent has made an enpassant-vulnerable
 /// double pawn jump. Meaning, the opponent double jumped AND
 /// the active player has a pawn in position to capture enpassant.
-pub fn is_enpassant_vuln(state: &mut FastPosition) -> Option<File> {
+pub fn is_enpassant_vuln(state: &FastPosition) -> Option<File> {
     // TODO: So much branching.... This needs a lot of optimization.
     if let Some(last_entry) = state.movelog.last().copied() {
         if let LoggedMove::Piece(pmove) = last_entry.lmove {

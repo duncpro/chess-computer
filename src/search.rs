@@ -1,3 +1,4 @@
+use crate::cache::Cache;
 use crate::eval::BELOW_MIN_SCORE;
 use crate::eval::DeepEvalContext;
 use crate::eval::DeepEvalException;
@@ -15,14 +16,15 @@ use std::time::Instant;
 
 // # Search
 
-struct SearchContext<'a, 'b> {
+struct SearchContext<'a, 'b, 'c> {
     pub gstate: &'a mut FastPosition,
     /// The `lookahead` (as in [`DeepEvalWDeadlineContext`]) used when
     /// evaluating each position resultant from each legal move
     /// the active-player has to choose from.
     pub eval_lookahead: u8,
     pub movebuf: SegVec<'b, MGAnyMove>,
-    pub deadline: Instant
+    pub deadline: Instant,
+    pub cache: &'c mut Cache
 }
 
 pub struct DeadlineElapsed;
@@ -42,7 +44,7 @@ fn search(mut ctx: SearchContext) -> Result<MGAnyMove, DeadlineElapsed> {
         make_move(ctx.gstate, mov);
         let result = deep_eval(DeepEvalContext { gstate: ctx.gstate, 
             lookahead: ctx.eval_lookahead, movebuf: ctx.movebuf.extend(), 
-            deadline: ctx.deadline, cutoff: best.value() });
+            deadline: ctx.deadline, cutoff: best.value(), cache: ctx.cache });
         unmake_move(ctx.gstate);
         match result {
             Err(DeepEvalException::DeadlineElapsed) => return Err(DeadlineElapsed),
@@ -69,10 +71,11 @@ fn search_shallow(gstate: &mut FastPosition, mut movebuf: SegVec<MGAnyMove>) -> 
 
 // # Iterative Deepening Search
 
-pub struct IterDeepSearchContext<'a, 'b> {
+pub struct IterDeepSearchContext<'a, 'b, 'c> {
     pub gstate: &'a mut FastPosition,
     pub movebuf: SegVec<'b, MGAnyMove>,
-    pub deadline: Instant
+    pub deadline: Instant,
+    pub cache: &'c mut Cache
 }
 
 pub struct IterDeepSearchResult {
@@ -88,7 +91,8 @@ pub fn iterdeep_search(mut ctx: IterDeepSearchContext) -> IterDeepSearchResult {
     let mut eval_lookahead: u8 = 1;
     loop {
         let result = search(SearchContext { gstate: ctx.gstate, eval_lookahead, 
-            movebuf: ctx.movebuf.extend(), deadline: ctx.deadline });
+            movebuf: ctx.movebuf.extend(), deadline: ctx.deadline,
+            cache: ctx.cache });
         match result {
             Err(DeadlineElapsed) => break,
             Ok(mov) => bestmove = mov,

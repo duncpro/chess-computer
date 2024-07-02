@@ -2,50 +2,77 @@ use std::ops::Index;
 use std::ops::IndexMut;
 
 use crate::crights::CastlingRights;
+use crate::enpassant::is_enpassant_vuln;
+use crate::gamestate::FastPosition;
 use crate::grid::File;
 use crate::grid::StandardCoordinate;
+use crate::piece::Color;
 use crate::piece::Piece;
+use crate::piece::PieceGrid;
 use rand::Rng;
 use rand::SeedableRng;
 use rand::rngs::StdRng;
+use rand::thread_rng;
 
 #[derive(Clone, Copy)]
 pub struct CacheEntry {
     pub score: i16,
-    pub depth: u8
+    pub depth: u8,
+    // pub key: PackedPosition,
+    pub hash: u64,
 }
 
-pub struct Cache { vec: Vec<Option<CacheEntry>> }
+pub struct Cache { 
+    vec: Vec<Option<CacheEntry>>,
+    occupancy: usize
+}
 
 impl Cache {
     pub fn new(mem_capacity: u64) -> Self {
         let ewidth = u64::try_from(std::mem::size_of::<CacheEntry>()).unwrap();
         let len = (mem_capacity * u64::pow(2, 20)) / ewidth;
-        Self { vec: vec![None; usize::try_from(len).unwrap()] }
+        Self { vec: vec![None; usize::try_from(len).unwrap()], occupancy: 0 }
     }
 
-    pub fn lookup_score(&self, hash: u64, depth: u8) -> Option<i16> {
-        let entry = self[hash]?;
-        if entry.depth != depth { return None; }
-        return Some(entry.score);
+    pub fn lookup_score(&self, state: &FastPosition, depth: u8) -> Option<i16> {
+        let lut_key = usize::try_from(state.hash.value() % 
+            u64::try_from(self.vec.len()).unwrap()).unwrap();
+        if let Some(entry) = self.vec[lut_key] {
+            if entry.hash == state.hash.value() {
+            // if entry.key == pack(state) {
+                if entry.depth >= depth {
+                    return Some(entry.score)
+                }
+            }
+        }
+        return None;
+    }
+
+    pub fn update_score(&mut self, state: &FastPosition, score: i16, depth: u8) {
+        if self.lookup_score(state, depth).is_some() { return; }
+        let lut_key = usize::try_from(state.hash.value() % 
+            u64::try_from(self.vec.len()).unwrap()).unwrap();
+        // let key = pack(state); 
+        if self.vec[lut_key].is_none() { self.occupancy += 1; }
+        self.vec[lut_key] = Some(CacheEntry { score, depth, 
+            hash: state.hash.value(), /* key */ });
     }
 }
 
-impl Index<u64> for Cache {
-    type Output = Option<CacheEntry>;
-
-    fn index(&self, hash: u64) -> &Self::Output {
-        let vec_len = u64::try_from(self.vec.len()).unwrap();
-        let key = usize::try_from(hash % vec_len).unwrap();
-        return &self.vec[key];
-    }
+#[derive(Clone, Copy, PartialEq, Eq)]
+struct PackedPosition {
+    p_lut: PieceGrid,
+    active_player: Color,
+    crights: CastlingRights,
+    enpassant_vuln: Option<File>
 }
 
-impl IndexMut<u64> for Cache {
-    fn index_mut(&mut self, hash: u64) -> &mut Self::Output {
-        let vec_len = u64::try_from(self.vec.len()).unwrap();
-        let key = usize::try_from(hash % vec_len).unwrap();
-        return &mut self.vec[key];
+fn pack(state: &FastPosition) -> PackedPosition {
+    PackedPosition { 
+        p_lut: state.p_lut, 
+        active_player: state.active_player(),
+        crights: state.crights, 
+        enpassant_vuln: is_enpassant_vuln(state)
     }
 }
 
@@ -62,23 +89,23 @@ impl IncrementalHash {
     pub fn toggle_tile(&mut self, pos: StandardCoordinate, piece: Piece) {
         let lut_key = usize::from(pos.index() * 12 + piece.index());
         let ch = self.chs.piece_placements[lut_key];
-        self.value %= ch;
+        self.value ^= ch;
     }
 
     pub fn toggle_active(&mut self) {
-        self.value %= self.chs.active;
+        self.value ^= self.chs.active;
     }
 
     pub fn toggle_crights(&mut self, crights: CastlingRights) {
         let lut_key = usize::from(crights.data());
         let ch = self.chs.crights[lut_key];
-        self.value %= ch;
+        self.value ^= ch;
     }
 
     pub fn toggle_ep_vuln(&mut self, file: File) {
         let lut_key = usize::from(file.index());
         let ch = self.chs.ep_vuln[lut_key];
-        self.value %= ch;
+        self.value ^= ch;
     }
 
     pub fn value(&self) -> u64 { self.value }
@@ -105,5 +132,11 @@ impl HashChars {
         let active: u64 = rng.gen();
 
         return Self { piece_placements, crights, ep_vuln, active }
+    }
+
+    pub fn new_random() -> Self {
+        let mut seed = [0u8; 32];
+        thread_rng().fill(&mut seed);
+        return Self::new(seed);
     }
 }

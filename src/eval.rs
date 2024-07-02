@@ -1,3 +1,4 @@
+use crate::cache::Cache;
 use crate::cache::CacheEntry;
 use crate::early_ok;
 use crate::gamestate::FastPosition;
@@ -6,7 +7,6 @@ use crate::makemove::unmake_move;
 use crate::mat_eval::calc_matdiff;
 use crate::misc::SegVec;
 use crate::misc::max_inplace;
-use crate::misc::pick;
 use crate::movegen::dispatch::count_legal_moves;
 use crate::movegen::dispatch::movegen_legal;
 use crate::movegen::types::MGAnyMove;
@@ -20,7 +20,7 @@ pub const BELOW_MIN_SCORE: i16 = i16::MIN + 1;
 
 // # Time Constrained Evaluation
 
-pub struct DeepEvalContext<'a, 'b> {
+pub struct DeepEvalContext<'a, 'b, 'c> {
     pub gstate: &'a mut FastPosition,
     /// The number of complete plys to play-out before applying 
     /// the heuristic score function to the position. When zero,
@@ -37,7 +37,8 @@ pub struct DeepEvalContext<'a, 'b> {
     /// better than `cutoff`, this branch is pruned (not explored),
     /// as the opponent will surely take this branch given the
     /// opportunity, and so it is not interesting to us.
-    pub cutoff: i16
+    pub cutoff: i16,
+    pub cache: &'c mut Cache
 }
 
 pub enum DeepEvalException { DeadlineElapsed, Cut }
@@ -52,13 +53,14 @@ pub fn deep_eval(mut ctx: DeepEvalContext) -> Result<i16, DeepEvalException> {
     if ctx.lookahead == 0 { return Ok(shallow_eval(ctx.gstate)); }
     movegen_legal(ctx.gstate, &mut ctx.movebuf);
     early_ok! { leaf_eval(ctx.gstate, ctx.movebuf.is_empty()) };
+    early_ok! { ctx.cache.lookup_score(ctx.gstate, ctx.lookahead) };
     
     let mut best_score: i16 = BELOW_MIN_SCORE;
     while let Some(mov) = ctx.movebuf.pop() {        
         make_move(ctx.gstate, mov);
         let result = deep_eval(DeepEvalContext { gstate: ctx.gstate, 
             lookahead: ctx.lookahead - 1, movebuf: ctx.movebuf.extend(), 
-            deadline: ctx.deadline, cutoff: best_score });
+            deadline: ctx.deadline, cutoff: best_score, cache: ctx.cache });
         unmake_move(ctx.gstate);
         match result {
             Err(DeadlineElapsed) => return Err(DeadlineElapsed),
@@ -76,7 +78,7 @@ pub fn deep_eval(mut ctx: DeepEvalContext) -> Result<i16, DeepEvalException> {
             },
         }
     }
-    
+    ctx.cache.update_score(ctx.gstate, best_score, ctx.lookahead);
     return Ok(best_score);
 }
 

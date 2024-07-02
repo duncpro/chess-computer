@@ -29,7 +29,6 @@ pub struct FastPosition {
     pub crights: CastlingRights,
     pub halfmoveclock: u16,
     pub hash: IncrementalHash,
-    pub cache: Cache
 }
 
 impl FastPosition {
@@ -37,15 +36,16 @@ impl FastPosition {
 
     /// Constructs an empty board with white as the active player
     /// and no castling rights for either side. 
-    pub fn new(hash_ch: HashChars, cache: Cache) -> Self {
+    pub fn new(hash_ch: HashChars) -> Self {
         let bbs = Bitboards::new();
         let p_lut = PieceGrid::empty();
         let movelog: Vec<MovelogEntry> = Vec::new();
         let crights = CastlingRights::NONE;
         let halfmoveclock = 0u16;
-        let hash = IncrementalHash::new(hash_ch);
+        let mut hash = IncrementalHash::new(hash_ch);
+        hash.toggle_crights(crights);
         return Self { bbs, p_lut, movelog, crights, halfmoveclock,
-            hash, cache }
+            hash };
     }
 }
 

@@ -87,10 +87,6 @@ pub fn make_pmove(state: &mut FastPosition, mgmove: PMGMove) {
     let mle = MovelogEntry { prev_crights, prev_halfmoveclock,
         lmove: LoggedMove::Piece(lpm) };
     state.movelog.push(mle);
-
-    // TODO: Enpassant
-    // If this move is PawnDoubleJump, then we need to toggle
-    // enpassant.
 }
 
 pub fn make_castle(state: &mut FastPosition, side: FileDirection) {
@@ -131,8 +127,6 @@ pub fn make_castle(state: &mut FastPosition, side: FileDirection) {
 
     let prev_crights = state.crights;
     state.crights.revoke(state.active_player());
-    state.hash.toggle_crights(prev_crights);
-    state.hash.toggle_crights(state.crights);
 
     let prev_halfmoveclock = state.halfmoveclock;
     state.halfmoveclock += 1;
@@ -145,6 +139,7 @@ pub fn make_move(state: &mut FastPosition, mov: MGAnyMove) {
     if let Some(file) = is_enpassant_vuln(state) {
         state.hash.toggle_ep_vuln(file);
     }
+    state.hash.toggle_crights(state.crights); // clear
     match mov {
         MGAnyMove::Piece(pmove) => make_pmove(state, pmove),
         MGAnyMove::Castle(side) => make_castle(state, side),
@@ -153,6 +148,7 @@ pub fn make_move(state: &mut FastPosition, mov: MGAnyMove) {
     if let Some(file) = is_enpassant_vuln(state) {
         state.hash.toggle_ep_vuln(file);
     }
+    state.hash.toggle_crights(state.crights); // restore
 }
 
 // # Unmake
@@ -220,8 +216,8 @@ pub fn unmake_move(state: &mut FastPosition) {
     
     let last_entry = state.movelog.pop().unwrap();
     
-    state.hash.toggle_crights(state.crights);
-    state.hash.toggle_crights(last_entry.prev_crights);
+    state.hash.toggle_crights(state.crights);           // clear
+    state.hash.toggle_crights(last_entry.prev_crights); // restore
     
     state.crights = last_entry.prev_crights;
     state.halfmoveclock = last_entry.prev_halfmoveclock;

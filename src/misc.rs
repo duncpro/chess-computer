@@ -145,7 +145,7 @@ macro_rules! impl_enum_table {
             }
 
             impl<T> [<$key_type Table>]<T> {
-                pub const fn new(array: [T; <$key_type>::COUNT]) -> Self {
+                pub const fn from_array(array: [T; <$key_type>::COUNT]) -> Self {
                     Self { array }
                 }
             }
