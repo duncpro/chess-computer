@@ -40,7 +40,7 @@ impl CastlingRights {
     /// rights.
     pub const INITIAL: Self = Self { data: 0b1111 };
 
-    pub const NONE: Self = Self { data: 0b1111 };
+    pub const NONE: Self = Self { data: 0 };
 }
 
 // # Updating Castling Rights
