@@ -87,7 +87,7 @@ impl IncrementalHash {
     }
     
     pub fn toggle_tile(&mut self, pos: StandardCoordinate, piece: Piece) {
-        let lut_key = usize::from(pos.index() * 12 + piece.index());
+        let lut_key = usize::from(pos.index()) * 12 + usize::from(piece.index());
         let ch = self.chs.piece_placements[lut_key];
         self.value ^= ch;
     }

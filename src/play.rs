@@ -48,7 +48,7 @@ pub fn automove(gstate: &mut FastPosition, think_time: Duration, cache: &mut Cac
 
 pub fn selfplay(time_constraints: ColorTable<Duration>) {
     let mut state: FastPosition = new_std_chess_position();
-    let mut cache: Cache = Cache::new(1024 * 6);
+    let mut cache: Cache = Cache::new(1024 * 2);
 
     println!("New Self-Play Game");
     print_board(&state.p_lut);
