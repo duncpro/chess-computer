@@ -36,7 +36,7 @@ macro_rules! impl_bitstring {
             fn clear(&mut self, bitpos: u8) {
                 *self &= !(1 << bitpos);
             }
-        }
+         }
     };
 }
 
@@ -80,3 +80,5 @@ pub const fn repeat_byte_u64(byte: u8) -> u64 {
     }
     return bitstring;
 }
+
+// Debugging

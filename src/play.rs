@@ -4,6 +4,7 @@ use crate::cli::print_board;
 use crate::cli::prompt_move;
 use crate::cli::prompt_ok;
 use crate::expect_match;
+use crate::gamestate::GameResult;
 use crate::grid::File;
 use crate::grid::Rank;
 use crate::grid::StandardCoordinate;
@@ -71,10 +72,8 @@ pub fn selfplay(time_constraints: ColorTable<Duration>) {
     println!("Game Over");
     expect_match!(status(&mut state), GameStatus::Complete(result));
     match result {
-        crate::gamestate::GameResult::Diff(victor) => 
-            println!("{} won", victor),
-        crate::gamestate::GameResult::Tie => 
-            println!("draw"),
+        GameResult::Diff(victor) => println!("{} won", victor),
+        GameResult::Tie => println!("draw"),
     }
 }
 
@@ -94,6 +93,7 @@ pub fn humanplay(think_time: Duration) {
     
     while matches!(status(&mut state), GameStatus::Incomplete) {
         println!("{}'s turn to move", state.active_player());
+        // println!("Castling Rights: {}", state.crights);
         println!("Legal Moves: {}", count_legal_moves(&mut state));
         println!("Ply #: {}", state.movelog.len() + 1);
 
@@ -112,9 +112,9 @@ pub fn humanplay(think_time: Duration) {
     println!("Game Over");
     expect_match!(status(&mut state), GameStatus::Complete(result));
     match result {
-        crate::gamestate::GameResult::Diff(victor) => 
+        GameResult::Diff(victor) => 
             println!("{} won", victor),
-        crate::gamestate::GameResult::Tie => 
+        GameResult::Tie => 
             println!("draw"),
     }
 }

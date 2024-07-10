@@ -16,6 +16,7 @@ mod makemove;
 mod mat_eval;
 mod misc;
 mod movegen;
+mod persistence;
 mod piece;
 mod play;
 mod rmrel;
@@ -29,6 +30,6 @@ fn main() {
     use crate::play::selfplay;
     use crate::play::humanplay;
     use crate::piece::ColorTable;
-    // humanplay(Duration::from_secs(5));
-    selfplay(ColorTable::from_array([Duration::from_secs(1), Duration::from_secs(5)]));
+    // humanplay(Duration::from_secs(20));
+    selfplay(ColorTable::from_array([Duration::from_secs(5), Duration::from_secs(5)]));
 }

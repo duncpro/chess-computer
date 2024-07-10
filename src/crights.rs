@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use crate::bitboard::Bitboard;
 use crate::coordinates::StandardCS;
 use crate::gamestate::locate_king_stdc;
@@ -93,4 +95,15 @@ fn is_king_intact(state: &mut FastPosition) -> bool {
     let king_home = StandardCoordinate::new(base_rank, File::from_index(4));
     let king_pos  = locate_king_stdc(&state.bbs);
     return king_home == king_pos;
+}
+
+impl Display for CastlingRights {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let qw = self.get(FileDirection::Queenside, Color::White);
+        let kw = self.get(FileDirection::Kingside, Color::White);
+        let qb = self.get(FileDirection::Queenside, Color::Black);
+        let kb = self.get(FileDirection::Kingside, Color::Black);
+
+        write!(f, "{:?}", (kb, qb, kw, qw))
+    }
 }
