@@ -12,9 +12,8 @@ use std::str::FromStr;
 
 // # Load Game
 
-pub fn load_game(text: &str) -> Result<ChessGame, LoadGameErr> {
-    let mut state = new_std_chess_position();
-    let tokens = text.split(";").map(|s| s.trim());
+pub fn apply_gstr(state: &mut ChessGame, gstr: &str) -> Result<(), LoadGameErr> {
+    let tokens = gstr.split(";").map(|s| s.trim());
     for token in tokens {
         if token.is_empty() { continue; }
         let mgmove = match token {
@@ -24,13 +23,13 @@ pub fn load_game(text: &str) -> Result<ChessGame, LoadGameErr> {
         };
 
         let mut legal_moves: Vec<MGAnyMove> = Vec::new();
-        movegen_legal(&mut state, &mut legal_moves);
+        movegen_legal(state, &mut legal_moves);
         if !legal_moves.contains(&mgmove) {
             return Err(LoadGameErr::IllegalMove(mgmove))
         }
-        make_move(&mut state, mgmove);
+        make_move(state, mgmove);
     }
-    return Ok(state);
+    return Ok(());
 }
 
 #[derive(Debug)]

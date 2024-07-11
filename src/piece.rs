@@ -95,7 +95,7 @@ impl_enum_table!(Color);
 
 // `Piece`
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 #[repr(transparent)]
 pub struct Piece { data: NonZeroU8 }
 

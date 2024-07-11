@@ -175,18 +175,17 @@ pub fn reverse_pawn_attack(target: u8) -> RawBitboard {
     {
         let mut bb: RawBitboard = 0;
         setbit!(bb, target);
-        const BORDER_MASK: RawBitboard = !repeat_byte_u64(0b00000001);
+        const BORDER_MASK: RawBitboard = !repeat_byte_u64(0b10000000);
         bb &= BORDER_MASK;
-        bb <<= 7;
+        bb >>= 7;
         attackers |= bb;
     }
-    // Attack from kingside
     {
         let mut bb: RawBitboard = 0;
         setbit!(bb, target);
-        const BORDER_MASK: RawBitboard = !repeat_byte_u64(0b10000000);
+        const BORDER_MASK: RawBitboard = !repeat_byte_u64(0b00000001);
         bb &= BORDER_MASK;
-        bb <<= 9;
+        bb >>= 9;
         attackers |= bb;
     }
     return attackers;

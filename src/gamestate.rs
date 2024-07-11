@@ -51,20 +51,20 @@ impl ChessGame {
 
 // # Movelog
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct MovelogEntry {
     pub prev_crights: CastlingRights,
     pub prev_halfmoveclock: u16,
     pub lmove: LoggedMove,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum LoggedMove {
     Castle(FileDirection),
     Piece(LoggedPieceMove)
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct LoggedPieceMove {
     pub mgmove: PMGMove,
     pub capture: Option<Piece>,

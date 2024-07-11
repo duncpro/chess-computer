@@ -100,6 +100,12 @@ impl Display for File {
     }
 }
 
+impl Debug for File {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_char(char::from(65 + self.index()))
+    }
+}
+
 #[derive(Debug)]
 pub struct ParseFileErr;
 
