@@ -15,7 +15,7 @@ use crate::movegen::king::king_attack;
 use crate::piece::Color;
 use crate::piece::Species;
 use crate::movegen::knight::knight_attack;
-use crate::movegen::pawn::reverse_pawn_attack;
+use crate::movegen::pawn::{pawn_attack, reverse_pawn_attack};
 use crate::rmrel::relativize;
 
 /// Determines if a hypothetical piece placed on `vuln_sq` is currently
@@ -43,7 +43,7 @@ fn is_attacked_pawn(args: AttackQuery) -> bool {
     let king_rmrel = relativize(locate_king_stdc(args.board),
         args.board.active_player);
 
-    let mut bb = reverse_pawn_attack(king_rmrel);
+    let mut bb = pawn_attack(king_rmrel);
     bb &= args.board.affilia_rel_bbs[args.board.active_player.oppo()];
     bb &= args.board.pawn_rel_bb;
 

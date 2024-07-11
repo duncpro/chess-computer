@@ -191,6 +191,28 @@ pub fn reverse_pawn_attack(target: u8) -> RawBitboard {
     return attackers;
 }
 
+pub fn pawn_attack(origin: u8) -> RawBitboard {
+    let mut targets: RawBitboard = 0;
+    // Attack from queenside
+    {
+        let mut bb: RawBitboard = 0;
+        setbit!(bb, origin);
+        const BORDER_MASK: RawBitboard = !repeat_byte_u64(0b00000001);
+        bb &= BORDER_MASK;
+        bb <<= 7;
+        targets |= bb;
+    }
+    {
+        let mut bb: RawBitboard = 0;
+        setbit!(bb, origin);
+        const BORDER_MASK: RawBitboard = !repeat_byte_u64(0b10000000);
+        bb &= BORDER_MASK;
+        bb <<= 9;
+        targets |= bb;
+    }
+    return targets;
+}
+
 
 fn push_promote(ctx: &mut PMGContext<impl Push<PMGMove>>, 
     origin_rmrel: u8, destin_rmrel: u8) 
