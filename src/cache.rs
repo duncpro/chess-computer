@@ -119,7 +119,6 @@ pub struct HashChars {
     active: u64,
 }
 
-
 impl HashChars {
     pub fn new(seed: [u8; 32]) -> Self {
         let mut piece_placements = [0u64; 12 * 64];
