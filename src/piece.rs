@@ -43,7 +43,6 @@ pub enum Color {
 impl Color {
     pub const COUNT: usize = 2;
 
-
     /// Calculates the index of the color `self`.
     ///
     /// ```text
@@ -75,13 +74,6 @@ impl Color {
     /// Black |   -1
     /// ```
     pub fn sign(self) -> i8 { -1 * (((self.index() as i8) * 2) - 1) }
-
-    pub fn base_rank(self) -> Rank { Rank::from_index(self.index() * 7) }
-
-    pub fn pawn_rank(self) -> Rank { 
-        let sindex = (self.base_rank().index() as i8) + self.sign();
-        return Rank::from_index(sindex as u8);
-    }
 
     pub fn swap(&mut self) { *self = self.oppo(); }
 }

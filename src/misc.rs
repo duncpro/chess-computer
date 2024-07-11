@@ -74,6 +74,8 @@ pub const fn const_min_u8(left: u8, right: u8) -> u8 {
     if left < right { left } else { right }
 }
 
+/// Select one of two precomputed values based on some condition.
+/// This is analgous to the ternary conditional operator in C-like languages.
 pub const fn pick<T>(condition: bool, if_true: T, if_false: T) -> T
 where T: Copy
 {
@@ -179,7 +181,7 @@ pub struct PushCount<T> {
 }
 
 impl<T> Push<T> for PushCount<T> {
-    fn push(&mut self, value: T) { 
+    fn push(&mut self, _value: T) {
         self.count += 1; 
     }
 }

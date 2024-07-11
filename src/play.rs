@@ -17,7 +17,7 @@ use crate::piece::ColorTable;
 use crate::piece::Piece;
 use crate::search::iterdeep_search;
 use crate::search::IterDeepSearchContext;
-use crate::gamestate::FastPosition;
+use crate::gamestate::ChessGame;
 use crate::gamestate::GameStatus;
 use crate::gamestate::status;
 use crate::movegen::types::MGAnyMove;
@@ -28,7 +28,7 @@ use std::time::Duration;
 use std::time::Instant;
 use crate::movegen::dispatch::count_legal_moves;
 
-pub fn automove(gstate: &mut FastPosition, think_time: Duration, cache: &mut Cache) {
+pub fn automove(gstate: &mut ChessGame, think_time: Duration, cache: &mut Cache) {
     if matches!(status(gstate), GameStatus::Complete(_)) {
         return; }
     
@@ -48,7 +48,7 @@ pub fn automove(gstate: &mut FastPosition, think_time: Duration, cache: &mut Cac
 
 
 pub fn selfplay(time_constraints: ColorTable<Duration>) {
-    let mut state: FastPosition = new_std_chess_position();
+    let mut state: ChessGame = new_std_chess_position();
     let mut cache: Cache = Cache::new(1024 * 2);
 
     println!("New Self-Play Game");
@@ -77,13 +77,13 @@ pub fn selfplay(time_constraints: ColorTable<Duration>) {
     }
 }
 
-pub fn humanmove(gstate: &mut FastPosition) {
+pub fn humanmove(gstate: &mut ChessGame) {
     let mov = prompt_move(gstate);
     make_move(gstate, mov);
 }
 
 pub fn humanplay(think_time: Duration) {
-    let mut state: FastPosition = new_std_chess_position();
+    let mut state: ChessGame = new_std_chess_position();
     let mut cache: Cache = Cache::new(1024 * 4);
 
     println!("New Self-Play Game");

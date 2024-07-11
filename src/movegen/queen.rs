@@ -1,4 +1,4 @@
-use crate::gamestate::FastPosition;
+use crate::gamestate::ChessGame;
 use crate::coordinates::AntidiagonalMajorCS;
 use crate::coordinates::ProdiagonalMajorCS;
 use crate::coordinates::RankMajorCS;

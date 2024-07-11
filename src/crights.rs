@@ -1,13 +1,13 @@
-use std::fmt::Display;
+use std::fmt::{Debug, Display};
 
 use crate::bitboard::Bitboard;
 use crate::coordinates::StandardCS;
 use crate::gamestate::locate_king_stdc;
 use crate::getbit;
-use crate::grid::File;
+use crate::grid::{File, Rank};
 use crate::grid::StandardCoordinate;
 use crate::grid::FileDirection;
-use crate::gamestate::FastPosition;
+use crate::gamestate::ChessGame;
 use crate::piece::Color;
 use crate::piece::Species;
 
@@ -37,9 +37,9 @@ impl CastlingRights {
     pub fn data(self) -> u8 { self.data }
 
     /// Value of `CastlingRights` at the beginning of a standard chess
-    /// game, before any moves have been made. This value corresponds
+    /// game before any moves have been made. This value corresponds
     /// to the state of both players having both their castling
-    /// rights.
+    /// rights intact.
     pub const INITIAL: Self = Self { data: 0b1111 };
 
     pub const NONE: Self = Self { data: 0 };
@@ -47,18 +47,18 @@ impl CastlingRights {
 
 // # Updating Castling Rights
 
-pub fn update_crights(state: &mut FastPosition) {
+pub fn update_crights(state: &mut ChessGame) {
     update_crights_kingside(state);
     update_crights_queenside(state);
 }
 
-fn update_crights_kingside(state: &mut FastPosition) {
+fn update_crights_kingside(state: &mut ChessGame) {
     let mut value = state.crights.get(FileDirection::Kingside, 
         state.active_player());
 
     value &= is_king_intact(state);
 
-    let base_rank = state.active_player().base_rank();
+    let base_rank = Rank::base_rank(state.active_player());
     
     let rook_home = StandardCoordinate::new(base_rank, File::from_index(7));
         
@@ -71,13 +71,13 @@ fn update_crights_kingside(state: &mut FastPosition) {
         state.active_player(), value);
 }
 
-fn update_crights_queenside(state: &mut FastPosition) {
+fn update_crights_queenside(state: &mut ChessGame) {
     let mut value = state.crights.get(FileDirection::Queenside, 
         state.active_player());
 
     value &= is_king_intact(state);
 
-    let base_rank = state.active_player().base_rank();
+    let base_rank = Rank::base_rank(state.active_player());
     
     let rook_home = StandardCoordinate::new(base_rank, File::from_index(0));
     
@@ -90,20 +90,19 @@ fn update_crights_queenside(state: &mut FastPosition) {
         state.active_player(), value);
 }
 
-fn is_king_intact(state: &mut FastPosition) -> bool {
-    let base_rank = state.active_player().base_rank();
+fn is_king_intact(state: &mut ChessGame) -> bool {
+    let base_rank = Rank::base_rank(state.active_player());
     let king_home = StandardCoordinate::new(base_rank, File::from_index(4));
     let king_pos  = locate_king_stdc(&state.bbs);
     return king_home == king_pos;
 }
 
-impl Display for CastlingRights {
+impl Debug for CastlingRights {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let qw = self.get(FileDirection::Queenside, Color::White);
         let kw = self.get(FileDirection::Kingside, Color::White);
         let qb = self.get(FileDirection::Queenside, Color::Black);
         let kb = self.get(FileDirection::Kingside, Color::Black);
-
-        write!(f, "{:?}", (kb, qb, kw, qw))
+        write!(f, "(kb: {}, qb: {}, kw: {}, qw: {})", kb, qb, kw, qw)
     }
 }

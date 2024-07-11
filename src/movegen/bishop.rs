@@ -1,6 +1,6 @@
 use crate::coordinates::AntidiagonalMajorCS;
 use crate::coordinates::ProdiagonalMajorCS;
-use crate::gamestate::FastPosition;
+use crate::gamestate::ChessGame;
 use crate::misc::Push;
 use crate::piece::Species::Bishop;
 use crate::movegen::slider::movegen_sliders;

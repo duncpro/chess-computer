@@ -1,6 +1,6 @@
 use crate::coordinates::FileMajorCS;
 use crate::coordinates::RankMajorCS;
-use crate::gamestate::FastPosition;
+use crate::gamestate::ChessGame;
 use crate::misc::Push;
 use crate::piece::Species::Rook;
 use crate::movegen::slider::movegen_sliders;

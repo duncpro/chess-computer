@@ -20,9 +20,9 @@ use crate::piece::PieceGrid;
 use crate::piece::Species;
 use crate::piece::SpeciesTable;
 
-// # `FastPosition`
+// # `ChessGame`
 
-pub struct FastPosition {
+pub struct ChessGame {
     pub bbs: Bitboards,
     pub p_lut: PieceGrid,
     pub movelog: Vec<MovelogEntry>,
@@ -31,11 +31,11 @@ pub struct FastPosition {
     pub hash: IncrementalHash,
 }
 
-impl FastPosition {
+impl ChessGame {
     pub fn active_player(&self) -> Color { self.bbs.active_player } 
 
-    /// Constructs an empty board with white as the active player
-    /// and no castling rights for either side. 
+    /// Constructs an *empty* board with white as the active player
+    /// and obviously no castling rights for either side (there are no pieces).
     pub fn new(hash_ch: HashChars) -> Self {
         let bbs = Bitboards::new();
         let p_lut = PieceGrid::empty();
@@ -68,11 +68,9 @@ pub enum LoggedMove {
 pub struct LoggedPieceMove {
     pub mgmove: PMGMove,
     pub capture: Option<Piece>,
+    pub is_pdj /* (pawn double jump) */: bool,
+    pub target: StandardCoordinate
 }
-
-#[derive(Clone, Copy, PartialEq, Eq)]
-#[repr(u8)]
-pub enum SpecialPieceMove { Promote = 1, PawnDoubleJump = 2 }
 
 // # `Bitboards`
 
@@ -158,7 +156,7 @@ pub enum GameResult {
     Tie
 }
 
-pub fn status(state: &mut FastPosition) -> GameStatus {
+pub fn status(state: &mut ChessGame) -> GameStatus {
     let has_move = count_legal_moves(state) > 0;
     if has_move { return GameStatus::Incomplete; }
     if !state.bbs.is_check() {

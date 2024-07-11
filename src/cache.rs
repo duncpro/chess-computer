@@ -3,7 +3,7 @@ use std::ops::IndexMut;
 
 use crate::crights::CastlingRights;
 use crate::enpassant::is_enpassant_vuln;
-use crate::gamestate::FastPosition;
+use crate::gamestate::ChessGame;
 use crate::grid::File;
 use crate::grid::StandardCoordinate;
 use crate::piece::Color;
@@ -34,7 +34,7 @@ impl Cache {
         Self { vec: vec![None; usize::try_from(len).unwrap()], occupancy: 0 }
     }
 
-    pub fn lookup_score(&self, state: &FastPosition, depth: u8) -> Option<i16> {
+    pub fn lookup_score(&self, state: &ChessGame, depth: u8) -> Option<i16> {
         let lut_key = usize::try_from(state.hash.value() % 
             u64::try_from(self.vec.len()).unwrap()).unwrap();
         if let Some(entry) = self.vec[lut_key] {
@@ -48,7 +48,7 @@ impl Cache {
         return None;
     }
 
-    pub fn update_score(&mut self, state: &FastPosition, score: i16, depth: u8) {
+    pub fn update_score(&mut self, state: &ChessGame, score: i16, depth: u8) {
         if self.lookup_score(state, depth).is_some() { return; }
         let lut_key = usize::try_from(state.hash.value() % 
             u64::try_from(self.vec.len()).unwrap()).unwrap();
@@ -67,7 +67,7 @@ struct PackedPosition {
     enpassant_vuln: Option<File>
 }
 
-fn pack(state: &FastPosition) -> PackedPosition {
+fn pack(state: &ChessGame) -> PackedPosition {
     PackedPosition { 
         p_lut: state.p_lut, 
         active_player: state.active_player(),
@@ -102,8 +102,9 @@ impl IncrementalHash {
         self.value ^= ch;
     }
 
-    pub fn toggle_ep_vuln(&mut self, file: File) {
-        let lut_key = usize::from(file.index());
+    pub fn toggle_ep_vuln(&mut self, option_file: Option<File>) {
+        let raw_value: u8 = unsafe { std::mem::transmute(option_file) };
+        let lut_key = usize::from(raw_value);
         let ch = self.chs.ep_vuln[lut_key];
         self.value ^= ch;
     }
@@ -114,7 +115,7 @@ impl IncrementalHash {
 pub struct HashChars {
     piece_placements: [u64; 6 * 2 * 64],
     crights: [u64; 16],
-    ep_vuln: [u64; 8],    
+    ep_vuln: [u64; 9],
     active: u64,
 }
 
@@ -123,12 +124,12 @@ impl HashChars {
     pub fn new(seed: [u8; 32]) -> Self {
         let mut piece_placements = [0u64; 12 * 64];
         let mut crights = [0u64; 16]; 
-        let mut ep_vuln = [0u64; 8];
+        let mut ep_vuln = [0u64; 9];
         
         let mut rng = StdRng::from_seed(seed);
         rng.fill(&mut piece_placements);
         rng.fill(&mut crights);
-        rng.fill(&mut ep_vuln);
+        rng.fill(&mut ep_vuln[1..9]);
         let active: u64 = rng.gen();
 
         return Self { piece_placements, crights, ep_vuln, active }

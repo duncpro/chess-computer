@@ -1,4 +1,4 @@
-use crate::gamestate::FastPosition;
+use crate::gamestate::ChessGame;
 use crate::grid::FileDirection;
 use crate::makemove::test_pmove;
 use crate::misc::PushCount;
@@ -28,7 +28,7 @@ fn pmove_dispatch(ctx: &mut PMGContext<impl Push<PMGMove>>)
     movegen_pawns(ctx);
 }
 
-fn movegen_legal_pmoves(state: &mut FastPosition, moves: &mut impl Push<PMGMove>) {
+fn movegen_legal_pmoves(state: &mut ChessGame, moves: &mut impl Push<PMGMove>) {
     let state_cell = RefCell::new(state);
     let mut pf = PushFilter::new(moves, 
         |pmove| test_pmove(*state_cell.borrow_mut(), *pmove));
@@ -36,7 +36,7 @@ fn movegen_legal_pmoves(state: &mut FastPosition, moves: &mut impl Push<PMGMove>
     pmove_dispatch(&mut ctx);
 }
 
-pub fn movegen_legal(state: &mut FastPosition, moves: &mut impl Push<MGAnyMove>) {
+pub fn movegen_legal(state: &mut ChessGame, moves: &mut impl Push<MGAnyMove>) {
     movegen_legal_pmoves(state, 
         &mut PushMap::new(moves, |pmove| MGAnyMove::Piece(*pmove)));
     if movegen_castle_kingside(state) {
@@ -47,7 +47,7 @@ pub fn movegen_legal(state: &mut FastPosition, moves: &mut impl Push<MGAnyMove>)
     }
 }
 
-pub fn count_legal_moves(state: &mut FastPosition) -> usize {
+pub fn count_legal_moves(state: &mut ChessGame) -> usize {
     let mut counter: PushCount<MGAnyMove> = PushCount::new();
     movegen_legal(state, &mut counter);
     return counter.count();

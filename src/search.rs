@@ -11,13 +11,13 @@ use crate::makemove::unmake_move;
 use crate::misc::SegVec;
 use crate::movegen::dispatch::movegen_legal;
 use crate::movegen::types::MGAnyMove;
-use crate::gamestate::FastPosition;
+use crate::gamestate::ChessGame;
 use std::time::Instant;
 
 // # Search
 
 struct SearchContext<'a, 'b, 'c> {
-    pub gstate: &'a mut FastPosition,
+    pub gstate: &'a mut ChessGame,
     /// The `lookahead` (as in [`DeepEvalWDeadlineContext`]) used when
     /// evaluating each position resultant from each legal move
     /// the active-player has to choose from.
@@ -56,7 +56,7 @@ fn search(mut ctx: SearchContext) -> Result<MGAnyMove, DeadlineElapsed> {
 }
 
 
-fn search_shallow(gstate: &mut FastPosition, mut movebuf: SegVec<MGAnyMove>) -> MGAnyMove {
+fn search_shallow(gstate: &mut ChessGame, mut movebuf: SegVec<MGAnyMove>) -> MGAnyMove {
     let mut best: Max<MGAnyMove, i16> = Max::new(BELOW_MIN_SCORE);
     movegen_legal(gstate, &mut movebuf); 
     while let Some(mov) = movebuf.pop() {        
@@ -72,7 +72,7 @@ fn search_shallow(gstate: &mut FastPosition, mut movebuf: SegVec<MGAnyMove>) -> 
 // # Iterative Deepening Search
 
 pub struct IterDeepSearchContext<'a, 'b, 'c> {
-    pub gstate: &'a mut FastPosition,
+    pub gstate: &'a mut ChessGame,
     pub movebuf: SegVec<'b, MGAnyMove>,
     pub deadline: Instant,
     pub cache: &'c mut Cache

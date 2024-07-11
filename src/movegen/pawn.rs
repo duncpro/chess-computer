@@ -4,10 +4,9 @@ use crate::bits::bitscan;
 use crate::bits::repeat_byte_u64;
 use crate::coordinates::Coordinate;
 use crate::coordinates::RankMajorCS;
-use crate::gamestate::FastPosition;
+use crate::gamestate::ChessGame;
 use crate::gamestate::LoggedMove;
 use crate::gamestate::MovelogEntry;
-use crate::gamestate::SpecialPieceMove;
 use crate::grid::StandardCoordinate;
 use crate::misc::Push;
 use crate::misc::SegVec;
@@ -83,12 +82,7 @@ fn movegen_forward2(ctx: &mut PMGContext<impl Push<PMGMove>>) {
     for destin_rmrel in bitscan(bb) {
         let origin = absolutize(destin_rmrel - 16, ctx.active_player());
         let destin = absolutize(destin_rmrel, ctx.active_player());
-        ctx.push(PMGMove {
-            origin, destin, 
-            target: destin,
-            special: Some(SpecialPieceMove::PawnDoubleJump),
-            promote: None,
-        });
+        ctx.push(PMGMove::new_basic(origin, destin));
     }
 }
 
@@ -155,7 +149,7 @@ fn movegen_capture_kingside(ctx: &mut PMGContext<impl Push<PMGMove>>) {
 fn movegen_enpassant(ctx: &mut PMGContext<impl Push<PMGMove>>) {
     if let Some(last_entry) = ctx.inspect(|s| s.movelog.last().copied()) {
         if let LoggedMove::Piece(pmove) = last_entry.lmove {
-            if pmove.mgmove.special == Some(SpecialPieceMove::PawnDoubleJump) {
+            if pmove.is_pdj {
                 let target_rmrel = relativize(pmove.mgmove.destin,
                     ctx.active_player());
                 
@@ -166,14 +160,9 @@ fn movegen_enpassant(ctx: &mut PMGContext<impl Push<PMGMove>>) {
                 bb &= ctx.inspect(|s| s.bbs.pawn_rel_bb);
 
                 let destin = absolutize(destin_rmrel, ctx.active_player());
-                let target = StandardCoordinate::from(pmove.mgmove.destin);
                 for origin_rmrel in bitscan(bb) {
                     let origin = absolutize(origin_rmrel, ctx.active_player());
-                    ctx.push(PMGMove { 
-                        origin, destin, target, 
-                        special: None,
-                        promote: None
-                    });
+                    ctx.push(PMGMove { origin, destin, promote: None });
                 }
             }
         }
@@ -211,10 +200,10 @@ fn push_promote(ctx: &mut PMGContext<impl Push<PMGMove>>,
     let destin = absolutize(destin_rmrel, ctx.active_player());
 
     use Species::*;
-    ctx.push(make_promote_move(origin, destin, Queen));
-    ctx.push(make_promote_move(origin, destin, Rook));
-    ctx.push(make_promote_move(origin, destin, Bishop));
-    ctx.push(make_promote_move(origin, destin, Knight));
+    ctx.push(PMGMove::new_promote(origin, destin, Queen));
+    ctx.push(PMGMove::new_promote(origin, destin, Rook));
+    ctx.push(PMGMove::new_promote(origin, destin, Bishop));
+    ctx.push(PMGMove::new_promote(origin, destin, Knight));
 }
 
 fn push(ctx: &mut PMGContext<impl Push<PMGMove>>, 
@@ -222,17 +211,5 @@ fn push(ctx: &mut PMGContext<impl Push<PMGMove>>,
 {
     let origin = absolutize(origin_rmrel, ctx.active_player());
     let destin = absolutize(destin_rmrel, ctx.active_player());
-    ctx.push(PMGMove::new(origin, destin));
-}
-
-fn make_promote_move(origin: StandardCoordinate, destin: StandardCoordinate, 
-    desire: Species) -> PMGMove
-{
-    return PMGMove { 
-        origin, 
-        destin, 
-        target: destin,
-        special: Some(SpecialPieceMove::Promote),
-        promote: Some(desire)
-    };
+    ctx.push(PMGMove::new_basic(origin, destin));
 }

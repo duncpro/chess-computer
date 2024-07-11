@@ -4,7 +4,7 @@ use crate::build_itable;
 use crate::cfor;
 use crate::coordinates::Coordinate;
 use crate::coordinates::RankMajorCS;
-use crate::gamestate::FastPosition;
+use crate::gamestate::ChessGame;
 use crate::grid::StandardCoordinate;
 use crate::misc::Push;
 use crate::piece::Species;
@@ -20,7 +20,7 @@ pub fn movegen_knights(ctx: &mut PMGContext<impl Push<PMGMove>>) {
         let mut destins = knight_attack(origin);
         destins &= !ctx.inspect(|s| s.bbs.affilia_bbs[s.active_player()].get());
         for destin in destins.scan() {
-            ctx.push(PMGMove::new(origin.into(), destin.into()));
+            ctx.push(PMGMove::new_basic(origin.into(), destin.into()));
         }
     }
 }

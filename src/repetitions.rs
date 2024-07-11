@@ -1,16 +1,15 @@
 use crate::crights::CastlingRights;
 use crate::expect_match;
-use crate::gamestate::FastPosition;
+use crate::gamestate::ChessGame;
 use crate::gamestate::LoggedMove;
 use crate::gamestate::MovelogEntry;
 use crate::movegen::types::PMGMove;
 use crate::gamestate::LoggedPieceMove;
-use crate::gamestate::SpecialPieceMove;
 use crate::piece::Color;
 use crate::piece::PieceGrid;
 use crate::piece::Species;
 
-pub fn count_repetitions(current: &FastPosition) -> usize {    
+pub fn count_repetitions(current: &ChessGame) -> usize {
     let mut past_p_lut = current.p_lut;
     let mut past_active_player = current.active_player();
     let mut repeat_count: usize = 0;
@@ -40,13 +39,13 @@ pub fn count_repetitions(current: &FastPosition) -> usize {
 
 fn unmake_move(grid: &mut PieceGrid, pmove: LoggedPieceMove) {
     let mut piece = grid.get(pmove.mgmove.destin).unwrap();
-    if pmove.mgmove.special == Some(SpecialPieceMove::Promote) {
+    if pmove.mgmove.promote.is_some() {
         piece.set_species(Species::Pawn);
     }
     grid.set(pmove.mgmove.destin, None);
-    grid.set(pmove.mgmove.target, None);
+    grid.set(pmove.target, None);
     if let Some(capture_piece) = pmove.capture {
-        grid.set(pmove.mgmove.target, Some(capture_piece));
+        grid.set(pmove.target, Some(capture_piece));
     }
     grid.set(pmove.mgmove.origin, Some(piece));
 }

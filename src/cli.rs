@@ -1,4 +1,4 @@
-use crate::gamestate::FastPosition;
+use crate::gamestate::ChessGame;
 use crate::grid::FileDirection;
 use crate::grid::StandardCoordinate;
 use crate::movegen::dispatch::movegen_legal;
@@ -59,7 +59,7 @@ pub fn prompt_ok() {
     std::io::stdin().read_line(&mut input);
 }
 
-pub fn prompt_move(state: &mut FastPosition) -> MGAnyMove {
+pub fn prompt_move(state: &mut ChessGame) -> MGAnyMove {
     let mut moves: Vec<MGAnyMove> = Vec::new();
     movegen_legal(state, &mut moves);
     for (i, mov) in moves.iter().enumerate() {

@@ -1,7 +1,7 @@
 use crate::bitboard::Bitboard;
 use crate::coordinates::StandardCS;
 use crate::coordinates::CoordinateSystem;
-use crate::gamestate::FastPosition;
+use crate::gamestate::ChessGame;
 use crate::grid::StandardCoordinate;
 use crate::laneutils::lanescan;
 use crate::misc::Push;
@@ -30,6 +30,6 @@ fn movegen_slider<C>(ctx: &mut PMGContext<impl Push<PMGMove>>,
     bb &= !friendly_bb;
     
     for destin in bb.scan() {
-        ctx.push(PMGMove::new(origin, destin.into()))
+        ctx.push(PMGMove::new_basic(origin, destin.into()))
     }
 }

@@ -1,21 +1,43 @@
-use std::fmt::{Debug, Display, Formatter, Write};
 use crate::misc::const_min_u8;
+use crate::piece::Color;
+use std::fmt::{Debug, Write};
+use std::fmt::Formatter;
+use std::str::FromStr;
+use std::fmt::Display;
+use std::num::NonZeroU8;
 
 // # Laterals
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub struct Rank { index: u8 }
-
-#[derive(Clone, Copy, PartialEq, Eq)]
-pub struct File { index: u8 }
+#[repr(transparent)]
+pub struct Rank { value: NonZeroU8 }
 
 impl Rank {
     pub const fn from_index(index: u8) -> Self {
         assert!(index < 8);
-        Self { index }
+        let value = unsafe { NonZeroU8::new_unchecked(index + 1) };
+        Self { value }
     }
 
-    pub const fn index(self) -> u8 { self.index }
+    pub const fn index(self) -> u8 { self.value.get() - 1 }
+
+    pub fn base_rank(color: Color) -> Self {
+        Self::from_index(color.index() * 7)
+    }
+
+    pub fn relative_to(color: Color, offset: i8) -> Self {
+        let base = Self::base_rank(color).index() as i8;
+        let sindex = base + color.sign() * offset;
+        return Self::from_index(sindex.try_into().unwrap())
+    }
+
+    pub fn pawn_rank(color: Color) -> Self {
+        return Self::relative_to(color, 1);
+    }
+
+    pub fn pdj_rank(color: Color) -> Self {
+        return Self::relative_to(color, 3)
+    }
 }
 
 impl Display for Rank {
@@ -24,13 +46,41 @@ impl Display for Rank {
     }
 }
 
+#[derive(Debug)]
+pub enum ParseRankErr {
+    ParseIntErr(std::num::ParseIntError),
+    OutOfBounds(/* bad value */ u8)
+}
+
+impl From<std::num::ParseIntError> for ParseRankErr {
+    fn from(value: std::num::ParseIntError) -> Self {
+        Self::ParseIntErr(value)
+    }
+}
+
+impl FromStr for Rank {
+    type Err = ParseRankErr;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let index = s.parse::<u8>()?;
+        if (index < 1) | (index > 8) {
+            return Err(ParseRankErr::OutOfBounds(index))
+        }
+        return Ok(Rank::from_index(index - 1));
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct File { value: NonZeroU8 }
+
 impl File {
     pub const fn from_index(index: u8) -> Self {
         assert!(index < 8);
-        Self { index }
+        let value = unsafe { NonZeroU8::new_unchecked(index + 1) };
+        Self { value }
     }
 
-    pub const fn index(self) -> u8 { self.index }
+    pub const fn index(self) -> u8 { self.value.get() - 1 }
 
     pub fn letter(self) -> char { char::from(65 + self.index()) }
 
@@ -47,6 +97,27 @@ impl File {
 impl Display for File {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.write_char(char::from(65 + self.index()))
+    }
+}
+
+#[derive(Debug)]
+pub struct ParseFileErr;
+
+impl FromStr for File {
+    type Err = ParseFileErr;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "A" => Ok(File::A),
+            "B" => Ok(File::B),
+            "C" => Ok(File::C),
+            "D" => Ok(File::D),
+            "E" => Ok(File::E),
+            "F" => Ok(File::F),
+            "G" => Ok(File::G),
+            "H" => Ok(File::H),
+            _   => Err(ParseFileErr)
+        }
     }
 }
 
@@ -162,10 +233,45 @@ impl Display for StandardCoordinate {
     }
 }
 
+impl Debug for StandardCoordinate {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}{}", self.file().letter(), self.rank())
+    }
+}
+
+#[derive(Debug)]
+pub enum ParseStandardCoordinateError {
+    ParseRankErr(ParseRankErr),
+    ParseFileErr(ParseFileErr),
+    BadLen
+}
+
+impl From<ParseRankErr> for ParseStandardCoordinateError {
+    fn from(value: ParseRankErr) -> Self {
+        Self::ParseRankErr(value)
+    }
+}
+
+impl From<ParseFileErr> for ParseStandardCoordinateError {
+    fn from(value: ParseFileErr) -> Self {
+        Self::ParseFileErr(value)
+    }
+}
+
+impl FromStr for StandardCoordinate {
+    type Err = ParseStandardCoordinateError;
+    
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s.len() != 2 { return Err(Self::Err::BadLen) }
+        let file = File::from_str(&s[0..1])?;
+        let rank = Rank::from_str(&s[1..2])?;
+        return Ok(Self::new(rank, file));
+    }
+}
 
 // # `FileDirection`
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(u8)]
 pub enum FileDirection {
     Queenside = 0,

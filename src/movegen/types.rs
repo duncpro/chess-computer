@@ -1,7 +1,6 @@
 use crate::bitboard::Bitboard;
 use crate::coordinates::CoordinateSystem;
-use crate::gamestate::FastPosition;
-use crate::gamestate::SpecialPieceMove;
+use crate::gamestate::ChessGame;
 use crate::makemove::test_pmove;
 use crate::misc::Push;
 use crate::misc::PushFilter;
@@ -12,29 +11,34 @@ use crate::grid::StandardCoordinate;
 use std::cell::Ref;
 use std::cell::RefCell;
 
-// # `MGPieceMove`
+// # `PMGMove`
 
-#[derive(Clone, Copy)]
-pub struct PMGMove {
+/// There are a variety of chessmove representations in this program.
+/// `PMGMove` in particular is produced by the move generation routines
+/// and is used during move-application and move-reversal as well.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct PMGMove /* Piece Move Generation Move */ {
     pub origin: StandardCoordinate,
     pub destin: StandardCoordinate,
-    pub target: StandardCoordinate,
-    pub special: Option<SpecialPieceMove>,
     pub promote: Option<Species>
 }
 
 impl PMGMove {
-    pub fn new(origin: StandardCoordinate, destin: StandardCoordinate) 
-    -> Self 
+    pub fn new_basic(origin: StandardCoordinate, destin: StandardCoordinate) -> Self
     {
-        Self { origin, destin, target: destin, special: None,
-            promote: None }
+        Self { origin, destin, promote: None }
+    }
+
+    pub fn new_promote(origin: StandardCoordinate, destin: StandardCoordinate,
+        desire: Species) -> Self
+    {
+        Self { origin, destin, promote: Some(desire) }
     }
 }
 
 // # `MGAnyMove`
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum MGAnyMove {
     Piece(PMGMove),
     Castle(FileDirection)
@@ -45,13 +49,13 @@ pub enum MGAnyMove {
 pub struct PMGContext<'a, 'b, 'c, P>
 where P: Push<PMGMove>
 { 
-    gstate: &'a RefCell<&'b mut FastPosition>,
+    gstate: &'a RefCell<&'b mut ChessGame>,
     pmoves: &'c mut P
 }
 
 impl<'a, 'b, 'c, P: Push<PMGMove>> PMGContext<'a, 'b, 'c, P> {
-    pub fn new(gstate: &'a RefCell<&'b mut FastPosition>, 
-        pmoves: &'c mut P) -> Self 
+    pub fn new(gstate: &'a RefCell<&'b mut ChessGame>,
+               pmoves: &'c mut P) -> Self
     {
            Self { gstate, pmoves }
     }
@@ -66,7 +70,7 @@ impl<'a, 'b, 'c, P: Push<PMGMove>> PMGContext<'a, 'b, 'c, P> {
         return self.gstate.borrow().active_player();
     }
 
-    pub fn inspect<T>(&self, f: impl Fn(&FastPosition) -> T) -> T
+    pub fn inspect<T>(&self, f: impl Fn(&ChessGame) -> T) -> T
     where T: Copy
     {
         return f(*self.gstate.borrow());

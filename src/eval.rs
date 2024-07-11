@@ -1,11 +1,12 @@
+use std::i16::MIN;
 use crate::cache::Cache;
 use crate::cache::CacheEntry;
 use crate::early_ok;
-use crate::gamestate::FastPosition;
+use crate::gamestate::ChessGame;
 use crate::makemove::make_move;
 use crate::makemove::unmake_move;
 use crate::mat_eval::calc_matdiff;
-use crate::misc::SegVec;
+use crate::misc::{pick, SegVec};
 use crate::misc::max_inplace;
 use crate::movegen::dispatch::count_legal_moves;
 use crate::movegen::dispatch::movegen_legal;
@@ -21,7 +22,7 @@ pub const BELOW_MIN_SCORE: i16 = i16::MIN + 1;
 // # Time Constrained Evaluation
 
 pub struct DeepEvalContext<'a, 'b, 'c> {
-    pub gstate: &'a mut FastPosition,
+    pub gstate: &'a mut ChessGame,
     /// The number of complete plys to play-out before applying 
     /// the heuristic score function to the position. When zero,
     /// the heuristic score function is applied immediately.
@@ -93,19 +94,15 @@ pub fn deep_eval(mut ctx: DeepEvalContext) -> Result<i16, DeepEvalException> {
 /// If there is less time remaining on our clock than the amount of time
 /// required to execute this procedure, the game is necessarily lost.
 /// The short runtime of `shallow_eval` is at the expense of accuracy.
-pub fn shallow_eval(gstate: &mut FastPosition) -> i16 {
+pub fn shallow_eval(gstate: &mut ChessGame) -> i16 {
     let cant_move = count_legal_moves(gstate) == 0;
     early_return! { leaf_eval(gstate, cant_move) };
     return calc_matdiff(&gstate.bbs);
 }
 
-fn leaf_eval(gstate: &mut FastPosition, cant_move: bool) -> Option<i16> {
-    if cant_move {
-        if gstate.bbs.is_check() {
-            return Some(MIN_SCORE)
-        } else {
-            return Some(0);
-        }
+fn leaf_eval(gstate: &mut ChessGame, cant_move: bool) -> Option<i16> {
+    if cant_move { // TODO: This branch instruction can be removed
+        return pick(gstate.bbs.is_check(), Some(MIN_SCORE), Some(0));
     }
     let by_repetition = count_repetitions(gstate) >= 3;
     let by_50moverule = gstate.halfmoveclock >= 100;

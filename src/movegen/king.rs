@@ -4,7 +4,7 @@ use crate::build_itable;
 use crate::cfor;
 use crate::coordinates::{Coordinate, StandardCS};
 use crate::coordinates::RankMajorCS;
-use crate::gamestate::FastPosition;
+use crate::gamestate::ChessGame;
 use crate::gamestate::locate_king;
 use crate::grid::StandardCoordinate;
 use crate::misc::Push;
@@ -20,7 +20,7 @@ pub fn movegen_king(ctx: &mut PMGContext<impl Push<PMGMove>>) {
     let mut bb = king_attack(origin);
     bb &= !ctx.inspect(|s| s.bbs.affilia_bbs[s.active_player()].get());
     for destin in bb.scan() {
-        ctx.push(PMGMove::new(origin.into(), destin.into()));
+        ctx.push(PMGMove::new_basic(origin.into(), destin.into()));
     }
 }
 
