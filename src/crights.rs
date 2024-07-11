@@ -59,16 +59,12 @@ fn update_crights_kingside(state: &mut ChessGame) {
     value &= is_king_intact(state);
 
     let base_rank = Rank::base_rank(state.active_player());
-    
-    let rook_home = StandardCoordinate::new(base_rank, File::from_index(7));
-        
+    let rook_home = StandardCoordinate::new(base_rank, File::H);
     let rooks: Bitboard<StandardCS> = 
         state.bbs.class(state.active_player(), Species::Rook);
-    
     value &= rooks.includes(rook_home.into());
 
-    state.crights.set(FileDirection::Kingside, 
-        state.active_player(), value);
+    state.crights.set(FileDirection::Kingside, state.active_player(), value);
 }
 
 fn update_crights_queenside(state: &mut ChessGame) {
@@ -78,21 +74,17 @@ fn update_crights_queenside(state: &mut ChessGame) {
     value &= is_king_intact(state);
 
     let base_rank = Rank::base_rank(state.active_player());
-    
-    let rook_home = StandardCoordinate::new(base_rank, File::from_index(0));
-    
+    let rook_home = StandardCoordinate::new(base_rank, File::A);
     let rooks: Bitboard<StandardCS> = 
         state.bbs.class(state.active_player(), Species::Rook);
-    
     value &= rooks.includes(rook_home.into());
 
-    state.crights.set(FileDirection::Queenside, 
-        state.active_player(), value);
+    state.crights.set(FileDirection::Queenside, state.active_player(), value);
 }
 
 fn is_king_intact(state: &mut ChessGame) -> bool {
     let base_rank = Rank::base_rank(state.active_player());
-    let king_home = StandardCoordinate::new(base_rank, File::from_index(4));
+    let king_home = StandardCoordinate::new(base_rank, File::E);
     let king_pos  = locate_king_stdc(&state.bbs);
     return king_home == king_pos;
 }

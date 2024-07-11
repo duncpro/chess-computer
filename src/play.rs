@@ -37,11 +37,7 @@ pub fn automove(gstate: &mut ChessGame, think_time: Duration, cache: &mut Cache)
         deadline: Instant::now() + think_time, cache });
 
     println!("Depth: {} (plys considered)", search_result.depth_achieved);
-
-    if let MGAnyMove::Piece(piece_move) = search_result.bestmove {
-        println!("Move: {} to {}", piece_move.origin, piece_move.destin);
-    }
-    // TODO: Castling!
+    println!("Best Move: {:?}", search_result.bestmove);
 
     make_move(gstate, search_result.bestmove);
 }
@@ -59,6 +55,7 @@ pub fn selfplay(time_constraints: ColorTable<Duration>) {
     while matches!(status(&mut state), GameStatus::Incomplete) {
         println!("{}'s turn to move", state.active_player());
         println!("Legal Moves: {}", count_legal_moves(&mut state));
+        println!("Crights: {:?}", state.crights);
         println!("Move #: {}", state.movelog.len() + 1);
         let think_time = time_constraints[state.active_player()];
         automove(&mut state, think_time, &mut cache);

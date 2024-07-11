@@ -186,7 +186,7 @@ fn unmake_castle(state: &mut ChessGame, side: FileDirection) {
 
     const ROOK_DESTIN_LUT: [File; 2] = [
         /* Queenside */ File::D,
-        /* Kingside  */ File::G
+        /* Kingside  */ File::F
     ];
     let rook_destin = StandardCoordinate::new(
         Rank::base_rank(state.active_player()),
