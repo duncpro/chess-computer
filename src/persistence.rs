@@ -1,12 +1,14 @@
-use std::str::FromStr;
 use crate::gamestate::ChessGame;
-use crate::grid::{FileDirection, ParseStandardCoordinateError, StandardCoordinate};
+use crate::grid::FileDirection;
+use crate::grid::ParseStandardCoordinateError;
+use crate::grid::StandardCoordinate;
 use crate::makemove::make_move;
 use crate::movegen::dispatch::movegen_legal;
 use crate::movegen::types::MGAnyMove;
 use crate::movegen::types::PMGMove;
 use crate::piece::Species;
 use crate::stdinit::new_std_chess_position;
+use std::str::FromStr;
 
 // # Load Game
 

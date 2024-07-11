@@ -6,7 +6,7 @@ use crate::grid::File;
 use crate::gamestate::ChessGame;
 
 pub fn movegen_castle_kingside(state: &ChessGame) -> bool{
-    let mut can_castle = false;
+    let mut can_castle = true;
         
     let base_rank = Rank::base_rank(state.active_player());
     {
@@ -30,7 +30,7 @@ pub fn movegen_castle_kingside(state: &ChessGame) -> bool{
 }
 
 pub fn movegen_castle_queenside(state: &ChessGame) -> bool {
-    let mut can_castle = false;
+    let mut can_castle = true;
         
     let base_rank = Rank::base_rank(state.active_player());
     {    
