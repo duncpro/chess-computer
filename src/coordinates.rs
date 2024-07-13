@@ -21,7 +21,7 @@ pub trait CoordinateSystem: Sized + Copy {
     const INDEX: usize;
 }
 
-/// Represents an *absolute* tile coordinate. 
+/// Represents an *absolute* major tile coordinate.
 ///
 /// There are four distinct absolute major coordinate systems.
 /// A coordinate in any of these systems is represented via
