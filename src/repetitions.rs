@@ -15,8 +15,7 @@ pub fn count_repetitions(current: &ChessGame) -> usize {
     let mut repeat_count: usize = 0;
 
     let mut i = current.movelog.len();
-    loop {
-        if i == 0 { break; }
+    while i != 0 {
         i -= 1;
         let mov = current.movelog[i];
         if mov.prev_crights != current.crights { break; }
