@@ -27,3 +27,4 @@ pub mod sliders;
 pub mod stdinit;
 pub mod mov;
 pub mod movesort;
+pub mod snapshot;

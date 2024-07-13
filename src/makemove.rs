@@ -1,7 +1,7 @@
-use mov::get_target_sq;
+use crate::mov::get_target_sq;
 use crate::bitboard::RawBitboard;
 use crate::bits::swap_bytes_inplace_u64;
-use crate::crights::update_crights;
+use crate::crights::update_crights_all;
 use crate::enpassant::is_enpassant_vuln;
 use crate::gamestate::LoggedMove;
 use crate::gamestate::LoggedPieceMove;
@@ -18,8 +18,10 @@ use crate::misc::pick;
 use crate::mov::PieceMove;
 use crate::gamestate::ChessGame;
 use crate::rmrel::relativize;
-use crate::{expect_match, mov, setbit};
+use crate::expect_match;
+use crate::setbit;
 use crate::cli::print_board;
+use crate::snapshot::capture_snapshot;
 use crate::unsetbit;
 
 // # Utilities
@@ -77,7 +79,7 @@ pub fn make_pmove(state: &mut ChessGame, mgmove: PieceMove) {
     fill_tile(state, mgmove.destin, place_piece);
 
     let prev_crights = state.crights;
-    update_crights(state);
+    update_crights_all(state);
 
     let prev_halfmoveclock = state.halfmoveclock;
     state.halfmoveclock += 1;
@@ -243,7 +245,7 @@ pub fn unmake_move(state: &mut ChessGame) {
 
 /// Calculates the legality of a pseudo-legal move.
 /// This procedure returns `true` if the move is legal and false otherwise.
-pub fn test_pmove(state: &mut ChessGame, pmove: PieceMove) -> bool {
+pub fn test_pmove_legality(state: &mut ChessGame, pmove: PieceMove) -> bool {
     make_pmove(state, pmove);
     let is_legal = !state.bbs.is_check();
     expect_match!(state.movelog.pop(), Some(ml_entry));
@@ -254,3 +256,11 @@ pub fn test_pmove(state: &mut ChessGame, pmove: PieceMove) -> bool {
     return is_legal;
 }
 
+pub fn inspect_move<R, F>(state: &mut ChessGame, mov: AnyMove, mut inspection: F) -> R
+where F: FnMut(&mut ChessGame) -> R
+{
+    make_move(state, mov);
+    let result = inspection(state);
+    unmake_move(state);
+    return result;
+}

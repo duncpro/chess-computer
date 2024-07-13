@@ -83,7 +83,8 @@ impl<C: CoordinateSystem> Bitboard<C> {
     }
 
     pub fn includes(self, coord: Coordinate<C>) -> bool {
-        return getbit!(self.raw_bb, coord.index())
+        let index = coord.index();
+        return getbit!(self.raw_bb, index);
     }
 
     pub fn is_not_empty(self) -> bool { self.raw_bb.count_ones() > 0 }

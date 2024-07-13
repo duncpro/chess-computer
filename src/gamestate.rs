@@ -114,7 +114,7 @@ impl Bitboards {
 
     /// Determines if the active-player's king is in check.
     pub fn is_check(&self) -> bool { 
-        is_attacked(&self, locate_king_stdc(&self))
+        is_attacked(&self, locate_king_stdc(&self, self.active_player))
     }
 
     /// Constructs `Bitbaords` representing an completely empty 
@@ -131,19 +131,18 @@ impl Bitboards {
 }
 
 
-/// Calculates the [`Coordinate`] of the active-player's king.
-pub fn locate_king<C: CoordinateSystem>(board: &Bitboards) -> Coordinate<C> {
+/// Calculates the [`Coordinate`] of the given player's king.
+pub fn locate_king<C: CoordinateSystem>(board: &Bitboards, color: Color) -> Coordinate<C> {
     let mut bb: Bitboard<C> = Bitboard::empty();
     bb  = board.species_bbs[Species::King].get();
-    bb &= board.affilia_bbs[board.active_player].get();
+    bb &= board.affilia_bbs[color].get();
     return bb.single();
 }
 
-/// Calculates the [`StandardCoordinate`] of the active-player's king.
-pub fn locate_king_stdc(board: &Bitboards) -> StandardCoordinate {
-    locate_king::<StandardCS>(board).into()
+/// Calculates the [`StandardCoordinate`] of the given player's king.
+pub fn locate_king_stdc(board: &Bitboards, color: Color) -> StandardCoordinate {
+    locate_king::<StandardCS>(board, color).into()
 }
-
 
 // # Status
 

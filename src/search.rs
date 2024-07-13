@@ -4,7 +4,7 @@ use crate::eval::DeepEvalContext;
 use crate::eval::DeepEvalException;
 use crate::eval::deep_eval;
 use crate::eval::shallow_eval;
-use crate::makemove::make_move;
+use crate::makemove::{inspect_move, make_move};
 use crate::misc::Max;
 use crate::makemove::unmake_move;
 use crate::misc::SegVec;
@@ -39,11 +39,11 @@ fn search(mut ctx: SearchContext) -> Result<AnyMove, DeadlineElapsed> {
     movegen_legal_sorted(ctx.gstate, &mut ctx.movebuf, ctx.cache);
     assert!(ctx.movebuf.len() > 0);
     while let Some(genmov) = ctx.movebuf.pop() {
-        make_move(ctx.gstate, genmov.mov);
-        let result = deep_eval(DeepEvalContext { gstate: ctx.gstate, 
-            lookahead: ctx.lookahead - 1, movebuf: ctx.movebuf.extend(),
-            deadline: ctx.deadline, cutoff: best.value(), cache: ctx.cache });
-        unmake_move(ctx.gstate);
+        let result = inspect_move(ctx.gstate, genmov.mov, |gstate| {
+            deep_eval(DeepEvalContext { gstate, lookahead: ctx.lookahead - 1,
+                movebuf: ctx.movebuf.extend(), deadline: ctx.deadline, cutoff: best.value(),
+                cache: ctx.cache })
+        });
         match result {
             Err(DeepEvalException::DeadlineElapsed) => return Err(DeadlineElapsed),
             Err(DeepEvalException::Cut) => {},

@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::fmt::{Debug, Display};
 use std::num::NonZeroU8;
 use std::ops::{IndexMut, Index};
 use crate::impl_enum_table;
@@ -33,7 +33,7 @@ impl_enum_table!(Species);
 
 // # `Color`
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 #[repr(u8)]
 pub enum Color {
     White = 1,
@@ -91,7 +91,7 @@ impl_enum_table!(Color);
 
 // `Piece`
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Eq, PartialEq)]
 #[repr(transparent)]
 pub struct Piece { data: NonZeroU8 }
 
@@ -117,6 +117,12 @@ impl Piece {
         *self = Piece::new(self.color(), species);
     }
     pub fn index(self) -> u8 { self.data.get() - 1 } 
+}
+
+impl Debug for Piece {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Piece({:?}, {:?})", self.color(), self.species())
+    }
 }
 
 

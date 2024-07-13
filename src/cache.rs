@@ -69,23 +69,6 @@ impl Cache {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
-struct PackedPosition {
-    p_lut: PieceGrid,
-    active_player: Color,
-    crights: CastlingRights,
-    enpassant_vuln: Option<File>
-}
-
-fn pack(state: &ChessGame) -> PackedPosition {
-    PackedPosition { 
-        p_lut: state.p_lut, 
-        active_player: state.active_player(),
-        crights: state.crights, 
-        enpassant_vuln: is_enpassant_vuln(state)
-    }
-}
-
 pub struct IncrementalHash { 
     value: u64,
     chs: HashChars

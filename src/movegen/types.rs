@@ -1,7 +1,7 @@
 use crate::bitboard::Bitboard;
 use crate::coordinates::CoordinateSystem;
 use crate::gamestate::ChessGame;
-use crate::makemove::test_pmove;
+use crate::makemove::test_pmove_legality;
 use crate::misc::Push;
 use crate::piece::Color;
 use crate::piece::Species;
@@ -57,7 +57,7 @@ where P: Push<GeneratedMove>
     }
 
     pub fn push_p(&mut self, mov: PieceMove) {
-        let is_legal = test_pmove(*self.gstate.borrow_mut(), mov);
+        let is_legal = test_pmove_legality(*self.gstate.borrow_mut(), mov);
         if is_legal { self.push_legal(AnyMove::Piece(mov)) }
     }
 }

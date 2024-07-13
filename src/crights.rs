@@ -3,12 +3,12 @@ use std::fmt::{Debug, Display};
 use crate::bitboard::Bitboard;
 use crate::coordinates::StandardCS;
 use crate::gamestate::locate_king_stdc;
-use crate::getbit;
+use crate::{getbit, play};
 use crate::grid::{File, Rank};
 use crate::grid::StandardCoordinate;
 use crate::grid::FileDirection;
 use crate::gamestate::ChessGame;
-use crate::piece::Color;
+use crate::piece::{Color, Piece};
 use crate::piece::Species;
 
 // # `CastlingRights`
@@ -47,45 +47,32 @@ impl CastlingRights {
 
 // # Updating Castling Rights
 
-pub fn update_crights(state: &mut ChessGame) {
-    update_crights_kingside(state);
-    update_crights_queenside(state);
+pub fn update_crights_all(state: &mut ChessGame) {
+    update_crights_spec(state, FileDirection::Queenside, Color::White);
+    update_crights_spec(state, FileDirection::Kingside, Color::White);
+    update_crights_spec(state, FileDirection::Queenside, Color::Black);
+    update_crights_spec(state, FileDirection::Kingside, Color::Black);
 }
 
-fn update_crights_kingside(state: &mut ChessGame) {
-    let mut value = state.crights.get(FileDirection::Kingside, 
-        state.active_player());
-
-    value &= is_king_intact(state);
-
-    let base_rank = Rank::base_rank(state.active_player());
-    let rook_home = StandardCoordinate::new(base_rank, File::H);
-    let rooks: Bitboard<StandardCS> = 
-        state.bbs.class(state.active_player(), Species::Rook);
-    value &= rooks.includes(rook_home.into());
-
-    state.crights.set(FileDirection::Kingside, state.active_player(), value);
+fn update_crights_spec(state: &mut ChessGame, side: FileDirection, player: Color) {
+    let mut value = state.crights.get(side, player);
+    value &= is_king_intact(state, player);
+    const ROOK_FILE_LUT: [File; 2] = [File::A, File::H];
+    {
+        let rook_home = StandardCoordinate::new(
+            Rank::base_rank(player),
+            ROOK_FILE_LUT[usize::from(side.index())]);
+        let occupant = state.p_lut.get(rook_home);
+        let is_rook_intact = (occupant == Some(Piece::new(player, Species::Rook)));
+        value &= is_rook_intact;
+    }
+    state.crights.set(side, player, value);
 }
 
-fn update_crights_queenside(state: &mut ChessGame) {
-    let mut value = state.crights.get(FileDirection::Queenside, 
-        state.active_player());
-
-    value &= is_king_intact(state);
-
-    let base_rank = Rank::base_rank(state.active_player());
-    let rook_home = StandardCoordinate::new(base_rank, File::A);
-    let rooks: Bitboard<StandardCS> = 
-        state.bbs.class(state.active_player(), Species::Rook);
-    value &= rooks.includes(rook_home.into());
-
-    state.crights.set(FileDirection::Queenside, state.active_player(), value);
-}
-
-fn is_king_intact(state: &mut ChessGame) -> bool {
-    let base_rank = Rank::base_rank(state.active_player());
+fn is_king_intact(state: &mut ChessGame, player: Color) -> bool {
+    let base_rank = Rank::base_rank(player);
     let king_home = StandardCoordinate::new(base_rank, File::E);
-    let king_pos  = locate_king_stdc(&state.bbs);
+    let king_pos  = locate_king_stdc(&state.bbs, player);
     return king_home == king_pos;
 }
 

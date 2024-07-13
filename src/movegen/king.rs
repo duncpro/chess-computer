@@ -10,7 +10,7 @@ use crate::movegen::types::{GeneratedMove, MGContext};
 use crate::setbit;
 use crate::mov::PieceMove;
 pub fn movegen_king(ctx: &mut MGContext<impl Push<GeneratedMove>>) {
-    let origin = ctx.inspect(|s| locate_king::<RankMajorCS>(&s.bbs));
+    let origin = ctx.inspect(|s| locate_king::<RankMajorCS>(&s.bbs, s.active_player()));
     
     let mut bb = king_attack(origin);
     bb &= !ctx.inspect(|s| s.bbs.affilia_bbs[s.active_player()].get());
