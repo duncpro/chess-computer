@@ -73,6 +73,18 @@ pub struct LaneLoc {
     pub length: u8    
 }
 
+// ## `StandardCS`
+
+/// The [`CoordinateSystem`] of [`StandardCoordinate`].
+/// Unlike the other coordinate systems, conversion between
+/// `Coordinate<StandardCS>` and [`StandardCoordinate`] is
+/// computationally free, since the in-memory representations
+/// are indistinguishable.
+///
+/// Therefore, `StandardCS` should be preferred when a more specific
+/// coordinate system is unnecessary. Especially when the [`Coordinate`]
+/// is to be converted into a [`StandardCoordinate`] later.
+pub type StandardCS = RankMajorCS;
 
 // # Lateral Coordinate Systems
 
@@ -97,19 +109,6 @@ impl CoordinateSystem for RankMajorCS {
     
     const INDEX: usize = 0;
 }
-
-// ## `StandardCS`
-
-/// The [`CoordinateSystem`] of [`StandardCoordinate`].
-/// Unlike the other coordinate systems, conversion between 
-/// `Coordinate<StandardCS>` and [`StandardCoordinate`] is
-/// computationally free, since the in-memory representations
-/// are indistinguishable.
-///
-/// Therefore, `StandardCS` should be preferred when a more specific
-/// coordinate system is unnecessary. Especially when the [`Coordinate`]
-/// is to be converted into a [`StandardCoordinate`] later.
-pub type StandardCS = RankMajorCS;
 
 // ## `FileMajorCS`
 
