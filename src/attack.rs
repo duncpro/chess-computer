@@ -7,8 +7,6 @@ use crate::coordinates::StandardCS;
 use crate::coordinates::RankMajorCS;
 use crate::gamestate::ChessGame;
 use crate::gamestate::Bitboards;
-use crate::gamestate::locate_king;
-use crate::gamestate::locate_king_stdc;
 use crate::grid::StandardCoordinate;
 use crate::laneutils::lanelimit;
 use crate::movegen::king::king_attack;
@@ -40,13 +38,11 @@ struct AttackQuery<'a> {
 }
 
 fn is_attacked_pawn(args: AttackQuery) -> bool {
-    let king_rmrel = relativize(locate_king_stdc(args.board),
-        args.board.active_player);
+    let king_rmrel = relativize(args.vuln_sq, args.board.active_player);
 
     let mut bb = pawn_attack(king_rmrel);
     bb &= args.board.affilia_rel_bbs[args.board.active_player.oppo()];
     bb &= args.board.pawn_rel_bb;
-
     return bb != 0;
 }
 

@@ -129,6 +129,7 @@ impl<C: CoordinateSystem> Bitboard<C> {
 }
 
 pub fn print_bitboard(bb: RawBitboard) {
+    println!("LSB");
     for i in (0..8) {
         let bitlane = (bb >> (8 * i)) as Bitlane;
         for j in (0..8) {
@@ -138,6 +139,7 @@ pub fn print_bitboard(bb: RawBitboard) {
         }
         print!("\n");
     }
+    print!("                MSB");
 }
 
 

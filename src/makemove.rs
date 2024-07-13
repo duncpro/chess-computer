@@ -1,3 +1,4 @@
+use mov::get_target_sq;
 use crate::bitboard::RawBitboard;
 use crate::bits::swap_bytes_inplace_u64;
 use crate::crights::update_crights;
@@ -17,14 +18,14 @@ use crate::misc::pick;
 use crate::mov::PieceMove;
 use crate::gamestate::ChessGame;
 use crate::rmrel::relativize;
-use crate::{mov, setbit};
+use crate::{expect_match, mov, setbit};
+use crate::cli::print_board;
 use crate::unsetbit;
 
 // # Utilities
 
 fn clear_tile(state: &mut ChessGame, pos: StandardCoordinate) {
     let occupant = state.p_lut.get(pos);
-    state.p_lut.set(pos, None);
     if let Some(piece) = occupant {
         state.bbs.affilia_bbs[piece.color()].unset(pos);
         state.bbs.species_bbs[piece.species()].unset(pos);
@@ -32,6 +33,7 @@ fn clear_tile(state: &mut ChessGame, pos: StandardCoordinate) {
             relativize(pos, state.active_player()));
         state.hash.toggle_tile(pos, piece);
     }
+    state.p_lut.set(pos, None);
     unsetbit!(state.bbs.pawn_rel_bb, 
         relativize(pos, state.active_player()));
 }
@@ -64,7 +66,7 @@ pub fn swap_active(state: &mut ChessGame) {
 
 pub fn make_pmove(state: &mut ChessGame, mgmove: PieceMove) {
     let piece = state.p_lut.get(mgmove.origin).unwrap();
-    let target = mov::get_target_sq(mgmove, state);
+    let target = get_target_sq(mgmove, state);
     let capture = state.p_lut.get(target);
     
     clear_tile(state, mgmove.origin);
@@ -242,12 +244,13 @@ pub fn unmake_move(state: &mut ChessGame) {
 /// Calculates the legality of a pseudo-legal move.
 /// This procedure returns `true` if the move is legal and false otherwise.
 pub fn test_pmove(state: &mut ChessGame, pmove: PieceMove) -> bool {
-    state.hash.toggle_ep_vuln(is_enpassant_vuln(state));
     make_pmove(state, pmove);
-    state.hash.toggle_ep_vuln(is_enpassant_vuln(state));
     let is_legal = !state.bbs.is_check();
-    swap_active(state);
-    unmake_move(state);
+    expect_match!(state.movelog.pop(), Some(ml_entry));
+    state.halfmoveclock = ml_entry.prev_halfmoveclock;
+    state.crights = ml_entry.prev_crights;
+    expect_match!(ml_entry.lmove, LoggedMove::Piece(lpm));
+    unmake_pmove(state, lpm);
     return is_legal;
 }
 

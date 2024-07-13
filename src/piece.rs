@@ -87,10 +87,6 @@ impl Display for Color {
     }
 }
 
-impl Default for Color {
-    fn default() -> Self { Self::White }
-}
-
 impl_enum_table!(Color);
 
 // `Piece`
@@ -117,11 +113,9 @@ impl Piece {
         let species_index = class_index % 6;
         return Species::from_index(species_index);
     }
-
     pub fn set_species(&mut self, species: Species) {
         *self = Piece::new(self.color(), species);
     }
-
     pub fn index(self) -> u8 { self.data.get() - 1 } 
 }
 
