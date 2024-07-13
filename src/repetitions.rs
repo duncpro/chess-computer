@@ -3,7 +3,7 @@ use crate::expect_match;
 use crate::gamestate::ChessGame;
 use crate::gamestate::LoggedMove;
 use crate::gamestate::MovelogEntry;
-use crate::movegen::types::PMGMove;
+use crate::mov::PieceMove;
 use crate::gamestate::LoggedPieceMove;
 use crate::piece::Color;
 use crate::piece::PieceGrid;

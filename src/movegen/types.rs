@@ -3,61 +3,29 @@ use crate::coordinates::CoordinateSystem;
 use crate::gamestate::ChessGame;
 use crate::makemove::test_pmove;
 use crate::misc::Push;
-use crate::misc::PushFilter;
 use crate::piece::Color;
 use crate::piece::Species;
-use crate::grid::FileDirection;
-use crate::grid::StandardCoordinate;
-use std::cell::Ref;
 use std::cell::RefCell;
+use rand::distributions::uniform::SampleBorrow;
+use crate::mov::{AnyMove, PieceMove};
 
-// # `PMGMove`
+// # `MGContext`
 
-/// There are a variety of chessmove representations in this program.
-/// `PMGMove` in particular is produced by the move generation routines
-/// and is used during move-application and move-reversal as well.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct PMGMove /* Piece Move Generation Move */ {
-    pub origin: StandardCoordinate,
-    pub destin: StandardCoordinate,
-    pub promote: Option<Species>
-}
-
-impl PMGMove {
-    pub fn new_basic(origin: StandardCoordinate, destin: StandardCoordinate) -> Self
-    {
-        Self { origin, destin, promote: None }
-    }
-
-    pub fn new_promote(origin: StandardCoordinate, destin: StandardCoordinate,
-        desire: Species) -> Self
-    {
-        Self { origin, destin, promote: Some(desire) }
-    }
-}
-
-// # `MGAnyMove`
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum MGAnyMove {
-    Piece(PMGMove),
-    Castle(FileDirection)
-}
-
-// # `PMGContext`
-
-pub struct PMGContext<'a, 'b, 'c, P>
-where P: Push<PMGMove>
+pub struct MGContext<'a, 'b, 'c, P>
+where P: Push<GeneratedMove>
 { 
     gstate: &'a RefCell<&'b mut ChessGame>,
-    pmoves: &'c mut P
+    pmoves: &'c mut P,
+    next_gen_id: u8
 }
 
-impl<'a, 'b, 'c, P: Push<PMGMove>> PMGContext<'a, 'b, 'c, P> {
+impl<'a, 'b, 'c, P> MGContext<'a, 'b, 'c, P>
+where P: Push<GeneratedMove>
+{
     pub fn new(gstate: &'a RefCell<&'b mut ChessGame>,
                pmoves: &'c mut P) -> Self
     {
-           Self { gstate, pmoves }
+           Self { gstate, pmoves, next_gen_id: 9 }
     }
     
     pub fn class<C>(&self, color: Color, species: Species) -> Bitboard<C> 
@@ -70,13 +38,29 @@ impl<'a, 'b, 'c, P: Push<PMGMove>> PMGContext<'a, 'b, 'c, P> {
         return self.gstate.borrow().active_player();
     }
 
+    pub fn occupancy<C>(&self) -> Bitboard<C>
+    where C: CoordinateSystem
+    {
+        return self.gstate.borrow().bbs.occupancy();
+    }
+
     pub fn inspect<T>(&self, f: impl Fn(&ChessGame) -> T) -> T
     where T: Copy
     {
         return f(*self.gstate.borrow());
     }
 
-    pub fn push(&mut self, pmove: PMGMove) {
-        self.pmoves.push(pmove);
+    pub fn push_legal(&mut self, mov: AnyMove) {
+        let gen_id = self.next_gen_id;
+        self.next_gen_id += 1;
+        self.pmoves.push(GeneratedMove { mov, gen_id });
+    }
+
+    pub fn push_p(&mut self, mov: PieceMove) {
+        let is_legal = test_pmove(*self.gstate.borrow_mut(), mov);
+        if is_legal { self.push_legal(AnyMove::Piece(mov)) }
     }
 }
+
+#[derive(Clone, Copy, Debug)]
+pub struct GeneratedMove { pub mov: AnyMove, pub gen_id: u8 }

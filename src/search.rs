@@ -1,8 +1,7 @@
-use crate::cache::Cache;
+use crate::cache::{Cache, CacheValue};
 use crate::eval::BELOW_MIN_SCORE;
 use crate::eval::DeepEvalContext;
 use crate::eval::DeepEvalException;
-use crate::eval::MIN_SCORE;
 use crate::eval::deep_eval;
 use crate::eval::shallow_eval;
 use crate::makemove::make_move;
@@ -10,19 +9,17 @@ use crate::misc::Max;
 use crate::makemove::unmake_move;
 use crate::misc::SegVec;
 use crate::movegen::dispatch::movegen_legal;
-use crate::movegen::types::MGAnyMove;
 use crate::gamestate::ChessGame;
 use std::time::Instant;
-
+use crate::mov::AnyMove;
+use crate::movesort::movegen_legal_sorted;
+use crate::movegen::types::GeneratedMove;
 // # Search
 
 struct SearchContext<'a, 'b, 'c> {
     pub gstate: &'a mut ChessGame,
-    /// The `lookahead` (as in [`DeepEvalWDeadlineContext`]) used when
-    /// evaluating each position resultant from each legal move
-    /// the active-player has to choose from.
-    pub eval_lookahead: u8,
-    pub movebuf: SegVec<'b, MGAnyMove>,
+    pub lookahead: u8,
+    pub movebuf: SegVec<'b, GeneratedMove>,
     pub deadline: Instant,
     pub cache: &'c mut Cache
 }
@@ -37,35 +34,39 @@ pub struct DeadlineElapsed;
 /// is called while the game is completed (there are no legal moves)
 /// it will [`panic`]. When the deadline elapses, search is cancelled and
 /// `Err(DeadlineElapsed)` is returned.
-fn search(mut ctx: SearchContext) -> Result<MGAnyMove, DeadlineElapsed> {
-    let mut best: Max<MGAnyMove, i16> = Max::new(BELOW_MIN_SCORE);       
-    movegen_legal(ctx.gstate, &mut ctx.movebuf); 
-    while let Some(mov) = ctx.movebuf.pop() {        
-        make_move(ctx.gstate, mov);
+fn search(mut ctx: SearchContext) -> Result<AnyMove, DeadlineElapsed> {
+    let mut best: Max<GeneratedMove, i16> = Max::new(BELOW_MIN_SCORE);
+    movegen_legal_sorted(ctx.gstate, &mut ctx.movebuf, ctx.cache);
+    assert!(ctx.movebuf.len() > 0);
+    while let Some(genmov) = ctx.movebuf.pop() {
+        make_move(ctx.gstate, genmov.mov);
         let result = deep_eval(DeepEvalContext { gstate: ctx.gstate, 
-            lookahead: ctx.eval_lookahead, movebuf: ctx.movebuf.extend(), 
+            lookahead: ctx.lookahead - 1, movebuf: ctx.movebuf.extend(),
             deadline: ctx.deadline, cutoff: best.value(), cache: ctx.cache });
         unmake_move(ctx.gstate);
         match result {
             Err(DeepEvalException::DeadlineElapsed) => return Err(DeadlineElapsed),
             Err(DeepEvalException::Cut) => {},
-            Ok(score) => { best.push(mov, score * -1) }
+            Ok(score) => { best.push(genmov, score * -1) }
         }
     }
-    return Ok(best.take().unwrap());
+    let bestmov_id = best.item().unwrap().gen_id;
+    ctx.cache.update(ctx.gstate, ctx.lookahead, CacheValue { score: best.value(),
+        bestmov_id });
+    return Ok(best.item().unwrap().mov);
 }
 
 
-fn search_shallow(gstate: &mut ChessGame, mut movebuf: SegVec<MGAnyMove>) -> MGAnyMove {
-    let mut best: Max<MGAnyMove, i16> = Max::new(BELOW_MIN_SCORE);
+fn search_shallow(gstate: &mut ChessGame, mut movebuf: SegVec<GeneratedMove>) -> AnyMove {
+    let mut best: Max<AnyMove, i16> = Max::new(BELOW_MIN_SCORE);
     movegen_legal(gstate, &mut movebuf); 
-    while let Some(mov) = movebuf.pop() {        
-        make_move(gstate, mov);
+    while let Some(genmov) = movebuf.pop() {
+        make_move(gstate, genmov.mov);
         let score = -1 * shallow_eval(gstate);
         unmake_move(gstate);
-        best.push(mov, score);
+        best.push(genmov.mov, score);
     }
-    return best.take().unwrap();
+    return best.item().unwrap();
 }
 
 
@@ -73,13 +74,13 @@ fn search_shallow(gstate: &mut ChessGame, mut movebuf: SegVec<MGAnyMove>) -> MGA
 
 pub struct IterDeepSearchContext<'a, 'b, 'c> {
     pub gstate: &'a mut ChessGame,
-    pub movebuf: SegVec<'b, MGAnyMove>,
+    pub movebuf: SegVec<'b, GeneratedMove>,
     pub deadline: Instant,
     pub cache: &'c mut Cache
 }
 
 pub struct IterDeepSearchResult {
-    pub bestmove: MGAnyMove,
+    pub bestmove: AnyMove,
     pub depth_achieved: u8
 }
 
@@ -90,7 +91,8 @@ pub fn iterdeep_search(mut ctx: IterDeepSearchContext) -> IterDeepSearchResult {
     let mut bestmove = search_shallow(ctx.gstate, ctx.movebuf.extend());
     let mut eval_lookahead: u8 = 1;
     loop {
-        let result = search(SearchContext { gstate: ctx.gstate, eval_lookahead, 
+        let result = search(SearchContext { gstate: ctx.gstate,
+            lookahead: eval_lookahead,
             movebuf: ctx.movebuf.extend(), deadline: ctx.deadline,
             cache: ctx.cache });
         match result {

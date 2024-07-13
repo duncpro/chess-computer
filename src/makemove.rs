@@ -9,15 +9,15 @@ use crate::grid::File;
 use crate::grid::Rank;
 use crate::grid::FileDirection;
 use crate::grid::StandardCoordinate;
-use crate::movegen::types::MGAnyMove;
+use crate::mov::AnyMove;
 use crate::piece::Color;
 use crate::piece::Piece;
 use crate::piece::Species;
 use crate::misc::pick;
-use crate::movegen::types::PMGMove;
+use crate::mov::PieceMove;
 use crate::gamestate::ChessGame;
 use crate::rmrel::relativize;
-use crate::setbit;
+use crate::{mov, setbit};
 use crate::unsetbit;
 
 // # Utilities
@@ -38,6 +38,7 @@ fn clear_tile(state: &mut ChessGame, pos: StandardCoordinate) {
 
 pub fn fill_tile(state: &mut ChessGame, pos: StandardCoordinate, piece: Piece)
 {
+    assert!(state.p_lut.get(pos).is_none());
     state.p_lut.set(pos, Some(piece));
     state.bbs.affilia_bbs[piece.color()].set(pos);
     state.bbs.species_bbs[piece.species()].set(pos);
@@ -61,9 +62,9 @@ pub fn swap_active(state: &mut ChessGame) {
 
 // # Make
 
-pub fn make_pmove(state: &mut ChessGame, mgmove: PMGMove) {
+pub fn make_pmove(state: &mut ChessGame, mgmove: PieceMove) {
     let piece = state.p_lut.get(mgmove.origin).unwrap();
-    let target = get_target_sq(mgmove, state);
+    let target = mov::get_target_sq(mgmove, state);
     let capture = state.p_lut.get(target);
     
     clear_tile(state, mgmove.origin);
@@ -74,15 +75,13 @@ pub fn make_pmove(state: &mut ChessGame, mgmove: PMGMove) {
     fill_tile(state, mgmove.destin, place_piece);
 
     let prev_crights = state.crights;
-    update_crights(state); 
-    state.hash.toggle_crights(prev_crights);
-    state.hash.toggle_crights(state.crights);
+    update_crights(state);
 
     let prev_halfmoveclock = state.halfmoveclock;
     state.halfmoveclock += 1;
     let reset_halfmoveclock = capture.is_some() 
         | (piece.species() == Species::Pawn);
-    state.halfmoveclock *= !reset_halfmoveclock as u16;
+    state.halfmoveclock *= (!reset_halfmoveclock) as u16;
 
     let is_pdj = (piece.species() == Species::Pawn)
         & (mgmove.origin.rank() == Rank::pawn_rank(state.active_player()))
@@ -138,14 +137,17 @@ pub fn make_castle(state: &mut ChessGame, side: FileDirection) {
 
     state.movelog.push(MovelogEntry { prev_crights, prev_halfmoveclock,
         lmove: LoggedMove::Castle(side) });
+
+    let active_player = state.active_player();
+    state.has_castled[active_player] = true;
 }
 
-pub fn make_move(state: &mut ChessGame, mov: MGAnyMove) {
+pub fn make_move(state: &mut ChessGame, mov: AnyMove) {
     state.hash.toggle_ep_vuln(is_enpassant_vuln(state));
     state.hash.toggle_crights(state.crights); // clear
     match mov {
-        MGAnyMove::Piece(pmove) => make_pmove(state, pmove),
-        MGAnyMove::Castle(side) => make_castle(state, side),
+        AnyMove::Piece(pmove) => make_pmove(state, pmove),
+        AnyMove::Castle(side) => make_castle(state, side),
     }
     swap_active(state);
     state.hash.toggle_ep_vuln(is_enpassant_vuln(state));
@@ -211,6 +213,9 @@ fn unmake_castle(state: &mut ChessGame, side: FileDirection) {
         Species::Rook));
     fill_tile(state, king_origin, Piece::new(state.active_player(),
         Species::King));
+
+    let active_player = state.active_player();
+    state.has_castled[active_player] = false;
 }
 
 pub fn unmake_move(state: &mut ChessGame) {
@@ -236,22 +241,13 @@ pub fn unmake_move(state: &mut ChessGame) {
 
 /// Calculates the legality of a pseudo-legal move.
 /// This procedure returns `true` if the move is legal and false otherwise.
-pub fn test_pmove(state: &mut ChessGame, pmove: PMGMove) -> bool {
+pub fn test_pmove(state: &mut ChessGame, pmove: PieceMove) -> bool {
+    state.hash.toggle_ep_vuln(is_enpassant_vuln(state));
     make_pmove(state, pmove);
+    state.hash.toggle_ep_vuln(is_enpassant_vuln(state));
     let is_legal = !state.bbs.is_check();
     swap_active(state);
     unmake_move(state);
     return is_legal;
 }
 
-/// Computes the position of the piece captured by this move (if any).
-/// The target is identical to the destination in every case except enpassant.
-fn get_target_sq(pmgmove: PMGMove, state: &mut ChessGame) -> StandardCoordinate {
-    let species = state.p_lut.get(pmgmove.origin).unwrap().species();
-    let is_enpassant = (species == Species::Pawn)
-        & (pmgmove.origin.file() != pmgmove.destin.file())
-        & state.p_lut.get(pmgmove.destin).is_none();
-    let ep_targ_rank = Rank::pdj_rank(state.active_player().oppo());
-    let target_rank = pick(is_enpassant, ep_targ_rank, pmgmove.destin.rank());
-    return StandardCoordinate::new(target_rank, pmgmove.destin.file())
-}

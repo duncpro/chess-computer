@@ -1,16 +1,15 @@
 use crate::bitboard::Bitboard;
 use crate::coordinates::StandardCS;
 use crate::coordinates::CoordinateSystem;
-use crate::gamestate::ChessGame;
 use crate::grid::StandardCoordinate;
 use crate::laneutils::lanescan;
 use crate::misc::Push;
+use crate::mov::PieceMove;
 use crate::piece::Species;
-use crate::movegen::types::PMGMove;
-use crate::movegen::types::PMGContext;
+use crate::movegen::types::{GeneratedMove, MGContext};
 
-pub fn movegen_sliders<C>(ctx: &mut PMGContext<impl Push<PMGMove>>, 
-    species: Species) where C: CoordinateSystem
+pub fn movegen_sliders<C>(ctx: &mut MGContext<impl Push<GeneratedMove>>,
+                          species: Species) where C: CoordinateSystem
 {
     let mut bb: Bitboard<StandardCS> = 
         ctx.class(ctx.active_player(), species);
@@ -20,8 +19,8 @@ pub fn movegen_sliders<C>(ctx: &mut PMGContext<impl Push<PMGMove>>,
     }
 }
 
-fn movegen_slider<C>(ctx: &mut PMGContext<impl Push<PMGMove>>,
-    origin: StandardCoordinate) where C: CoordinateSystem
+fn movegen_slider<C>(ctx: &mut MGContext<impl Push<GeneratedMove>>,
+                     origin: StandardCoordinate) where C: CoordinateSystem
 {
     let mut bb = ctx.inspect(|s| lanescan::<C>(&s.bbs, origin));
     
@@ -30,6 +29,6 @@ fn movegen_slider<C>(ctx: &mut PMGContext<impl Push<PMGMove>>,
     bb &= !friendly_bb;
     
     for destin in bb.scan() {
-        ctx.push(PMGMove::new_basic(origin, destin.into()))
+        ctx.push_p(PieceMove::new_basic(origin, destin.into()));
     }
 }

@@ -83,30 +83,27 @@ where T: Copy
     return lut[condition as usize];
 }
 
-pub fn max_inplace<T>(left: &mut T, right: T) 
-where T: Ord + Copy
-{
-    *left = std::cmp::max(*left, right);
-}
-
 // # Max
 
-pub struct Max<T, V: Ord + Copy> { obj: Option<T>, value: V }
+pub struct Max<T, V: Ord + Copy> { item: Option<T>, value: V }
 
 impl<T, V: Ord + Copy> Max<T, V> {
     pub fn new(min: V) -> Self {
-        Self { obj: None, value: min }
+        Self { item: None, value: min }
     }
     
     pub fn push(&mut self, obj: T, value: V) {
         if value >= self.value {
-            self.obj = Some(obj);
+            self.item = Some(obj);
             self.value = value;
         }
     }
 
-    pub fn take(self) -> Option<T> { self.obj }
     pub fn value(&self) -> V { self.value }
+}
+
+impl<T: Copy, V: Ord + Copy> Max<T, V> {
+    pub fn item(&self) -> Option<T> { self.item }
 }
 
 /// This macro provides support for enum tables. An enum table is a wrapper 
@@ -197,62 +194,6 @@ impl<T> Push<T> for Vec<T> {
     fn push(&mut self, value: T) { Vec::push(self, value) }
 }
 
-pub struct PushFilter<'a, T, F, P> 
-where P: Push<T>, F: FnMut(&T) -> bool
-{
-    filter_fn: F,
-    inner: &'a mut P,
-    pd: PhantomData<T>
-}
-
-impl<'a, T, F, P> Push<T> for PushFilter<'a, T, F, P>
-where P: Push<T>, F: FnMut(&T) -> bool
-{
-    fn push(&mut self, value: T) {
-        let pass = (self.filter_fn)(&value);
-        if pass { self.inner.push(value); }
-    }
-}
-
-
-impl<'a, T, F, P> PushFilter<'a, T, F, P>
-where P: Push<T>, F: FnMut(&T) -> bool
-{
-    pub fn inner(&self) -> &P { &self.inner }
-    pub fn new(inner: &'a mut P, filter_fn: F) -> Self {
-        Self { filter_fn, inner, pd: PhantomData }
-    }
-}
-
-pub struct PushMap<'a, T, R, F, P> 
-where P: Push<R>, F: FnMut(&T) -> R
-{
-    map_fn: F,
-    inner: &'a mut P,
-    pd1: PhantomData<T>,
-    pd2: PhantomData<R>
-}
-
-impl<'a, T, R, F, P> Push<T> for PushMap<'a, T, R, F, P>
-where P: Push<R>, F: FnMut(&T) -> R
-{
-    fn push(&mut self, value: T) {
-        let mapped = (self.map_fn)(&value);
-        self.inner.push(mapped);
-    }
-}
-
-
-impl<'a, T, R, F, P> PushMap<'a, T, R, F, P>
-where P: Push<R>, F: FnMut(&T) -> R
-{
-    pub fn inner(&self) -> &P { &self.inner }
-    pub fn new(inner: &'a mut P, map_fn: F) -> Self {
-        Self { map_fn, inner, pd1: PhantomData,
-            pd2: PhantomData }
-    }
-}
-
 // # `SegVec`
 
 pub struct SegVec<'a, T> 
@@ -269,28 +210,6 @@ impl<'a, T> SegVec<'a, T> {
         SegVec { vec_cell: self.vec_cell, begin }
     }
 
-    pub fn retain<F>(&mut self, mut f: F)
-    where F: FnMut(&T) -> bool
-    {
-        let mut vec = self.vec_cell.borrow_mut();
-        for i in (self.begin..vec.len()).rev() {
-            let retained = f(&vec[i]);
-            if !retained { vec.remove(i); }
-        }
-    }
-
-    pub fn sort_unstable_by_key<K, F>(&mut self, f: F)
-    where F: FnMut(&T) -> K, K: Ord
-    {
-        self.as_mut_slice().sort_unstable_by_key(f);
-    }
-    
-    pub fn sort_by_key<K, F>(&mut self, f: F)
-    where F: FnMut(&T) -> K, K: Ord
-    {
-        self.as_mut_slice().sort_by_key(f);
-    }
-
     pub fn pop(&mut self) -> Option<T> {
         let mut vec = self.vec_cell.borrow_mut();
         if self.begin < vec.len() { return vec.pop(); }
@@ -300,21 +219,29 @@ impl<'a, T> SegVec<'a, T> {
     pub fn new(vec: &'a mut RefCell<Vec<T>>) -> Self {
         let begin = vec.borrow().len();
         Self { vec_cell: vec, begin }
-    }    
+    }
 
-    fn as_slice<'b, 'c>(&'b self) -> Ref<'c, [T]>
+    pub fn len(&self) -> usize { self.as_slice().len() }
+
+    pub fn as_slice<'b, 'c>(&'b self) -> Ref<'c, [T]>
     where 'a: 'b, 'b: 'c
     {
         let begin = self.begin;
         Ref::map(self.vec_cell.borrow(), |r| &r.as_slice()[begin..])
     }
     
-    fn as_mut_slice<'b, 'c>(&'b self) -> RefMut<'c, [T]>
+    pub fn as_mut_slice<'b, 'c>(&'b self) -> RefMut<'c, [T]>
     where 'a: 'b, 'b: 'c
     {
         let begin = self.begin;
         RefMut::map(self.vec_cell.borrow_mut(), 
             |r| &mut r.as_mut_slice()[begin..])
+    }
+
+    pub fn swap_remove(&mut self, index: usize) -> T {
+        let mut vec = self.vec_cell.borrow_mut();
+        let removed = vec.swap_remove(self.begin + index);
+        return removed;
     }
 
     pub fn is_empty(&self) -> bool { self.as_slice().is_empty() }

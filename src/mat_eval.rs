@@ -18,6 +18,11 @@ build_itable!(SPECIES_VALUE: [u8; 6], |table| {
     put!(Queen, 9)
 });
 
+pub fn get_species_value(species: Species) -> i16 {
+    let lut_key = usize::from(species.index());
+    return i16::from(SPECIES_VALUE[lut_key]);
+}
+
 fn count_class(board: &Bitboards, color: Color, species: Species) -> i16 {
     let bitboard: Bitboard<StandardCS> = board.class(color, species);
     return i16::from(bitboard.count());
@@ -25,8 +30,8 @@ fn count_class(board: &Bitboards, color: Color, species: Species) -> i16 {
 
 fn matval_class(board: &Bitboards, color: Color, species: Species) -> i16 {
     let count = count_class(board, color, species);
-    let lut_key = usize::from(species.index());
-    return count * i16::from(SPECIES_VALUE[lut_key]);
+    let value = get_species_value(species);
+    return count * value;
 }
 
 fn matval(board: &Bitboards, color: Color) -> i16 {

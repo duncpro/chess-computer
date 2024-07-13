@@ -25,3 +25,5 @@ pub mod repetitions;
 pub mod search;
 pub mod sliders;
 pub mod stdinit;
+pub mod mov;
+pub mod movesort;

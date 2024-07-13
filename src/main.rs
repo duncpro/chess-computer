@@ -5,4 +5,9 @@ fn main() {
     use chess_solver_3::piece::ColorTable;
     // humanplay(Duration::from_secs(20));
     selfplay(ColorTable::from_array([Duration::from_secs(5), Duration::from_secs(5)]));
+
+
+    // let mut gstr = String::new();
+    // let mut file = std::fs::File::open("debuggame.txt").unwrap();
+    // file.read_to_string(&mut gstr).unwrap();
 }

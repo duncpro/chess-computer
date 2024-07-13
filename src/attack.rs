@@ -18,7 +18,7 @@ use crate::movegen::knight::knight_attack;
 use crate::movegen::pawn::{pawn_attack, reverse_pawn_attack};
 use crate::rmrel::relativize;
 
-/// Determines if a hypothetical piece placed on `vuln_sq` is currently
+/// Determines if a hypothetical king placed on `vuln_sq` is currently
 /// targeted by the opponent.
 pub fn is_attacked(board: &Bitboards, vuln_sq: StandardCoordinate) -> bool {
     let mut attacked: bool = false;

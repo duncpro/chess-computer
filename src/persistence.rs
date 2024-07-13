@@ -4,30 +4,30 @@ use crate::grid::ParseStandardCoordinateError;
 use crate::grid::StandardCoordinate;
 use crate::makemove::make_move;
 use crate::movegen::dispatch::movegen_legal;
-use crate::movegen::types::MGAnyMove;
-use crate::movegen::types::PMGMove;
+use crate::mov::PieceMove;
 use crate::piece::Species;
-use crate::stdinit::new_std_chess_position;
 use std::str::FromStr;
-
+use crate::mov::AnyMove;
+use crate::movegen::types::GeneratedMove;
 // # Load Game
 
 pub fn apply_gstr(state: &mut ChessGame, gstr: &str) -> Result<(), LoadGameErr> {
     let tokens = gstr.split(";").map(|s| s.trim());
     for token in tokens {
         if token.is_empty() { continue; }
-        let mgmove = match token {
-            "CastleQueenside" => MGAnyMove::Castle(FileDirection::Queenside),
-            "CastleKingside" => MGAnyMove::Castle(FileDirection::Kingside),
-            other => MGAnyMove::Piece(parse_pmove(other)?)
+        let prop_move = match token {
+            "CastleQueenside" => AnyMove::Castle(FileDirection::Queenside),
+            "CastleKingside" => AnyMove::Castle(FileDirection::Kingside),
+            other => AnyMove::Piece(parse_pmove(other)?)
         };
 
-        let mut legal_moves: Vec<MGAnyMove> = Vec::new();
+        let mut legal_moves: Vec<GeneratedMove> = Vec::new();
         movegen_legal(state, &mut legal_moves);
-        if !legal_moves.contains(&mgmove) {
-            return Err(LoadGameErr::IllegalMove(mgmove))
-        }
-        make_move(state, mgmove);
+
+        let is_legal = legal_moves.iter().map(|genmove| genmove.mov)
+            .any(|mov| mov == prop_move);
+        if !is_legal { return Err(LoadGameErr::IllegalMove(prop_move)) }
+        make_move(state, prop_move);
     }
     return Ok(());
 }
@@ -35,7 +35,7 @@ pub fn apply_gstr(state: &mut ChessGame, gstr: &str) -> Result<(), LoadGameErr> 
 #[derive(Debug)]
 pub enum LoadGameErr {
     ParsePMove(ParsePMoveErr),
-    IllegalMove(MGAnyMove)
+    IllegalMove(AnyMove)
 }
 
 impl From<ParsePMoveErr> for LoadGameErr {
@@ -54,7 +54,7 @@ pub enum ParsePMoveErr {
     TooManyParts
 }
 
-pub fn parse_pmove(token: &str) -> Result<PMGMove, ParsePMoveErr> {
+pub fn parse_pmove(token: &str) -> Result<PieceMove, ParsePMoveErr> {
     let mut subtokens = token.split(":").map(|s| s.trim());
     let origin_part = subtokens.next().ok_or(ParsePMoveErr::MissingOrigin)?;
     let origin = StandardCoordinate::from_str(origin_part)
@@ -75,5 +75,37 @@ pub fn parse_pmove(token: &str) -> Result<PMGMove, ParsePMoveErr> {
         }
     }
     if subtokens.count() != 0 { return Err(ParsePMoveErr::TooManyParts); }
-    return Ok(PMGMove { origin, destin, promote });
+    return Ok(PieceMove { origin, destin, promote });
+}
+
+fn write_pmove<W>(stream: &mut W, pmove: PieceMove) -> std::io::Result<()>
+where W: std::io::Write
+{
+    write!(stream, "{}:{}", pmove.origin, pmove.destin)?;
+    if let Some(desire) = pmove.promote {
+       let ch = match desire {
+            Species::Rook => "r",
+            Species::Knight => "k",
+            Species::Bishop => "b",
+            Species::Queen => "q",
+            other => panic!("cannot encode promotion to {:?}", other)
+        };
+        write!(stream, "{}", ch)?;
+    }
+
+    return Ok(());
+}
+
+pub fn write_move<W>(stream: &mut W, mov: AnyMove) -> std::io::Result<()>
+where W: std::io::Write
+{
+    match mov {
+        AnyMove::Piece(pmove) => write_pmove(stream, pmove)?,
+        AnyMove::Castle(direction) => match direction {
+            FileDirection::Queenside => write!(stream, "CastleQueenside")?,
+            FileDirection::Kingside => write!(stream, "CastleKingside")?
+        }
+    }
+    write!(stream, ";")?;
+    return Ok(())
 }

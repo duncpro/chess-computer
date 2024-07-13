@@ -1,28 +1,16 @@
 use crate::bitboard::RawBitboard;
-use crate::bitboard::Bitboard;
 use crate::bits::bitscan;
 use crate::bits::repeat_byte_u64;
-use crate::coordinates::Coordinate;
-use crate::coordinates::RankMajorCS;
-use crate::gamestate::ChessGame;
 use crate::gamestate::LoggedMove;
-use crate::gamestate::MovelogEntry;
-use crate::grid::StandardCoordinate;
 use crate::misc::Push;
-use crate::misc::SegVec;
-use crate::piece::ColorTable;
-use crate::piece::Color;
 use crate::piece::Species;
-use crate::movegen::types::PMGMove;
 use crate::rmrel::absolutize;
 use crate::rmrel::relativize;
 use crate::setbit;
-use crate::movegen::types::PMGContext;
-use std::ops::BitAnd;
-use std::ops::Not;
-use std::ops::BitAndAssign;
+use crate::movegen::types::{GeneratedMove, MGContext};
+use crate::mov::PieceMove;
 
-pub fn movegen_pawns(ctx: &mut PMGContext<impl Push<PMGMove>>) {
+pub fn movegen_pawns(ctx: &mut MGContext<impl Push<GeneratedMove>>) {
     movegen_forward1(ctx);
     movegen_forward2(ctx);
     movegen_capture_queenside(ctx);
@@ -30,7 +18,7 @@ pub fn movegen_pawns(ctx: &mut PMGContext<impl Push<PMGMove>>) {
     movegen_enpassant(ctx);
 }
 
-fn movegen_forward1(ctx: &mut PMGContext<impl Push<PMGMove>>) {
+fn movegen_forward1(ctx: &mut MGContext<impl Push<GeneratedMove>>) {
     let mut bb: RawBitboard = 0;
 
     // Select the active-player's pawns.
@@ -50,11 +38,11 @@ fn movegen_forward1(ctx: &mut PMGContext<impl Push<PMGMove>>) {
         push_promote(ctx, destin_rmrel - 8, destin_rmrel);
     }
     for destin_rmrel in bitscan(bb & !PROMOTE_MASK) {
-        push(ctx, destin_rmrel - 8, destin_rmrel);
+        push_basic(ctx, destin_rmrel - 8, destin_rmrel);
     }
 }
 
-fn movegen_forward2(ctx: &mut PMGContext<impl Push<PMGMove>>) {
+fn movegen_forward2(ctx: &mut MGContext<impl Push<GeneratedMove>>) {
     let mut bb: RawBitboard = 0;
 
     // Select the active-player's pawns.
@@ -80,13 +68,11 @@ fn movegen_forward2(ctx: &mut PMGContext<impl Push<PMGMove>>) {
     bb &= !ctx.inspect(|s| s.bbs.rel_occupancy());
 
     for destin_rmrel in bitscan(bb) {
-        let origin = absolutize(destin_rmrel - 16, ctx.active_player());
-        let destin = absolutize(destin_rmrel, ctx.active_player());
-        ctx.push(PMGMove::new_basic(origin, destin));
+        push_basic(ctx, /* origin = */ destin_rmrel - 16, /* destin = */ destin_rmrel);
     }
 }
 
-fn movegen_capture_queenside(ctx: &mut PMGContext<impl Push<PMGMove>>) {    
+fn movegen_capture_queenside(ctx: &mut MGContext<impl Push<GeneratedMove>>) {
     let mut bb: RawBitboard = 0;
 
     // Select all of the active-player's pawns.
@@ -112,11 +98,11 @@ fn movegen_capture_queenside(ctx: &mut PMGContext<impl Push<PMGMove>>) {
     }
 
     for destin in bitscan(bb & !PROMOTE_MASK) {
-        push(ctx, destin - 7, destin);
+        push_basic(ctx, destin - 7, destin);
     }
 }
 
-fn movegen_capture_kingside(ctx: &mut PMGContext<impl Push<PMGMove>>) {    
+fn movegen_capture_kingside(ctx: &mut MGContext<impl Push<GeneratedMove>>) {
     let mut bb: RawBitboard = 0;
 
     // Select all of the active-player's pawns.
@@ -142,11 +128,11 @@ fn movegen_capture_kingside(ctx: &mut PMGContext<impl Push<PMGMove>>) {
     }
 
     for destin in bitscan(bb & !PROMOTE_MASK) {
-        push(ctx, destin - 9, destin);
+        push_basic(ctx, destin - 9, destin);
     }
 }
 
-fn movegen_enpassant(ctx: &mut PMGContext<impl Push<PMGMove>>) {
+fn movegen_enpassant(ctx: &mut MGContext<impl Push<GeneratedMove>>) {
     if let Some(last_entry) = ctx.inspect(|s| s.movelog.last().copied()) {
         if let LoggedMove::Piece(pmove) = last_entry.lmove {
             if pmove.is_pdj {
@@ -159,14 +145,35 @@ fn movegen_enpassant(ctx: &mut PMGContext<impl Push<PMGMove>>) {
                 bb &= ctx.inspect(|s| s.bbs.affilia_rel_bbs[s.active_player()]);
                 bb &= ctx.inspect(|s| s.bbs.pawn_rel_bb);
 
-                let destin = absolutize(destin_rmrel, ctx.active_player());
                 for origin_rmrel in bitscan(bb) {
-                    let origin = absolutize(origin_rmrel, ctx.active_player());
-                    ctx.push(PMGMove { origin, destin, promote: None });
+                    push_basic(ctx, origin_rmrel, destin_rmrel);
                 }
             }
         }
     }
+}
+
+fn push_promote(ctx: &mut MGContext<impl Push<GeneratedMove>>,
+                origin_rmrel: u8, destin_rmrel: u8)
+{
+    push(ctx, origin_rmrel, destin_rmrel, Some(Species::Knight));
+    push(ctx, origin_rmrel, destin_rmrel, Some(Species::Bishop));
+    push(ctx, origin_rmrel, destin_rmrel, Some(Species::Queen));
+    push(ctx, origin_rmrel, destin_rmrel, Some(Species::Rook));
+}
+
+fn push_basic(ctx: &mut MGContext<impl Push<GeneratedMove>>,
+              origin_rmrel: u8, destin_rmrel: u8)
+{
+    push(ctx, origin_rmrel, destin_rmrel, None);
+}
+
+fn push(ctx: &mut MGContext<impl Push<GeneratedMove>>,
+        origin_rmrel: u8, destin_rmrel: u8, promote: Option<Species>)
+{
+    let origin = absolutize(origin_rmrel, ctx.active_player());
+    let destin = absolutize(destin_rmrel, ctx.active_player());
+    ctx.push_p(PieceMove { origin, destin, promote });
 }
 
 pub fn reverse_pawn_attack(target: u8) -> RawBitboard {
@@ -211,26 +218,4 @@ pub fn pawn_attack(origin: u8) -> RawBitboard {
         targets |= bb;
     }
     return targets;
-}
-
-
-fn push_promote(ctx: &mut PMGContext<impl Push<PMGMove>>, 
-    origin_rmrel: u8, destin_rmrel: u8) 
-{
-    let origin = absolutize(origin_rmrel, ctx.active_player());
-    let destin = absolutize(destin_rmrel, ctx.active_player());
-
-    use Species::*;
-    ctx.push(PMGMove::new_promote(origin, destin, Queen));
-    ctx.push(PMGMove::new_promote(origin, destin, Rook));
-    ctx.push(PMGMove::new_promote(origin, destin, Bishop));
-    ctx.push(PMGMove::new_promote(origin, destin, Knight));
-}
-
-fn push(ctx: &mut PMGContext<impl Push<PMGMove>>, 
-    origin_rmrel: u8, destin_rmrel: u8) 
-{
-    let origin = absolutize(origin_rmrel, ctx.active_player());
-    let destin = absolutize(destin_rmrel, ctx.active_player());
-    ctx.push(PMGMove::new_basic(origin, destin));
 }

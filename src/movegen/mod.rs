@@ -8,4 +8,3 @@ pub mod rook;
 pub mod slider;
 pub mod castle;
 pub mod types;
-pub mod movesort;

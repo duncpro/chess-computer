@@ -1,19 +1,18 @@
-use std::i16::MIN;
 use crate::cache::Cache;
-use crate::cache::CacheEntry;
+use crate::cache::CacheValue;
 use crate::early_ok;
 use crate::gamestate::ChessGame;
 use crate::makemove::make_move;
 use crate::makemove::unmake_move;
 use crate::mat_eval::calc_matdiff;
-use crate::misc::{pick, SegVec};
-use crate::misc::max_inplace;
+use crate::misc::{Max, pick, SegVec};
 use crate::movegen::dispatch::count_legal_moves;
 use crate::movegen::dispatch::movegen_legal;
-use crate::movegen::types::MGAnyMove;
 use crate::repetitions::count_repetitions;
 use crate::early_return;
 use std::time::Instant;
+use crate::grid::FileDirection;
+use crate::movegen::types::GeneratedMove;
 
 pub const MAX_SCORE: i16 = i16::MAX - 1;
 pub const MIN_SCORE: i16 = i16::MIN + 2;
@@ -31,7 +30,7 @@ pub struct DeepEvalContext<'a, 'b, 'c> {
     /// are generated but before they are evaluated. This
     /// buffer should be empty when `DeepEvalContext` is
     /// constructed by the caller.
-    pub movebuf: SegVec<'b, MGAnyMove>,
+    pub movebuf: SegVec<'b, GeneratedMove>,
     pub deadline: Instant,
     /// The best score that the parent is assured of so-far.
     /// If a child/opponent move is encountered with a score 
@@ -54,14 +53,14 @@ pub fn deep_eval(mut ctx: DeepEvalContext) -> Result<i16, DeepEvalException> {
     if ctx.lookahead == 0 { return Ok(shallow_eval(ctx.gstate)); }
     movegen_legal(ctx.gstate, &mut ctx.movebuf);
     early_ok! { leaf_eval(ctx.gstate, ctx.movebuf.is_empty()) };
-    early_ok! { ctx.cache.lookup_score(ctx.gstate, ctx.lookahead) };
-    
-    let mut best_score: i16 = BELOW_MIN_SCORE;
-    while let Some(mov) = ctx.movebuf.pop() {        
-        make_move(ctx.gstate, mov);
+    early_ok! { ctx.cache.lookup_score_atleast(ctx.gstate, ctx.lookahead) };
+
+    let mut best: Max<GeneratedMove, i16> = Max::new(BELOW_MIN_SCORE);
+    while let Some(genmove) = ctx.movebuf.pop() {
+        make_move(ctx.gstate, genmove.mov);
         let result = deep_eval(DeepEvalContext { gstate: ctx.gstate, 
             lookahead: ctx.lookahead - 1, movebuf: ctx.movebuf.extend(), 
-            deadline: ctx.deadline, cutoff: best_score, cache: ctx.cache });
+            deadline: ctx.deadline, cutoff: best.value(), cache: ctx.cache });
         unmake_move(ctx.gstate);
         match result {
             Err(DeadlineElapsed) => return Err(DeadlineElapsed),
@@ -75,12 +74,14 @@ pub fn deep_eval(mut ctx: DeepEvalContext) -> Result<i16, DeepEvalException> {
                 // we cut it, as P will never give us an opportunity to make this move (they have
                 // a better choice already).
                 if score * -1 >= ctx.cutoff * -1 { return Err(Cut); }
-                max_inplace(&mut best_score, -1 * score);
+                best.push(genmove, -1 * score);
             },
         }
     }
-    ctx.cache.update_score(ctx.gstate, best_score, ctx.lookahead);
-    return Ok(best_score);
+    let bestmov_id = best.item().unwrap().gen_id;
+    ctx.cache.update(ctx.gstate, ctx.lookahead, CacheValue {
+        bestmov_id, score: best.value() });
+    return Ok(best.value());
 }
 
 // # Shallow Evaluation
@@ -97,7 +98,25 @@ pub fn deep_eval(mut ctx: DeepEvalContext) -> Result<i16, DeepEvalException> {
 pub fn shallow_eval(gstate: &mut ChessGame) -> i16 {
     let cant_move = count_legal_moves(gstate) == 0;
     early_return! { leaf_eval(gstate, cant_move) };
-    return calc_matdiff(&gstate.bbs);
+
+    let active_player = gstate.active_player();
+
+    let mut score: i16 = 0;
+    score += calc_matdiff(&gstate.bbs) * 4;
+
+    let castle =
+        gstate.crights.get(FileDirection::Queenside, gstate.active_player())
+        | gstate.crights.get(FileDirection::Kingside, gstate.active_player())
+        | gstate.has_castled[active_player];
+
+    let oppo_castle =
+        gstate.crights.get(FileDirection::Queenside, gstate.active_player().oppo())
+        | gstate.crights.get(FileDirection::Kingside, gstate.active_player().oppo())
+        | gstate.has_castled[active_player.oppo()];
+
+    score += i16::from(castle as u8);
+    score -= i16::from(oppo_castle as u8);
+    return score;
 }
 
 fn leaf_eval(gstate: &mut ChessGame, cant_move: bool) -> Option<i16> {

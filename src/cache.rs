@@ -1,6 +1,3 @@
-use std::ops::Index;
-use std::ops::IndexMut;
-
 use crate::crights::CastlingRights;
 use crate::enpassant::is_enpassant_vuln;
 use crate::gamestate::ChessGame;
@@ -9,53 +6,66 @@ use crate::grid::StandardCoordinate;
 use crate::piece::Color;
 use crate::piece::Piece;
 use crate::piece::PieceGrid;
+use crate::mov::AnyMove;
 use rand::Rng;
 use rand::SeedableRng;
 use rand::rngs::StdRng;
 use rand::thread_rng;
+use std::ops::Index;
+use std::ops::IndexMut;
+
+#[derive(Copy, Clone)]
+pub struct CacheValue {
+    pub bestmov_id: u8,
+    pub score: i16,
+}
 
 #[derive(Clone, Copy)]
-pub struct CacheEntry {
-    pub score: i16,
+struct InternalCacheEntry {
+    pub value: CacheValue,
     pub depth: u8,
-    // pub key: PackedPosition,
     pub hash: u64
 }
 
-pub struct Cache { 
-    vec: Vec<Option<CacheEntry>>,
-    occupancy: usize
-}
+pub struct Cache { vec: Vec<Option<InternalCacheEntry>> }
 
 impl Cache {
     pub fn new(mem_capacity: u64) -> Self {
-        let ewidth = u64::try_from(std::mem::size_of::<CacheEntry>()).unwrap();
+        let ewidth = u64::try_from(std::mem::size_of::<InternalCacheEntry>())
+            .unwrap();
         let len = (mem_capacity * u64::pow(2, 20)) / ewidth;
-        Self { vec: vec![None; usize::try_from(len).unwrap()], occupancy: 0 }
+        Self { vec: vec![None; usize::try_from(len).unwrap()] }
     }
 
-    pub fn lookup_score(&self, state: &ChessGame, depth: u8) -> Option<i16> {
+    pub fn lookup_score_atleast(&self, state: &ChessGame, depth: u8) -> Option<i16>
+    {
+        let value = self.lookup_atleast(state, depth)?;
+        return Some(value.score);
+    }
+
+    pub fn lookup_atleast(&self, state: &ChessGame, depth: u8) -> Option<CacheValue> {
         let lut_key = usize::try_from(state.hash.value() % 
             u64::try_from(self.vec.len()).unwrap()).unwrap();
         if let Some(entry) = self.vec[lut_key] {
             if entry.hash == state.hash.value() {
-            // if entry.key == pack(state) {
                 if entry.depth >= depth {
-                    return Some(entry.score)
+                    return Some(entry.value)
                 }
             }
         }
         return None;
     }
 
-    pub fn update_score(&mut self, state: &ChessGame, score: i16, depth: u8) {
-        if self.lookup_score(state, depth).is_some() { return; }
+    pub fn lookup_any(&self, state: &ChessGame) -> Option<CacheValue> {
+        self.lookup_atleast(state, 0)
+    }
+
+    pub fn update(&mut self, state: &ChessGame, depth: u8, value: CacheValue) {
+        if self.lookup_atleast(state, depth).is_some() { return; }
         let lut_key = usize::try_from(state.hash.value() % 
             u64::try_from(self.vec.len()).unwrap()).unwrap();
-        // let key = pack(state); 
-        if self.vec[lut_key].is_none() { self.occupancy += 1; }
-        self.vec[lut_key] = Some(CacheEntry { score, depth, 
-            hash: state.hash.value(), /* key */ });
+        self.vec[lut_key] = Some(InternalCacheEntry { depth,
+            hash: state.hash.value(), value });
     }
 }
 

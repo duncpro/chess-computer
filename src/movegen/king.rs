@@ -2,25 +2,20 @@ use crate::bitboard::Bitboard;
 use crate::bitboard::RawBitboard;
 use crate::build_itable;
 use crate::cfor;
-use crate::coordinates::{Coordinate, StandardCS};
+use crate::coordinates::Coordinate;
 use crate::coordinates::RankMajorCS;
-use crate::gamestate::ChessGame;
 use crate::gamestate::locate_king;
-use crate::grid::StandardCoordinate;
 use crate::misc::Push;
-use crate::movegen::types::PMGMove;
-use crate::movegen::types::PMGContext;
+use crate::movegen::types::{GeneratedMove, MGContext};
 use crate::setbit;
-use crate::cli::print_board;
-use crate::piece::Species;
-
-pub fn movegen_king(ctx: &mut PMGContext<impl Push<PMGMove>>) {
+use crate::mov::PieceMove;
+pub fn movegen_king(ctx: &mut MGContext<impl Push<GeneratedMove>>) {
     let origin = ctx.inspect(|s| locate_king::<RankMajorCS>(&s.bbs));
     
     let mut bb = king_attack(origin);
     bb &= !ctx.inspect(|s| s.bbs.affilia_bbs[s.active_player()].get());
     for destin in bb.scan() {
-        ctx.push(PMGMove::new_basic(origin.into(), destin.into()));
+        ctx.push_p(PieceMove::new_basic(origin.into(), destin.into()));
     }
 }
 

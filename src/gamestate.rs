@@ -12,7 +12,7 @@ use crate::crights::CastlingRights;
 use crate::grid::FileDirection;
 use crate::grid::StandardCoordinate;
 use crate::movegen::dispatch::count_legal_moves;
-use crate::movegen::types::PMGMove;
+use crate::mov::PieceMove;
 use crate::piece::Color;
 use crate::piece::ColorTable;
 use crate::piece::Piece;
@@ -29,6 +29,7 @@ pub struct ChessGame {
     pub crights: CastlingRights,
     pub halfmoveclock: u16,
     pub hash: IncrementalHash,
+    pub has_castled: ColorTable<bool>
 }
 
 impl ChessGame {
@@ -45,7 +46,7 @@ impl ChessGame {
         let mut hash = IncrementalHash::new(hash_ch);
         hash.toggle_crights(crights);
         return Self { bbs, p_lut, movelog, crights, halfmoveclock,
-            hash };
+            hash, has_castled: ColorTable::default() };
     }
 }
 
@@ -66,7 +67,7 @@ pub enum LoggedMove {
 
 #[derive(Clone, Copy, Debug)]
 pub struct LoggedPieceMove {
-    pub mgmove: PMGMove,
+    pub mgmove: PieceMove,
     pub capture: Option<Piece>,
     pub is_pdj /* (pawn double jump) */: bool,
     pub target: StandardCoordinate
