@@ -13,6 +13,7 @@ use crate::early_return;
 use std::time::Instant;
 use crate::grid::FileDirection;
 use crate::movegen::types::GeneratedMove;
+use crate::movesort::movegen_legal_sorted;
 use crate::snapshot::capture_snapshot;
 
 pub const MAX_SCORE: i16 = i16::MAX - 1;
@@ -52,7 +53,7 @@ pub fn deep_eval(mut ctx: DeepEvalContext) -> Result<i16, DeepEvalException> {
     // Enforce time and depth constraints.
     if Instant::now() > ctx.deadline { return Err(DeadlineElapsed); }
     if ctx.lookahead == 0 { return Ok(shallow_eval(ctx.gstate)); }
-    movegen_legal(ctx.gstate, &mut ctx.movebuf);
+    movegen_legal_sorted(ctx.gstate, &mut ctx.movebuf, ctx.cache);
     early_ok! { leaf_eval(ctx.gstate, ctx.movebuf.is_empty()) };
     early_ok! { ctx.cache.lookup_score_atleast(ctx.gstate, ctx.lookahead) };
 
