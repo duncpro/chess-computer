@@ -75,15 +75,11 @@ pub struct LaneLoc {
 
 // ## `StandardCS`
 
-/// The [`CoordinateSystem`] of [`StandardCoordinate`].
-/// Unlike the other coordinate systems, conversion between
-/// `Coordinate<StandardCS>` and [`StandardCoordinate`] is
-/// computationally free, since the in-memory representations
-/// are indistinguishable.
-///
-/// Therefore, `StandardCS` should be preferred when a more specific
-/// coordinate system is unnecessary. Especially when the [`Coordinate`]
-/// is to be converted into a [`StandardCoordinate`] later.
+/// The [`CoordinateSystem`] of [`StandardCoordinate`]. Unlike the other coordinate systems,
+/// conversion between`Coordinate<StandardCS>` and [`StandardCoordinate`] is computationally free,
+/// as the in-memory representations are equivalent. `StandardCS` should be preferred when a more
+/// specific coordinate system is unnecessary. Especially if the [`Coordinate`] is to be converted
+/// into a [`StandardCoordinate`] later.
 pub type StandardCS = RankMajorCS;
 
 // # Lateral Coordinate Systems
@@ -168,6 +164,15 @@ impl CoordinateSystem for ProdiagonalMajorCS {
     const INDEX: usize = 2;
 }
 
+build_itable!(PDC_INVERSE_LUT: [u8; 64], |table| {
+    cfor!(let mut i: u8 = 0; i < 64; i += 1; {
+        let stdc = StandardCoordinate::from_index(i);
+        let pdc = calc_diag_coord(stdc.prodiagonal().index(),
+            stdc.prodiagonal_offset());
+        table[pdc as usize] = i;
+    });
+});
+
 // ## `AntidiagonalMajorCS`
 
 #[derive(Copy, Clone)] pub struct AntidiagonalMajorCS;
@@ -196,6 +201,15 @@ impl CoordinateSystem for AntidiagonalMajorCS {
     const INDEX: usize = 3;
 }
 
+build_itable!(ADC_INVERSE_LUT: [u8; 64], |table| {
+    cfor!(let mut i: u8 = 0; i < 64; i += 1; {
+        let stdc = StandardCoordinate::from_index(i);
+        let adc = calc_diag_coord(stdc.antidiagonal().index(),
+            stdc.antidiagonal_offset());
+        table[adc as usize] = i;
+    });
+});
+
 const fn triangle_num(n: u8) -> u8 { (n.pow(2) + n) / 2 }
 
 const fn calc_diag_coord(diag_index: u8, local_index: u8) -> u8 {
@@ -210,21 +224,3 @@ const fn calc_diag_coord(diag_index: u8, local_index: u8) -> u8 {
 
     return coord;   
 }
-
-build_itable!(PDC_INVERSE_LUT: [u8; 64], |table| {
-    cfor!(let mut i: u8 = 0; i < 64; i += 1; {
-        let stdc = StandardCoordinate::from_index(i);
-        let pdc = calc_diag_coord(stdc.prodiagonal().index(), 
-            stdc.prodiagonal_offset()); 
-        table[pdc as usize] = i; 
-    });
-});
-
-build_itable!(ADC_INVERSE_LUT: [u8; 64], |table| {
-    cfor!(let mut i: u8 = 0; i < 64; i += 1; {
-        let stdc = StandardCoordinate::from_index(i);
-        let adc = calc_diag_coord(stdc.antidiagonal().index(), 
-            stdc.antidiagonal_offset()); 
-        table[adc as usize] = i; 
-    });
-});
