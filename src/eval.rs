@@ -99,26 +99,7 @@ pub fn deep_eval(mut ctx: DeepEvalContext) -> Result<i16, DeepEvalException> {
 pub fn shallow_eval(gstate: &mut ChessGame) -> i16 {
     let cant_move = count_legal_moves(gstate) == 0;
     early_return! { leaf_eval(gstate, cant_move) };
-    let active_player = gstate.active_player();
-    let mut score: i16 = 0;
-    score += calc_matdiff(&gstate.bbs) * 4;
-    {
-        let castle_qs = gstate.crights.get(FileDirection::Queenside, gstate.active_player())
-            | gstate.has_castled[active_player];
-        let castle_ks = gstate.crights.get(FileDirection::Kingside, gstate.active_player())
-            | gstate.has_castled[active_player];
-        score += castle_qs as i16;
-        score += castle_ks as i16;
-    }
-    {
-        let castle_qs = gstate.crights.get(FileDirection::Queenside, gstate.active_player().oppo())
-            | gstate.has_castled[active_player];
-        let castle_ks = gstate.crights.get(FileDirection::Kingside, gstate.active_player().oppo())
-            | gstate.has_castled[active_player];
-        score -= castle_qs as i16;
-        score -= castle_ks as i16;
-    }
-    return score;
+    return calc_matdiff(&gstate.bbs);
 }
 
 fn leaf_eval(gstate: &mut ChessGame, cant_move: bool) -> Option<i16> {

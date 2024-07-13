@@ -5,10 +5,10 @@ use crate::mov::AnyMove;
 use crate::movegen::dispatch::movegen_legal;
 use crate::movegen::types::GeneratedMove;
 use crate::piece::Piece;
+
 pub fn get_unicode_symbol(piece: Piece) -> &'static str {
     use crate::piece::Color::*;
     use crate::piece::Species::*;
-    
     match piece.color() {
         White => match piece.species() {
             Pawn   => "♙",
