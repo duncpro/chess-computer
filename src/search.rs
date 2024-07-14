@@ -14,6 +14,7 @@ use std::time::Instant;
 use crate::mov::AnyMove;
 use crate::movesort::movegen_legal_sorted;
 use crate::movegen::types::GeneratedMove;
+
 // # Search
 
 struct SearchContext<'a, 'b, 'c> {
@@ -91,10 +92,8 @@ pub fn iterdeep_search(mut ctx: IterDeepSearchContext) -> IterDeepSearchResult {
     let mut bestmove = search_shallow(ctx.gstate, ctx.movebuf.extend());
     let mut eval_lookahead: u8 = 1;
     loop {
-        let result = search(SearchContext { gstate: ctx.gstate,
-            lookahead: eval_lookahead,
-            movebuf: ctx.movebuf.extend(), deadline: ctx.deadline,
-            cache: ctx.cache });
+        let result = search(SearchContext { gstate: ctx.gstate, lookahead: eval_lookahead,
+            movebuf: ctx.movebuf.extend(), deadline: ctx.deadline, cache: ctx.cache });
         match result {
             Err(DeadlineElapsed) => break,
             Ok(mov) => bestmove = mov,
