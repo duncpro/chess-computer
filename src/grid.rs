@@ -279,11 +279,11 @@ impl FromStr for StandardCoordinate {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(u8)]
-pub enum FileDirection {
+pub enum Side {
     Queenside = 0,
     Kingside = 1
 }
 
-impl FileDirection {
+impl Side {
     pub fn index(self) -> u8 { self as u8 } 
 }

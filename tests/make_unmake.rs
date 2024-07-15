@@ -5,7 +5,7 @@
 //! to verify the total correctness of `make_move` and `unmake_move`.
 
 use chess_solver_3::gamestate::ChessGame;
-use chess_solver_3::grid::{File, FileDirection, Rank, StandardCoordinate};
+use chess_solver_3::grid::{File, Side, Rank, StandardCoordinate};
 use chess_solver_3::makemove::{make_move, unmake_move};
 use chess_solver_3::mov::{AnyMove, PieceMove};
 use chess_solver_3::persistence::apply_gstr;
@@ -23,14 +23,14 @@ pub fn test_make_unmake(board: &mut ChessGame, mov: AnyMove) {
 pub fn test_make_unmake_castle_kingside_white() {
     let mut board = new_std_chess_position();
     apply_gstr(&mut board, "E2:E4; E7:E5; F1:E2; F8:E7; G1:F3; G8:F6;").unwrap();
-    test_make_unmake(&mut board, AnyMove::Castle(FileDirection::Kingside));
+    test_make_unmake(&mut board, AnyMove::Castle(Side::Kingside));
 }
 
 #[test]
 pub fn test_make_unmake_castle_kingside_black() {
     let mut board = new_std_chess_position();
     apply_gstr(&mut board, "E2:E4; E7:E5; F1:E2; F8:E7; G1:F3; G8:F6; A2:A3").unwrap();
-    test_make_unmake(&mut board, AnyMove::Castle(FileDirection::Kingside));
+    test_make_unmake(&mut board, AnyMove::Castle(Side::Kingside));
 }
 
 #[test]
@@ -38,7 +38,7 @@ pub fn test_make_unmake_castle_queenside_white() {
     let mut board = new_std_chess_position();
     apply_gstr(&mut board, "E2:E3; E7:E6; D2:D3; D7:D6; D1:E2; D8:E7; C1:D2; C8:D7; \
         B1:C3; B8:C6;").unwrap();
-    test_make_unmake(&mut board, AnyMove::Castle(FileDirection::Queenside));
+    test_make_unmake(&mut board, AnyMove::Castle(Side::Queenside));
 }
 
 #[test]
@@ -46,7 +46,7 @@ pub fn test_make_unmake_castle_queenside_black() {
     let mut board = new_std_chess_position();
     apply_gstr(&mut board, "E2:E3; E7:E6; D2:D3; D7:D6; D1:E2; D8:E7; C1:D2; C8:D7; \
         B1:C3; B8:C6; A2:A3").unwrap();
-    test_make_unmake(&mut board, AnyMove::Castle(FileDirection::Queenside));
+    test_make_unmake(&mut board, AnyMove::Castle(Side::Queenside));
 }
 
 #[test]

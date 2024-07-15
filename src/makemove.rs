@@ -8,7 +8,7 @@ use crate::gamestate::LoggedPieceMove;
 use crate::gamestate::MovelogEntry;
 use crate::grid::File;
 use crate::grid::Rank;
-use crate::grid::FileDirection;
+use crate::grid::Side;
 use crate::grid::StandardCoordinate;
 use crate::mov::AnyMove;
 use crate::piece::Color;
@@ -97,7 +97,7 @@ pub fn make_pmove(state: &mut ChessGame, mgmove: PieceMove) {
     state.movelog.push(mle);
 }
 
-pub fn make_castle(state: &mut ChessGame, side: FileDirection) {
+pub fn make_castle(state: &mut ChessGame, side: Side) {
     const ROOK_ORIGIN_LUT: [File; 2] = [
         /* Queenside */ File::A,
         /* Kingside  */ File::H
@@ -180,7 +180,7 @@ fn unmake_pmove(state: &mut ChessGame, pmove: LoggedPieceMove) {
 }
 
 
-fn unmake_castle(state: &mut ChessGame, side: FileDirection) {
+fn unmake_castle(state: &mut ChessGame, side: Side) {
     const ROOK_ORIGIN_LUT: [File; 2] = [
         /* Queenside */ File::A,
         /* Kingside  */ File::H

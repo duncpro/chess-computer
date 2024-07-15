@@ -6,7 +6,7 @@ use crate::gamestate::locate_king_stdc;
 use crate::{getbit, play};
 use crate::grid::{File, Rank};
 use crate::grid::StandardCoordinate;
-use crate::grid::FileDirection;
+use crate::grid::Side;
 use crate::gamestate::ChessGame;
 use crate::piece::{Color, Piece};
 use crate::piece::Species;
@@ -17,12 +17,12 @@ use crate::piece::Species;
 pub struct CastlingRights { data: u8 }
 
 impl CastlingRights {
-    pub fn get(self, side: FileDirection, color: Color) -> bool {
+    pub fn get(self, side: Side, color: Color) -> bool {
         let index = 2 * color.index() + side.index();
         return getbit!(self.data, index);
     }
 
-    pub fn set(&mut self, side: FileDirection, color: Color, value: bool)
+    pub fn set(&mut self, side: Side, color: Color, value: bool)
     {
         let index = 2 * color.index() + side.index();
         self.data &= !(1 << index);
@@ -30,8 +30,8 @@ impl CastlingRights {
     }
 
     pub fn revoke(&mut self, color: Color) {
-        self.set(FileDirection::Queenside, color, false);
-        self.set(FileDirection::Kingside, color, false);
+        self.set(Side::Queenside, color, false);
+        self.set(Side::Kingside, color, false);
     }
 
     pub fn data(self) -> u8 { self.data }
@@ -48,13 +48,13 @@ impl CastlingRights {
 // # Updating Castling Rights
 
 pub fn update_crights_all(state: &mut ChessGame) {
-    update_crights_spec(state, FileDirection::Queenside, Color::White);
-    update_crights_spec(state, FileDirection::Kingside, Color::White);
-    update_crights_spec(state, FileDirection::Queenside, Color::Black);
-    update_crights_spec(state, FileDirection::Kingside, Color::Black);
+    update_crights_spec(state, Side::Queenside, Color::White);
+    update_crights_spec(state, Side::Kingside, Color::White);
+    update_crights_spec(state, Side::Queenside, Color::Black);
+    update_crights_spec(state, Side::Kingside, Color::Black);
 }
 
-fn update_crights_spec(state: &mut ChessGame, side: FileDirection, player: Color) {
+fn update_crights_spec(state: &mut ChessGame, side: Side, player: Color) {
     let mut value = state.crights.get(side, player);
     value &= is_king_intact(state, player);
     const ROOK_FILE_LUT: [File; 2] = [File::A, File::H];
@@ -78,10 +78,10 @@ fn is_king_intact(state: &mut ChessGame, player: Color) -> bool {
 
 impl Debug for CastlingRights {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let qw = self.get(FileDirection::Queenside, Color::White);
-        let kw = self.get(FileDirection::Kingside, Color::White);
-        let qb = self.get(FileDirection::Queenside, Color::Black);
-        let kb = self.get(FileDirection::Kingside, Color::Black);
+        let qw = self.get(Side::Queenside, Color::White);
+        let kw = self.get(Side::Kingside, Color::White);
+        let qb = self.get(Side::Queenside, Color::Black);
+        let kb = self.get(Side::Kingside, Color::Black);
         write!(f, "(kb: {}, qb: {}, kw: {}, qw: {})", kb, qb, kw, qw)
     }
 }

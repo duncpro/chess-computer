@@ -1,5 +1,5 @@
 use crate::gamestate::{ChessGame, LoggedMove};
-use crate::grid::FileDirection;
+use crate::grid::Side;
 use crate::grid::StandardCoordinate;
 use crate::mov::AnyMove;
 use crate::movegen::dispatch::movegen_legal;
@@ -79,8 +79,8 @@ pub fn prompt_move(state: &mut ChessGame) -> AnyMove {
             AnyMove::Castle(direction) => {
                 print!("Castle ");
                 match direction {
-                    FileDirection::Queenside => print!("Queenside"),
-                    FileDirection::Kingside => print!("Kingside"),
+                    Side::Queenside => print!("Queenside"),
+                    Side::Kingside => print!("Kingside"),
                 }
             }
         }

@@ -1,6 +1,6 @@
 use crate::attack::is_attacked;
 use crate::coordinates::StandardCS;
-use crate::grid::FileDirection;
+use crate::grid::Side;
 use crate::grid::Rank;
 use crate::grid::StandardCoordinate;
 use crate::grid::File;
@@ -33,8 +33,8 @@ fn movegen_castle_kingside(ctx: &mut MGContext<impl Push<GeneratedMove>>) {
         let king_origin = StandardCoordinate::new(base_rank, File::E);
         can_castle &= ctx.inspect(|s| !is_attacked(&s.bbs, king_origin));
     }
-    can_castle &= ctx.inspect(|s| s.crights.get(FileDirection::Kingside, s.active_player()));
-    if can_castle { ctx.push_legal(AnyMove::Castle(FileDirection::Kingside)); }
+    can_castle &= ctx.inspect(|s| s.crights.get(Side::Kingside, s.active_player()));
+    if can_castle { ctx.push_legal(AnyMove::Castle(Side::Kingside)); }
 }
 
 fn movegen_castle_queenside(ctx: &mut MGContext<impl Push<GeneratedMove>>) {
@@ -59,6 +59,6 @@ fn movegen_castle_queenside(ctx: &mut MGContext<impl Push<GeneratedMove>>) {
         can_castle &= ctx.inspect(|s| !is_attacked(&s.bbs, king_origin));
     }
     can_castle &= ctx.inspect(|s|
-        s.crights.get(FileDirection::Queenside, s.active_player()));
-    if can_castle { ctx.push_legal(AnyMove::Castle(FileDirection::Queenside)); }
+        s.crights.get(Side::Queenside, s.active_player()));
+    if can_castle { ctx.push_legal(AnyMove::Castle(Side::Queenside)); }
 }

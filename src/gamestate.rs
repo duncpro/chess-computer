@@ -9,7 +9,7 @@ use crate::coordinates::Coordinate;
 use crate::coordinates::CoordinateSystem;
 use crate::coordinates::StandardCS;
 use crate::crights::CastlingRights;
-use crate::grid::FileDirection;
+use crate::grid::Side;
 use crate::grid::StandardCoordinate;
 use crate::movegen::dispatch::count_legal_moves;
 use crate::mov::PieceMove;
@@ -62,7 +62,7 @@ pub struct MovelogEntry {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum LoggedMove {
-    Castle(FileDirection),
+    Castle(Side),
     Piece(LoggedPieceMove)
 }
 

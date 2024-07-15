@@ -1,5 +1,5 @@
 use crate::gamestate::ChessGame;
-use crate::grid::FileDirection;
+use crate::grid::Side;
 use crate::grid::Rank;
 use crate::grid::StandardCoordinate;
 use crate::misc::pick;
@@ -22,7 +22,7 @@ impl PieceMove {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum AnyMove {
     Piece(PieceMove),
-    Castle(FileDirection)
+    Castle(Side)
 }
 
 /// Computes the position of the piece captured by this move (if any).

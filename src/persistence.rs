@@ -1,5 +1,5 @@
 use crate::gamestate::ChessGame;
-use crate::grid::FileDirection;
+use crate::grid::Side;
 use crate::grid::ParseStandardCoordinateError;
 use crate::grid::StandardCoordinate;
 use crate::makemove::make_move;
@@ -16,8 +16,8 @@ pub fn apply_gstr(state: &mut ChessGame, gstr: &str) -> Result<(), LoadGameErr> 
     for token in tokens {
         if token.is_empty() { continue; }
         let prop_move = match token {
-            "CastleQueenside" => AnyMove::Castle(FileDirection::Queenside),
-            "CastleKingside" => AnyMove::Castle(FileDirection::Kingside),
+            "CastleQueenside" => AnyMove::Castle(Side::Queenside),
+            "CastleKingside" => AnyMove::Castle(Side::Kingside),
             other => AnyMove::Piece(parse_pmove(other)?)
         };
 
@@ -102,8 +102,8 @@ where W: std::io::Write
     match mov {
         AnyMove::Piece(pmove) => write_pmove(stream, pmove)?,
         AnyMove::Castle(direction) => match direction {
-            FileDirection::Queenside => write!(stream, "CastleQueenside")?,
-            FileDirection::Kingside => write!(stream, "CastleKingside")?
+            Side::Queenside => write!(stream, "CastleQueenside")?,
+            Side::Kingside => write!(stream, "CastleKingside")?
         }
     }
     write!(stream, ";")?;

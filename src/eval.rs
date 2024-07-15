@@ -11,7 +11,7 @@ use crate::movegen::dispatch::movegen_legal;
 use crate::repetitions::count_repetitions;
 use crate::early_return;
 use std::time::Instant;
-use crate::grid::FileDirection;
+use crate::grid::Side;
 use crate::movegen::types::GeneratedMove;
 use crate::movesort::movegen_legal_sorted;
 use crate::snapshot::capture_snapshot;
