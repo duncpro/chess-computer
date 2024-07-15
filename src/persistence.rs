@@ -9,7 +9,6 @@ use crate::piece::Species;
 use std::str::FromStr;
 use crate::mov::AnyMove;
 use crate::movegen::types::GeneratedMove;
-// # Load Game
 
 pub fn apply_gstr(state: &mut ChessGame, gstr: &str) -> Result<(), LoadGameErr> {
     let tokens = gstr.split(";").map(|s| s.trim());
