@@ -272,3 +272,18 @@ impl<'a, T> Push<T> for SegVec<'a, T> {
         self.vec_cell.borrow_mut().push(value);
     }
 }
+
+pub struct Defer<F: FnMut()> { pub callback: F }
+
+impl<F: FnMut()> Drop for Defer<F> {
+    fn drop(&mut self) { (self.callback)() }
+}
+
+#[macro_export]
+macro_rules! defer {
+    ($action:block) => {
+        let _ = crate::misc::Defer {
+            callback: || { $action }
+        };
+    };
+}

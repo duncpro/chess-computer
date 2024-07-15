@@ -98,3 +98,17 @@ pub fn prompt_usize() -> usize {
     input.pop();
     return input.parse::<usize>().unwrap();
 }
+
+pub fn format_integer<T>(num: T) -> String where T: ToString {
+    let mut s = num.to_string();
+    let original_length = s.len();
+    for (index, ch) in s.clone().char_indices().rev() {
+        assert!(ch.is_ascii_digit());
+        if (original_length - index) % 3 == 0 {
+            if index + 1 != original_length {
+                s.insert(index, ',');
+            }
+        }
+    }
+    return s;
+}

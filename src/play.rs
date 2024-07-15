@@ -1,6 +1,6 @@
 use crate::cache::Cache;
 use crate::cache::HashChars;
-use crate::cli::print_board;
+use crate::cli::{format_integer, print_board};
 use crate::cli::prompt_move;
 use crate::cli::prompt_ok;
 use crate::expect_match;
@@ -40,6 +40,7 @@ pub fn automove(gstate: &mut ChessGame, think_time: Duration, cache: &mut Cache,
         deadline: Instant::now() + think_time, cache });
 
     println!("Depth: {} (plys considered)", search_result.depth_achieved);
+    println!("Node Count: {}", format_integer(search_result.node_count));
     println!("Best Move: {:?}", search_result.bestmove);
 
     write_move(gamefile, search_result.bestmove);

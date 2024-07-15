@@ -1,6 +1,6 @@
 use crate::cache::Cache;
 use crate::cache::CacheValue;
-use crate::early_ok;
+use crate::{defer, early_ok};
 use crate::gamestate::ChessGame;
 use crate::makemove::{inspect_move, make_move};
 use crate::makemove::unmake_move;
@@ -22,7 +22,7 @@ pub const BELOW_MIN_SCORE: i16 = i16::MIN + 1;
 
 // # Time Constrained Evaluation
 
-pub struct DeepEvalContext<'a, 'b, 'c> {
+pub struct DeepEvalContext<'a, 'b, 'c, 'd> {
     pub gstate: &'a mut ChessGame,
     /// The number of complete plys to play-out before applying 
     /// the heuristic score function to the position. When zero,
@@ -40,7 +40,8 @@ pub struct DeepEvalContext<'a, 'b, 'c> {
     /// as the opponent will surely take this branch given the
     /// opportunity, and so it is not interesting to us.
     pub cutoff: i16,
-    pub cache: &'c mut Cache
+    pub cache: &'c mut Cache,
+    pub node_count: &'d mut u64
 }
 
 pub enum DeepEvalException { DeadlineElapsed, Cut }
@@ -49,9 +50,8 @@ pub enum DeepEvalException { DeadlineElapsed, Cut }
 /// by the opponent. When the deadline elapses, the search is cancelled and
 /// `Err(DeadlineElapsed)` is returned.
 pub fn deep_eval(mut ctx: DeepEvalContext) -> Result<i16, DeepEvalException> {
-    use DeepEvalException::*;
-    // Enforce time and depth constraints.
-    if Instant::now() > ctx.deadline { return Err(DeadlineElapsed); }
+    if Instant::now() > ctx.deadline { return Err(DeepEvalException::DeadlineElapsed); }
+    defer!({ *ctx.node_count += 1; });
     if ctx.lookahead == 0 { return Ok(shallow_eval(ctx.gstate)); }
     movegen_legal_sorted(ctx.gstate, &mut ctx.movebuf, ctx.cache);
     early_ok! { leaf_eval(ctx.gstate, ctx.movebuf.is_empty()) };
@@ -62,11 +62,12 @@ pub fn deep_eval(mut ctx: DeepEvalContext) -> Result<i16, DeepEvalException> {
         let result = inspect_move(ctx.gstate, genmove.mov, |gstate| {
             deep_eval(DeepEvalContext { gstate, lookahead: ctx.lookahead - 1,
                 movebuf: ctx.movebuf.extend(), deadline: ctx.deadline, cutoff: best.value(),
-                cache: ctx.cache })
+                cache: ctx.cache, node_count: ctx.node_count })
         });
         match result {
-            Err(DeadlineElapsed) => return Err(DeadlineElapsed),
-            Err(Cut) => {},
+            Err(DeepEvalException::DeadlineElapsed) =>
+                return Err(DeepEvalException::DeadlineElapsed),
+            Err(DeepEvalException::Cut) => {},
             Ok(score) => {
                 // The larger `score` is the better this position is for C.
                 // The larger `score * -1` is the better this position is for N.
@@ -75,7 +76,7 @@ pub fn deep_eval(mut ctx: DeepEvalContext) -> Result<i16, DeepEvalException> {
                 // So if this position is better for N than the best score for N that the P will allow,
                 // we cut it, as P will never give us an opportunity to make this move (they have
                 // a better choice already).
-                if score * -1 >= ctx.cutoff * -1 { return Err(Cut); }
+                if score * -1 >= ctx.cutoff * -1 { return Err(DeepEvalException::Cut); }
                 best.push(genmove, -1 * score);
             },
         }

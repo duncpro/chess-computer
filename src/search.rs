@@ -17,12 +17,13 @@ use crate::movegen::types::GeneratedMove;
 
 // # Search
 
-struct SearchContext<'a, 'b, 'c> {
+struct SearchContext<'a, 'b, 'c, 'd> {
     pub gstate: &'a mut ChessGame,
     pub lookahead: u8,
     pub movebuf: SegVec<'b, GeneratedMove>,
     pub deadline: Instant,
-    pub cache: &'c mut Cache
+    pub cache: &'c mut Cache,
+    pub node_count: &'d mut u64,
 }
 
 pub struct DeadlineElapsed;
@@ -43,7 +44,7 @@ fn search(mut ctx: SearchContext) -> Result<AnyMove, DeadlineElapsed> {
         let result = inspect_move(ctx.gstate, genmov.mov, |gstate| {
             deep_eval(DeepEvalContext { gstate, lookahead: ctx.lookahead - 1,
                 movebuf: ctx.movebuf.extend(), deadline: ctx.deadline, cutoff: best.value(),
-                cache: ctx.cache })
+                cache: ctx.cache, node_count: ctx.node_count })
         });
         match result {
             Err(DeepEvalException::DeadlineElapsed) => return Err(DeadlineElapsed),
@@ -82,7 +83,8 @@ pub struct IterDeepSearchContext<'a, 'b, 'c> {
 
 pub struct IterDeepSearchResult {
     pub bestmove: AnyMove,
-    pub depth_achieved: u8
+    pub depth_achieved: u8,
+    pub node_count: u64
 }
 
 /// Conducts a time-limited search for the optimal move. 
@@ -91,14 +93,16 @@ pub struct IterDeepSearchResult {
 pub fn iterdeep_search(mut ctx: IterDeepSearchContext) -> IterDeepSearchResult {
     let mut bestmove = search_shallow(ctx.gstate, ctx.movebuf.extend());
     let mut eval_lookahead: u8 = 1;
+    let mut node_count: u64 = 0;
     loop {
         let result = search(SearchContext { gstate: ctx.gstate, lookahead: eval_lookahead,
-            movebuf: ctx.movebuf.extend(), deadline: ctx.deadline, cache: ctx.cache });
+            movebuf: ctx.movebuf.extend(), deadline: ctx.deadline, cache: ctx.cache,
+            node_count: &mut node_count });
         match result {
             Err(DeadlineElapsed) => break,
             Ok(mov) => bestmove = mov,
         }
         eval_lookahead += 1;
     }
-    return IterDeepSearchResult { bestmove, depth_achieved: eval_lookahead };
+    return IterDeepSearchResult { bestmove, depth_achieved: eval_lookahead, node_count };
 }
