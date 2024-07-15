@@ -69,6 +69,7 @@ impl Cache {
     }
 }
 
+#[derive(Clone, PartialEq, Eq)]
 pub struct IncrementalHash { 
     value: u64,
     chs: HashChars
@@ -105,6 +106,7 @@ impl IncrementalHash {
     pub fn value(&self) -> u64 { self.value }
 }
 
+#[derive(Clone, PartialEq, Eq)]
 pub struct HashChars {
     piece_placements: [u64; 6 * 2 * 64],
     crights: [u64; 16],

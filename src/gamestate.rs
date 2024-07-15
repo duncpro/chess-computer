@@ -22,6 +22,7 @@ use crate::piece::SpeciesTable;
 
 // # `ChessGame`
 
+#[derive(Clone, PartialEq, Eq)]
 pub struct ChessGame {
     pub bbs: Bitboards,
     pub p_lut: PieceGrid,
@@ -52,20 +53,20 @@ impl ChessGame {
 
 // # Movelog
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct MovelogEntry {
     pub prev_crights: CastlingRights,
     pub prev_halfmoveclock: u16,
     pub lmove: LoggedMove,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum LoggedMove {
     Castle(FileDirection),
     Piece(LoggedPieceMove)
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct LoggedPieceMove {
     pub mgmove: PieceMove,
     pub capture: Option<Piece>,
@@ -75,6 +76,7 @@ pub struct LoggedPieceMove {
 
 // # `Bitboards`
 
+#[derive(Clone, PartialEq, Eq)]
 pub struct Bitboards {
     // ## MDBitboards
     pub species_bbs: SpeciesTable<MDBitboard>,

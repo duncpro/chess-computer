@@ -9,14 +9,13 @@ use chess_solver_3::grid::{File, FileDirection, Rank, StandardCoordinate};
 use chess_solver_3::makemove::{make_move, unmake_move};
 use chess_solver_3::mov::{AnyMove, PieceMove};
 use chess_solver_3::persistence::apply_gstr;
-use chess_solver_3::snapshot::capture_snapshot;
 use chess_solver_3::stdinit::new_std_chess_position;
 
 pub fn test_make_unmake(board: &mut ChessGame, mov: AnyMove) {
-    let before_snapshot = capture_snapshot(board);
+    let before_snapshot = board.clone();
     make_move(board, mov);
     unmake_move(board);
-    let after_snapshot = capture_snapshot(board);
+    let after_snapshot = board.clone();
     assert!(before_snapshot == after_snapshot);
 }
 

@@ -146,7 +146,7 @@ pub fn print_bitboard(bb: RawBitboard) {
 
 // # `MDBitboard`
 
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Default, Eq, PartialEq)]
 pub struct MDBitboard { array: [RawBitboard; 4] }
 
 impl MDBitboard {

@@ -124,6 +124,20 @@ macro_rules! impl_enum_table {
                 array: [T; <$key_type>::COUNT]
             }
 
+            impl<T> Clone for [<$key_type Table>]<T> where T: Clone {
+                fn clone(&self) -> Self {
+                    Self { array: self.array.clone() }
+                }
+            }
+
+            impl<T> PartialEq for [<$key_type Table>]<T> where T: PartialEq {
+                fn eq(&self, other: &Self) -> bool {
+                    self.array == other.array
+                }
+            }
+
+            impl<T> Eq for [<$key_type Table>]<T> where T: Eq {}
+
             impl<T> Default for [<$key_type Table>]<T> where T: Default + Copy {
                 fn default() -> Self {
                     Self { array: [T::default(); <$key_type>::COUNT]  }
