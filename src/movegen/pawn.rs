@@ -4,7 +4,7 @@ use crate::bits::repeat_byte_u64;
 use crate::gamestate::LoggedMove;
 use crate::misc::Push;
 use crate::piece::Species;
-use crate::rmrel::absolutize;
+use crate::rmrel::{absolutize, RMRelCoord};
 use crate::rmrel::relativize;
 use crate::setbit;
 use crate::movegen::types::{GeneratedMove, MGContext};
@@ -176,7 +176,10 @@ fn push(ctx: &mut MGContext<impl Push<GeneratedMove>>,
     ctx.push_p(PieceMove { origin, destin, promote });
 }
 
-pub fn reverse_pawn_attack(target: u8) -> RawBitboard {
+/// Create a [`RawBitboard`] denoting all squares which are attacked by an
+/// opponent-pawn placed at `origin`. Put another way, the pawn attacks *towards*
+/// the *least* significant byte.
+pub fn reverse_pawn_attack(target: RMRelCoord) -> RawBitboard {
     let mut attackers: RawBitboard = 0;
     // Attack from queenside
     {
@@ -198,9 +201,11 @@ pub fn reverse_pawn_attack(target: u8) -> RawBitboard {
     return attackers;
 }
 
-pub fn pawn_attack(origin: u8) -> RawBitboard {
+/// Create a [`RawBitboard`] denoting all squares which are attacked by a
+/// self-pawn placed at `origin`. Put another way, the pawn attacks *towards*
+/// the *most* significant byte.
+pub fn pawn_attack(origin: RMRelCoord) -> RawBitboard {
     let mut targets: RawBitboard = 0;
-    // Attack from queenside
     {
         let mut bb: RawBitboard = 0;
         setbit!(bb, origin);

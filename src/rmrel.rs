@@ -1,14 +1,10 @@
-//! This module defines the *relative* rank-major tile coordinate
-//! system. 
+//! This module defines the *relative* rank-major tile coordinate system.
 //! 
-//! Coordinates in this system are relative to the active-player.
-//! For example, the active-player's base rank occupies indices 1..8,
-//! and the opponents base rank occupies indices 56..64.
+//! Coordinates in this system are relative to the active-player, that is, the player to move.
+//! For example, the active-player's base rank coincides with coordinates 0..8, and the opponents
+//! base rank occupies indices 56..64.
 //!
-//! This is a specialized coordinate system used primarily during
-//! pawn move generation. See the general-purpose coordinate system
-//! [`StandardCoordinate`] in [`crate::grid`], and the more specialized
-//! absolute major coordinate systems defined in [`crate::coordinates`].
+//! This is a specialized coordinate system used primarily during pawn move generation.
 
 use crate::bitboard::RawBitboard;
 use crate::bits::bitscan;
@@ -30,9 +26,11 @@ fn convert_rmrel_coord(input: u8, active: Color) -> u8 {
     return ((output_rank as u8) * 8) + input_file;
 }
 
+pub type RMRelCoord = u8;
+
 /// Resolves a *relative* rank-major tile coordinate to a [`StandardCoordinate`].
 /// This is the inverse of [`absolutize`].
-pub fn absolutize(relc: u8, active_player: Color)
+pub fn absolutize(relc: RMRelCoord, active_player: Color)
 -> StandardCoordinate
 {
     let abs_rm_index = convert_rmrel_coord(relc, active_player);
@@ -42,7 +40,7 @@ pub fn absolutize(relc: u8, active_player: Color)
 
 /// Resolves a [`StandardCoordinate`] to a *relative* rank-major tile coordinate.
 /// This is the inverse of [`absolutize`].
-pub fn relativize(abs_coord: StandardCoordinate, active: Color) -> u8 {
+pub fn relativize(abs_coord: StandardCoordinate, active: Color) -> RMRelCoord {
     let abs_rm_coord = Coordinate::<RankMajorCS>::from(abs_coord);
     return convert_rmrel_coord(abs_rm_coord.index(), active);
 }

@@ -140,7 +140,7 @@ pub fn print_bitboard(bb: RawBitboard) {
         }
         print!("\n");
     }
-    print!("                MSB");
+    println!("                MSB");
 }
 
 
