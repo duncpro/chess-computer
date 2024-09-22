@@ -50,8 +50,8 @@ pub enum DeepEvalException { DeadlineElapsed, Cut }
 /// by the opponent. When the deadline elapses, the search is cancelled and
 /// `Err(DeadlineElapsed)` is returned.
 pub fn deep_eval(mut ctx: DeepEvalContext) -> Result<i16, DeepEvalException> {
+    *ctx.node_count += 1;
     if Instant::now() > ctx.deadline { return Err(DeepEvalException::DeadlineElapsed); }
-    defer!({ *ctx.node_count += 1; });
     if ctx.lookahead == 0 { return Ok(shallow_eval(ctx.gstate)); }
     movegen_legal_sorted(ctx.gstate, &mut ctx.movebuf, ctx.cache);
     early_ok! { leaf_eval(ctx.gstate, ctx.movebuf.is_empty()) };
